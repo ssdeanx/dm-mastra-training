@@ -6,35 +6,35 @@
  * providing a centralized registry for agent management and orchestration.
  */
 
+
 // Core agents
-export { masterAgent } from './master-agent';
-export { weatherAgent } from './weather-agent';
-
-// Specialized domain agents
-export { researchAgent } from './research-agent';
-export { synthesisAgent } from '../workflows/vnext-workflow';
-export { supervisorAgent } from './supervisor-agent';
-export { langGraphAgent } from './langgraph-agent';
-
-// Import agents for registry
 import { masterAgent } from './master-agent';
 import { weatherAgent } from './weather-agent';
-import { synthesisAgent } from '../workflows/vnext-workflow';
+import { analyzerAgent } from './analyzer-agent';
 import { supervisorAgent } from './supervisor-agent';
 
-import { analyzerAgent } from './analyzer-agent';
+// Specialized/domain agents
+import { researchAgent } from './research-agent';
+import { dataAgent } from './data-agent';
 import { langGraphAgent } from './langgraph-agent';
+import { synthesisAgent } from '../workflows/vnext-workflow';
 
-// Additional exports for workflow usage
+// Export all agents for external use
+export { masterAgent } from './master-agent';
+export { weatherAgent } from './weather-agent';
 export { analyzerAgent } from './analyzer-agent';
-
+export { supervisorAgent } from './supervisor-agent';
+export { researchAgent } from './research-agent';
+export { dataAgent } from './data-agent';
+export { langGraphAgent } from './langgraph-agent';
+export { synthesisAgent } from '../workflows/vnext-workflow';
 
 // Runtime Context Types - Export all agent-specific runtime contexts
 export type { MasterAgentRuntimeContext } from './master-agent';
-export type { WeatherAgentRuntimeContext } from './weather-agent';;
+export type { WeatherAgentRuntimeContext } from './weather-agent';
 export type { ResearchAgentRuntimeContext } from './research-agent';
+export type { DataAgentRuntimeContext } from './data-agent';
 export type { SupervisorAgentRuntimeContext } from './supervisor-agent';
-
 export type { AnalyzerAgentRuntimeContext } from './analyzer-agent';
 export type { LangGraphAgentRuntimeContext } from './langgraph-agent';
 
@@ -42,18 +42,19 @@ export type { LangGraphAgentRuntimeContext } from './langgraph-agent';
  * Agent registry object for easy access and management
  * Provides a structured way to access all available agents
  */
+
 export const agentRegistry = {
   // Core agents
   master: masterAgent,
-
   analyzer: analyzerAgent,
-
   supervisor: supervisorAgent,
 
   // Domain-specific agents
   weather: weatherAgent,
-
+  research: researchAgent,
+  data: dataAgent,
   langgraph: langGraphAgent,
+
   // Workflow agents
   synthesize: synthesisAgent,
 } as const;
@@ -62,13 +63,14 @@ export const agentRegistry = {
  * Agent categories for organized access and management
  * Groups agents by their primary domain expertise
  */
+
 export const agentCategories = {
-  core: ['master', 'supervisor', 'analyzer',  'langgraph', 'research'] as const,
+  core: ['master', 'supervisor', 'analyzer', 'langgraph', 'research', 'data'] as const,
   development: ['master'] as const,
-  data: ['research', 'weather'] as const,
+  data: ['data', 'research', 'weather'] as const,
   management: ['supervisor'] as const,
   operations: ['master'] as const,
-  creative: ['synthesis'] as const,
+  creative: ['synthesize'] as const,
   specialized: ['master'] as const,
 } as const;
 
@@ -111,11 +113,36 @@ export function hasAgent(agentName: string): agentName is keyof typeof agentRegi
  * Agent metadata for management and documentation
  */
 export const agentMetadata = {
-  master: { description: 'Master assistant for debugging and problem-solving', tags: ['core', 'debug', 'master'] },
-  analyzer: { description: 'Data analysis and insights generation specialist', tags: ['core', 'data', 'analysis'] },
-  supervisor: { description: 'Agent coordination and orchestration specialist', tags: ['supervisor', 'coordination', 'orchestration'] },
-  weather: { description: 'Weather information and forecasting assistant', tags: ['weather', 'data', 'api'] },
-  synthesis: { description: 'Research synthesis and report generation specialist', tags: ['synthesis', 'reporting', 'writing'] },
-  research: { description: 'Research and information analysis specialist', tags: ['research', 'analysis', 'information'] },
-  langgraph: { description: 'LangGraph agent for graph-based reasoning and analysis', tags: ['langgraph', 'graph', 'reasoning'] },
+  master: {
+    description: 'Master assistant for debugging and problem-solving',
+    tags: ['core', 'debug', 'master']
+  },
+  analyzer: {
+    description: 'Data analysis and insights generation specialist',
+    tags: ['core', 'data', 'analysis']
+  },
+  supervisor: {
+    description: 'Agent coordination and orchestration specialist',
+    tags: ['supervisor', 'coordination', 'orchestration']
+  },
+  weather: {
+    description: 'Weather information and forecasting assistant',
+    tags: ['weather', 'data', 'api']
+  },
+  synthesis: {
+    description: 'Research synthesis and report generation specialist',
+    tags: ['synthesis', 'reporting', 'writing']
+  },
+  research: {
+    description: 'Research and information analysis specialist',
+    tags: ['research', 'analysis', 'information']
+  },
+  data: {
+    description: 'Secure file and directory operations agent for the data/ folder',
+    tags: ['data', 'file', 'management', 'secure']
+  },
+  langgraph: {
+    description: 'LangGraph agent for graph-based reasoning and analysis',
+    tags: ['langgraph', 'graph', 'reasoning']
+  },
 } as const;

@@ -7,7 +7,7 @@ import { createGemini25Provider } from '../config/googleProvider';
 import { PinoLogger } from "@mastra/loggers";
 import { z } from 'zod';
 import { UPSTASH_PROMPT } from "@mastra/upstash";
-import { createBraveSearchTool, createTavilySearchTool } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, codeSearchTool, webScraperTool, gitOperationsTool, createDiffbotClient } from "../tools";
 
 /**
  * Runtime context type for the Research Agent
@@ -145,6 +145,11 @@ ${UPSTASH_PROMPT}
     chunkerTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
+    // Spread Diffbot tools here so each is a top-level tool
+    ...createDiffbotClient(),
+    codeSearchTool,
+    webScraperTool,
+    gitOperationsTool,
   },
   memory: upstashMemory,
 });

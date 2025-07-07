@@ -21,7 +21,7 @@ import { z } from 'zod';
 //import { WordInclusionMetric } from "../evals/wordInclusion";
 import { UPSTASH_PROMPT } from "@mastra/upstash";
 import { PinoLogger } from "@mastra/loggers";
-import { createBraveSearchTool, createTavilySearchTool } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, codeSearchTool, webScraperTool, gitOperationsTool } from "../tools";
 /**
  * Runtime context type for the Master Agent
  * Production-focused runtime variables for agent behavior
@@ -202,6 +202,9 @@ ${UPSTASH_PROMPT}
     stockPriceTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
+    codeSearchTool,
+    webScraperTool,
+    gitOperationsTool,
   },
   memory: upstashMemory,
   evals: {

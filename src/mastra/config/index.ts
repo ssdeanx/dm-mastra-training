@@ -355,7 +355,7 @@ export function createTracedGoogleModel(
   const { name, tags, metadata, runName, ...googleProviderOptions } = options || {};
 
   // Use existing provider creation with all Google options
-  const baseModel = createMastraGoogleProvider(modelId, googleProviderOptions);
+  //const baseModel = createMastraGoogleProvider(modelId, googleProviderOptions);
 
   if (!langsmithConfig.tracingEnabled) {
     observabilityLogger.debug('LangSmith tracing disabled, returning unwrapped model');

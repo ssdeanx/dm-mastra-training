@@ -6,7 +6,7 @@ import { chunkerTool } from "../tools/chunker-tool";
 import { z } from "zod";
 import { UPSTASH_PROMPT } from "@mastra/upstash";
 import { PinoLogger } from "@mastra/loggers";
-import { createBraveSearchTool, createTavilySearchTool } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool } from "../tools";
 const logger = new PinoLogger({ name: 'AnalyzerAgent', level: 'info' });
 logger.info('Initializing AnalyzerAgent');
 
@@ -139,6 +139,8 @@ ${UPSTASH_PROMPT}
     chunkerTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
+    webScraperTool,
+    gitOperationsTool,
   },
   memory: upstashMemory,
 });

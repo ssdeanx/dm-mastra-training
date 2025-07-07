@@ -1,10 +1,13 @@
 import type * as wikibase from 'wikibase-sdk'
-import { AIFunctionsProvider, assert, getEnv, throttleKy } from '@agentic/core'
+import { assert, getEnv, throttleKy } from '@agentic/core'
 import defaultKy, { type KyInstance } from 'ky'
 import pThrottle from 'p-throttle'
 import wdk from 'wikibase-sdk/wikidata.org'
 import { z } from 'zod'
-import { createMastraTools } from '@agentic/mastra'
+import { createTool } from "@mastra/core/tools";
+import { PinoLogger } from '@mastra/loggers';
+
+const logger = new PinoLogger({ name: 'wikidata', level: 'info' });
 
 // Allow up to 200 requests per second by default.
 export const wikidataThrottle = pThrottle({
@@ -74,7 +77,7 @@ const WikidataEntityMapSchema = z.record(WikidataEntitySchema);
  *
  * TODO: support any wikibase instance
  */
-export class WikidataClient extends AIFunctionsProvider {
+export class WikidataClient {
   protected readonly ky: KyInstance
   protected readonly apiUserAgent: string
 
@@ -90,7 +93,6 @@ export class WikidataClient extends AIFunctionsProvider {
     ky?: KyInstance
   } = {}) {
     assert(apiUserAgent, 'WikidataClient missing required "apiUserAgent"')
-    super()
 
     this.apiUserAgent = apiUserAgent
 
@@ -149,56 +151,50 @@ export class WikidataClient extends AIFunctionsProvider {
   }
 }
 
-/**
- * Interface for Mastra tool with outputSchema property
- */
-interface MastraToolWithSchema<T = unknown> {
-  outputSchema?: z.ZodSchema<T>;
-  [key: string]: unknown;
-}
-
-/**
- * Helper function to create a Mastra-compatible Wikidata client
- *
- * @param config - Configuration options for the Wikidata client
- * @returns An array of Mastra-compatible tools
- */
-export function createMastraWikidataTools(config: {
+export function createWikidataClientTools(config: {
   apiBaseUrl?: string;
   apiUserAgent?: string;
   throttle?: boolean;
   ky?: KyInstance;
 } = {}) {
   const wikidataClient = new WikidataClient(config);
-  const mastraTools = createMastraTools(wikidataClient);
 
-  // Patch outputSchema for getEntityById
-  if (mastraTools.wikidata_get_entity_by_id) {
-    (mastraTools.wikidata_get_entity_by_id as unknown as MastraToolWithSchema<SimplifiedEntity>).outputSchema = WikidataEntitySchema;
-  }
-
-  // Patch outputSchema for getEntitiesByIds
-  if (mastraTools.wikidata_get_entities_by_ids) {
-    (mastraTools.wikidata_get_entities_by_ids as unknown as MastraToolWithSchema<SimplifiedEntityMap>).outputSchema = WikidataEntityMapSchema;
-  }
-
-  return mastraTools;
+  return {
+    wikidataGetEntityById: createTool({
+      id: "wikidata-get-entity-by-id",
+      description: "Gets a Wikidata entity by ID.",
+      inputSchema: z.object({ id: z.string().describe('The ID of the Wikidata entity.') }),
+      outputSchema: WikidataEntitySchema,
+      execute: async ({ context }) => {
+        logger.info('Getting Wikidata entity by ID', { id: context.id });
+        try {
+          const response = await wikidataClient.getEntityById(context.id);
+          logger.info('Wikidata entity retrieved successfully', { id: context.id });
+          return response;
+        } catch (error) {
+          logger.error('Wikidata entity retrieval failed', { id: context.id, error: error instanceof Error ? error.message : 'Unknown error' });
+          throw new Error(`Wikidata entity retrieval failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
+      },
+    }),
+    wikidataGetEntitiesByIds: createTool({
+      id: "wikidata-get-entities-by-ids",
+      description: "Gets multiple Wikidata entities by their IDs.",
+      inputSchema: z.object({ ids: z.array(z.string()).describe('An array of Wikidata entity IDs.') }),
+      outputSchema: WikidataEntityMapSchema,
+      execute: async ({ context }) => {
+        logger.info('Getting Wikidata entities by IDs', { ids: context.ids });
+        try {
+          const response = await wikidataClient.getEntitiesByIds(context.ids);
+          logger.info('Wikidata entities retrieved successfully', { ids: context.ids });
+          return response;
+        } catch (error) {
+          logger.error('Wikidata entities retrieval failed', { ids: context.ids, error: error instanceof Error ? error.message : 'Unknown error' });
+          throw new Error(`Wikidata entities retrieval failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
+      },
+    }),
+  };
 }
 
-// Export adapter and schemas for convenience
-export { createMastraTools, WikidataEntitySchema, WikidataEntityMapSchema };
-// Export adapter and schemas for convenience
-
-/**
- * Mastra-wrapped Wikidata tools for querying and enhancing Wikidata entities.
- *
- * @mastra Tool for Wikidata API integration
- * @see https://mastra.ai/en/reference/tools/create-tool
- * @example
- * ```typescript
- * import { wikidataTools } from './agentic/wikidata-client';
- * const results = await wikidataTools.getEntityById({ id: 'Q42' });
- * ```
- * @edit 2025-06-24 [BY: Cline]
- */
-export const wikidataTools = createMastraWikidataTools();
+export const wikidataTools = createWikidataClientTools();
