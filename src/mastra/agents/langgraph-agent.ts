@@ -11,6 +11,12 @@ import {
   chunkerTool,
   //graphRAGUpsertTool,
   hybridVectorSearchTool,
+  graphRAGQueryTool,
+  diffbotAnalyzeUrlTool,
+  diffbotEnhanceEntityTool,
+  diffbotEnhanceKnowledgeGraphTool,
+  diffbotExtractArticleFromUrlTool,
+  diffbotSearchKnowledgeGraphTool,
   //rerankTool,
 } from '../tools';
 import { UPSTASH_PROMPT } from '@mastra/upstash';
@@ -173,6 +179,12 @@ ${UPSTASH_PROMPT}
   }),
   tools: {
     graphRAGTool,
+    graphRAGQueryTool,
+    diffbotAnalyzeUrlTool,
+    diffbotExtractArticleFromUrlTool,
+    diffbotEnhanceKnowledgeGraphTool,
+    diffbotSearchKnowledgeGraphTool,
+    diffbotEnhanceEntityTool,
     //graphRAGUpsertTool, # FIXME: temporarily disabled due to issues
     vectorQueryTool,
     hybridVectorSearchTool,

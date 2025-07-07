@@ -1,6 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import { upstashMemory } from '../upstashMemory';
-import { graphRAGTool, graphRAGUpsertTool } from '../tools/graphRAG';
+import { graphRAGQueryTool, graphRAGTool, graphRAGUpsertTool } from '../tools/graphRAG';
 import { vectorQueryTool, hybridVectorSearchTool } from "../tools/vectorQueryTool";
 import { mem0RememberTool, mem0MemorizeTool } from "../tools/mem0-tool";
 import { weatherTool } from "../tools/weather-tool";
@@ -192,7 +192,8 @@ ${UPSTASH_PROMPT}
   }),
   tools: {
     graphRAGTool,
-    //graphRAGUpsertTool, # FIXME: temporarily disabled due to issues
+    graphRAGQueryTool,
+    graphRAGUpsertTool,
     mem0RememberTool,
     mem0MemorizeTool,
     chunkerTool,
