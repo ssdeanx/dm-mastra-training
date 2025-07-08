@@ -34,7 +34,7 @@
     "@mastra/evals": "^0.10.5",
     "@mastra/fastembed": "^0.10.0",
     "@mastra/firecrawl": "^1.2.5",
-    "@mastra/libsql": "^0.11.0",
+
     "@mastra/loggers": "^0.10.3",
     "@mastra/mcp": "^0.10.5",
     "@mastra/mcp-docs-server": "^0.13.4",
@@ -85,7 +85,7 @@
     "mastra": "^0.10.10",
     "@mastra/core": "^0.10.10",
     "@opentelemetry/core": "^2.0.1",
-    "@opentelemetry/auto-instrumentations-node": "^0.60.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.61.0",
     "@qdrant/js-client-rest": "^1.14.1",
     "axios": "^1.10.0"
   }

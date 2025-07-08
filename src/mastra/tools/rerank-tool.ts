@@ -3,8 +3,8 @@ import { createTool, ToolExecutionContext } from '@mastra/core/tools';
 import { RuntimeContext } from '@mastra/core/di';
 import { rerank, type RerankResult } from '@mastra/rag';
 import { createGemini25Provider } from '../config/googleProvider';
-import { CoreMessage, UIMessage } from 'ai';
-import { searchUpstashMessages } from '../upstashMemory';
+//import { CoreMessage, UIMessage } from 'ai';
+import { vectorQueryTool } from './vectorQueryTool';
 import { PinoLogger } from '@mastra/loggers';
 import { z } from 'zod';
 
@@ -26,12 +26,10 @@ export type RerankRuntimeContext = {
 
 // Input and output schemas
 const rerankInputSchema = z.object({
-  threadId: z.string().describe('Thread identifier for conversation context'),
+  indexName: z.string().optional().describe('Vector store index name'),
   query: z.string().min(1).describe('Query string for semantic search and reranking'),
   topK: z.number().int().positive().default(10).describe('Number of initial results to retrieve before reranking'),
   finalK: z.number().int().positive().default(3).describe('Final number of results after reranking'),
-  before: z.number().int().min(0).default(2).describe('Number of messages before each match'),
-  after: z.number().int().min(0).default(1).describe('Number of messages after each match'),
   semanticWeight: z.number().min(0).max(1).default(0.6).describe('Weight for semantic similarity'),
   vectorWeight: z.number().min(0).max(1).default(0.3).describe('Weight for vector similarity'),
   positionWeight: z.number().min(0).max(1).default(0.1).describe('Weight for position bias'),
@@ -85,30 +83,31 @@ export const rerankTool = createTool({
           modelPreference,
           weights: { semanticWeight, vectorWeight, positionWeight },
           query: validatedInput.query,
-          threadId: validatedInput.threadId
+          indexName: validatedInput.indexName
         });
       }
 
-      // First, get more results than needed for reranking using Upstash memory
-      const initialResults = await searchUpstashMessages(
-        validatedInput.threadId,
-        validatedInput.query,
-        validatedInput.topK,
-        validatedInput.before,
-        validatedInput.after
-      );
+      // First, get more results than needed for reranking using the vectorQueryTool
+      const initialResults = await vectorQueryTool.execute({
+        context: {
+          queryText: validatedInput.query,
+          topK: validatedInput.topK,
+          indexName: validatedInput.indexName,
+        },
+        runtimeContext,
+      });
 
       // If we have more results than needed, apply reranking
-      if (initialResults.messages.length > validatedInput.finalK) {
+      if (initialResults.results.length > validatedInput.finalK) {
         const model = createGemini25Provider(modelPreference);
 
-        // Convert memory results to the format expected by rerank function
-        const queryResults = initialResults.messages.map((msg: CoreMessage, index: number) => ({
-          id: `msg_${index}`,
-          score: 0.5, // Default score
+        // Convert vector query results to the format expected by rerank function
+        const queryResults = initialResults.results.map((result: { id: string; score: number; metadata: Record<string, unknown>; content: string; }, index: number) => ({
+          id: result.id,
+          score: result.score,
           metadata: {
-            text: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
-            role: msg.role,
+            ...result.metadata,
+            text: result.content,
             index,
             userId,
             sessionId
@@ -130,33 +129,26 @@ export const rerankTool = createTool({
           }
         );
 
-        // Map reranked results back to messages
+        // Map reranked results back to messages (or a more generic format)
         const rerankedMessages = rerankedResults.map((result) => {
-          const originalIndex = result.result.metadata?.index;
-          if (typeof originalIndex === 'number') {
-            return initialResults.messages[originalIndex];
-          }
-          return undefined;
-        }).filter(Boolean) as CoreMessage[];
-
-        // Map reranked results to UI messages
-        const rerankedUIMessages = rerankedResults.map((result: RerankResult) => {
-          const originalIndex = result.result.metadata?.index as number | undefined;
-          if (typeof originalIndex === 'number') {
-            return initialResults.uiMessages[originalIndex];
-          }
-          return undefined;
-        }).filter(Boolean) as UIMessage[];
+          return {
+            id: result.result.id,
+            content: result.result.metadata?.text,
+            role: 'assistant', // Assuming the reranked content is from the assistant
+            metadata: result.result.metadata,
+            score: result.score,
+          };
+        });
 
         const rerankMetadata = {
           topK: validatedInput.topK,
           finalK: validatedInput.finalK,
-          before: validatedInput.before,
-          after: validatedInput.after,
-          initialResultCount: initialResults.messages.length,
+          before: 0, // Not applicable for vector search
+          after: 0, // Not applicable for vector search
+          initialResultCount: initialResults.results.length,
           rerankingUsed: true,
           rerankingDuration: Date.now() - startTime,
-          averageRelevanceScore: rerankedResults.length > 0 ? 
+          averageRelevanceScore: rerankedResults.length > 0 ?
             rerankedResults.reduce((sum: number, r: RerankResult) => sum + r.score, 0) / rerankedResults.length : 0,
           userId,
           sessionId
@@ -164,7 +156,7 @@ export const rerankTool = createTool({
 
         if (debug) {
           logger.info('Reranked search completed', {
-            originalCount: initialResults.messages.length,
+            originalCount: initialResults.results.length,
             finalCount: rerankedMessages.length,
             avgScore: rerankMetadata.averageRelevanceScore,
             duration: rerankMetadata.rerankingDuration
@@ -173,7 +165,7 @@ export const rerankTool = createTool({
 
         return rerankOutputSchema.parse({
           messages: rerankedMessages,
-          uiMessages: rerankedUIMessages,
+          uiMessages: [], // uiMessages are not applicable in this context
           rerankMetadata
         });
 
@@ -182,9 +174,9 @@ export const rerankTool = createTool({
         const rerankMetadata = {
           topK: validatedInput.topK,
           finalK: validatedInput.finalK,
-          before: validatedInput.before,
-          after: validatedInput.after,
-          initialResultCount: initialResults.messages.length,
+          before: 0,
+          after: 0,
+          initialResultCount: initialResults.results.length,
           rerankingUsed: false,
           rerankingDuration: Date.now() - startTime,
           averageRelevanceScore: 0,
@@ -194,31 +186,31 @@ export const rerankTool = createTool({
 
         if (debug) {
           logger.info('Reranking skipped - insufficient results', {
-            resultCount: initialResults.messages.length,
+            resultCount: initialResults.results.length,
             finalK: validatedInput.finalK
           });
         }
 
         return rerankOutputSchema.parse({
-          messages: initialResults.messages,
-          uiMessages: initialResults.uiMessages,
+          messages: initialResults.results,
+          uiMessages: [],
           rerankMetadata
         });
       }
 
     } catch (error) {
-      logger.error('Rerank tool execution failed', { 
+      logger.error('Rerank tool execution failed', {
         error: error instanceof Error ? error.message : String(error),
         query: input.query,
-        threadId: input.threadId
+        indexName: input.indexName
       });
-      
+
       // Return empty results on error
       const rerankMetadata = {
         topK: input.topK || 10,
         finalK: input.finalK || 3,
-        before: input.before || 2,
-        after: input.after || 1,
+        before: 0,
+        after: 0,
         initialResultCount: 0,
         rerankingUsed: false,
         rerankingDuration: Date.now() - startTime,
@@ -246,117 +238,3 @@ rerankRuntimeContext.set('vector-weight', 0.3);
 rerankRuntimeContext.set('position-weight', 0.1);
 rerankRuntimeContext.set('debug', false);
 rerankRuntimeContext.set('quality-threshold', 0.7);
-
-/**
- * Legacy function for backward compatibility
- */
-export async function rerankSearchMessages(
-  threadId: string,
-  vectorSearchString: string,
-  topK = 10,
-  finalK = 3,
-  before = 2,
-  after = 1
-): Promise<{ messages: CoreMessage[]; uiMessages: UIMessage[]; rerankMetadata: { topK: number; before: number; after: number } }> {
-  const startTime = Date.now();
-
-  try {
-    // First, get more results than needed for reranking using Upstash memory
-    const initialResults = await searchUpstashMessages(
-      threadId,
-      vectorSearchString,
-      topK,
-      before,
-      after
-    );
-
-    // Use Mastra's rerank function with Google model for better relevance
-    if (initialResults.messages.length > finalK) {
-      const model = createGemini25Provider('gemini-2.5-flash-lite-preview-06-17', {
-        responseModalities: ["TEXT"],
-        thinkingConfig: {
-          thinkingBudget: 0, // Fixed thinking budget
-          includeThoughts: false, // Disable thoughts for debugging and monitoring purposes
-        },
-      });
-
-      // Convert memory results to the format expected by rerank function
-      const queryResults = initialResults.messages.map((msg: CoreMessage, index: number) => ({
-        id: `msg_${index}`,
-        score: 0.5, // Default score
-        metadata: {
-          text: msg.content,
-          role: msg.role,
-          index
-        }
-      }));
-
-      // Rerank using Mastra's rerank function
-      const rerankedResults = await rerank(
-        queryResults,
-        vectorSearchString,
-        model,
-        {
-          weights: {
-            semantic: 0.6,
-            vector: 0.3,
-            position: 0.1
-          },
-          topK: finalK
-        }
-      );
-
-      // Map reranked results back to messages
-      const rerankedMessages = rerankedResults.map((result) => {
-        const originalIndex = result.result.metadata?.index;
-        if (typeof originalIndex === 'number') {
-          return initialResults.messages[originalIndex];
-        }
-        return undefined;
-      }).filter(Boolean) as CoreMessage[];
-      // Map reranked results to UI messages
-      const rerankedUIMessages = rerankedResults.map((result: RerankResult) => {
-        const originalIndex = result.result.metadata?.index as number | undefined;
-        if (typeof originalIndex === 'number') {
-          return initialResults.uiMessages[originalIndex];
-        }
-        return undefined;
-      }).filter(Boolean) as UIMessage[];
-
-      const rerankMetadata = {
-        topK,
-        before,
-        after,
-        initialResultCount: initialResults.messages.length,
-        rerankingUsed: true,
-        rerankingDuration: Date.now() - startTime,
-        averageRelevanceScore: rerankedResults.length > 0 ? rerankedResults.reduce((sum: number, r: RerankResult) => sum + r.score, 0) / rerankedResults.length : 0
-      };
-
-      logger.info('Reranked search completed', {
-        threadId,
-        query: vectorSearchString,
-        ...rerankMetadata
-      });
-
-      return {
-        messages: rerankedMessages,
-        uiMessages: rerankedUIMessages,
-        rerankMetadata: { topK, before, after }
-      };
-    } else {
-      // Fallback to simple top-k without reranking
-      const finalMessages = initialResults.messages.slice(0, finalK);
-      const finalUIMessages = initialResults.uiMessages.slice(0, finalK);
-
-      return {
-        messages: finalMessages,
-        uiMessages: finalUIMessages,
-        rerankMetadata: { topK, before, after }
-      };
-    }
-  } catch (error: unknown) {
-    logger.error(`rerankSearchMessages failed: ${(error as Error).message}`);
-    throw error;
-  }
-}

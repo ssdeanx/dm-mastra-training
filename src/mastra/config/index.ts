@@ -12,11 +12,9 @@ import { traceable } from "langsmith/traceable";
 
 // Re-export existing functionality
 export * from './googleProvider';
-import { wrapAISDKModel } from "langsmith/wrappers/vercel";
 import { AISDKExporter } from "langsmith/vercel";
 import { Client } from "langsmith";
 import { PinoLogger } from '@mastra/loggers';
-import { createMastraGoogleProvider } from './googleProvider';
 import { formatISO } from 'date-fns';
 
 /**
@@ -242,7 +240,6 @@ const logger = new PinoLogger({ name: 'enhanced-observability', level: 'info' })
 // Export everything needed for LangSmith integration
 export {
   traceable,
-  wrapAISDKModel,
   AISDKExporter
 };
 
@@ -279,8 +276,8 @@ export class EnhancedAISDKExporter extends AISDKExporter {
       metadata: options.metadata ? Object.fromEntries(
         Object.entries(options.metadata).map(([key, value]) => [
           key,
-          typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' 
-            ? value 
+          typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+            ? value
             : String(value)
         ])
       ) : undefined
@@ -299,94 +296,6 @@ export class EnhancedAISDKExporter extends AISDKExporter {
       }
     };
   }
-}
-
-/**
- * Create a traced Google model with LangSmith integration
- * Works with any Google provider configuration from googleProvider.ts
- * 
- * @param modelId - Google AI model ID (e.g., 'gemini-2.0-flash-exp')
- * @param options - Comprehensive options including all Google provider options
- * @returns Wrapped Google AI model with automatic LangSmith tracing
- */
-export function createTracedGoogleModel(
-  modelId: string,
-  options?: {
-    // LangSmith tracing options
-    name?: string;
-    tags?: string[];
-    metadata?: Record<string, unknown>;
-    runName?: string;
-
-    // Google AI provider options (passed through to createMastraGoogleProvider)
-    temperature?: number;
-    maxContext?: number;
-    maxTokens?: number;
-    topP?: number;
-    topK?: number;
-    presencePenalty?: number;
-    frequencyPenalty?: number;
-    seed?: number;
-    thinkingConfig?: {
-      thinkingBudget?: number;
-      includeThoughts?: boolean;
-    };
-    responseModalities?: ["TEXT", "IMAGE"];
-
-    // Additional Google provider options
-    safetySettings?: Array<{
-      category: string;
-      threshold: string;
-    }>;
-    generationConfig?: Record<string, unknown>;
-    tools?: Array<{
-      name: string;
-      description: string;
-      parameters: Record<string, unknown>;
-    }>;
-    toolConfig?: Record<string, unknown>;
-    systemInstruction?: string;
-
-    // Any other Google provider options
-    [key: string]: unknown;
-  }
-) {
-  // Extract LangSmith-specific options
-  const { name, tags, metadata, runName, ...googleProviderOptions } = options || {};
-
-  // Use existing provider creation with all Google options
-  //const baseModel = createMastraGoogleProvider(modelId, googleProviderOptions);
-
-  if (!langsmithConfig.tracingEnabled) {
-    observabilityLogger.debug('LangSmith tracing disabled, returning unwrapped model');
-    return baseModel;
-  }
-
-  // Wrap with LangSmith tracing using AI SDK wrapper
-  const tracedModel = wrapAISDKModel(baseModel, {
-    name: name || `google-${modelId}`,
-    tags: tags || ['google', 'ai-sdk', 'mastra'],
-    metadata: {
-      modelId,
-      provider: 'google',
-      framework: 'ai-sdk',
-      runName,
-      thinkingBudget: googleProviderOptions.thinkingConfig?.thinkingBudget,
-      includeThoughts: googleProviderOptions.thinkingConfig?.includeThoughts,
-      responseModalities: googleProviderOptions.responseModalities,
-      ...metadata,
-    }
-  });
-
-  logger.info(`Created traced Google model: ${modelId}`, {
-    name: name || `google-${modelId}`,
-    tags: tags || ['google', 'ai-sdk', 'mastra'],
-    temperature: googleProviderOptions.temperature,
-    thinkingBudget: googleProviderOptions.thinkingConfig?.thinkingBudget
-  });
-
-  return tracedModel;
-
 }
 
 /**

@@ -17,11 +17,16 @@ import { RuntimeContext } from "@mastra/core/runtime-context";
 import {
   upsertVectors,
   createVectorIndex,
+  VECTOR_PROFILES,
   VECTOR_CONFIG,
-  VectorStoreError
+  VectorStoreError,
+  VectorStoreFactory,
+  MetadataFilter,
+  VectorQueryResult
 } from '../upstashMemory';
 import { embedMany } from 'ai';
 import { fastembed } from '@mastra/fastembed';
+import { chunkerTool } from './chunker-tool';
 
 const logger = new PinoLogger({ name: 'GraphRAGTool' });
 
@@ -45,7 +50,8 @@ const upsertInputSchema = z.object({
   document: documentInputSchema,
   chunkParams: chunkParamsSchema.optional(),
   indexName: z.string().default('context').describe('Name of the index to upsert to'),
-  createIndex: z.boolean().default(true).describe('Whether to create the index if it does not exist')
+  createIndex: z.boolean().default(true).describe('Whether to create the index if it does not exist'),
+  vectorProfile: z.enum(['default', 'gemini']).default('default').describe('Vector profile to use for embeddings and upserting'),
 }).strict();
 
 const upsertOutputSchema = z.object({
@@ -62,7 +68,8 @@ const queryInputSchema = z.object({
   topK: z.number().int().positive().default(10).describe('Number of results to return'),
   threshold: z.number().min(0).max(1).default(0.7).describe('Similarity threshold for graph connections'),
   includeVector: z.boolean().default(false).describe('Whether to include vector data in results'),
-  minScore: z.number().min(0).max(1).default(0).describe('Minimum similarity score threshold')
+  minScore: z.number().min(0).max(1).default(0).describe('Minimum similarity score threshold'),
+  vectorProfile: z.enum(['default', 'gemini']).default('default').describe('Vector profile to use for embeddings and querying'),
 }).strict();
 
 const queryResultSchema = z.object({
@@ -98,6 +105,7 @@ export type GraphRAGRuntimeContext = {
   sessionId?: string;
   category?: string;
   debug?: boolean;
+  vectorProfile?: 'default' | 'gemini';
 };
 
 /**
@@ -113,85 +121,95 @@ export const graphRAGUpsertTool = createTool({
     runtimeContext?: RuntimeContext<GraphRAGRuntimeContext>;
   }): Promise<z.infer<typeof upsertOutputSchema>> => {
     const startTime = Date.now();
-    
+
     try {
       const validatedInput = upsertInputSchema.parse(input);
-      
+
       // Get runtime context values
       const userId = runtimeContext?.get('userId') || 'anonymous';
       const sessionId = runtimeContext?.get('sessionId') || 'default';
       const debug = runtimeContext?.get('debug') || false;
-      
+      const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
+
+      // Get the vector store and embedder from the factory
+      const { vectorStore: upstashVectorClient, embedder } = VectorStoreFactory.get(vectorProfileName);
+
       if (debug) {
-        logger.info('Starting document upsert', { 
+        logger.info('Starting document upsert', {
           textLength: validatedInput.document.text.length,
           type: validatedInput.document.type,
           indexName: validatedInput.indexName,
           userId,
-          sessionId
+          sessionId,
+          vectorProfile: vectorProfileName
         });
       }
 
-      // Create MDocument based on type
-      let doc: MDocument;
-      const { text, type, metadata } = validatedInput.document;
-      
-      switch (type) {
-        case 'html':
-          doc = MDocument.fromHTML(text, metadata);
-          break;
-        case 'markdown':
-          doc = MDocument.fromMarkdown(text, metadata);
-          break;
-        case 'json':
-          doc = MDocument.fromJSON(text, metadata);
-          break;
-        case 'latex':
-          doc = MDocument.fromText(text, metadata); // Fallback to text for LaTeX
-          break;
-        case 'text':
-        default:
-          doc = MDocument.fromText(text, metadata);
-          break;
-      }
-
-      // Chunk the document
-      const chunkParams = validatedInput.chunkParams || {
-        strategy: 'recursive' as const,
-        size: 512,
-        overlap: 50,
-        separator: '\n'
-      };
-
-      const chunks = await doc.chunk({
-        strategy: chunkParams.strategy,
-        size: chunkParams.size,
-        overlap: chunkParams.overlap,
-        separator: chunkParams.separator
+      // Use the chunkerTool for robust document processing
+      const chunkerResult = await chunkerTool.execute({
+        context: {
+          document: {
+            content: validatedInput.document.text,
+            type: validatedInput.document.type,
+            metadata: validatedInput.document.metadata,
+          },
+          chunkParams: {
+            strategy: validatedInput.chunkParams?.strategy || 'recursive',
+            size: validatedInput.chunkParams?.size || 512,
+            overlap: validatedInput.chunkParams?.overlap || 50,
+            separator: validatedInput.chunkParams?.separator || '\n',
+            preserveStructure: true,
+            minChunkSize: 100,
+            maxChunkSize: 2048,
+          },
+          outputFormat: 'detailed',
+          includeStats: true,
+          vectorOptions: {
+            createEmbeddings: true,
+            upsertToVector: false, // Chunker will create embeddings, we will upsert here
+            indexName: validatedInput.indexName, // Add missing indexName
+            createIndex: validatedInput.createIndex, // Add missing createIndex
+            vectorProfile: vectorProfileName,
+          }
+        },
+        runtimeContext,
       });
+
+      const chunks = chunkerResult.chunks.map((chunk: { content: string; metadata: Record<string, unknown>; embedding?: number[] }) => ({
+        text: chunk.content,
+        metadata: chunk.metadata,
+        embedding: chunk.embedding,
+      }));
 
       logger.info('Document chunked successfully', { totalChunks: chunks.length });
 
-      // Create embeddings
-      const chunkTexts = chunks.map(chunk => chunk.text);
-      const { embeddings } = await embedMany({
-        model: fastembed,
-        values: chunkTexts
-      });
+      // Create embeddings (if not already created by chunker)
+      let embeddings: number[][] = [];
+      if (chunks[0]?.embedding) {
+        embeddings = chunks.map(chunk => chunk.embedding!);
+      } else {
+        const chunkTexts = chunks.map((chunk: { text: string }) => chunk.text);
+        const embedResult = await embedMany({
+          model: embedder,
+          values: chunkTexts
+        });
+        embeddings = embedResult.embeddings;
+      }
 
       // Create index if needed (Upstash Vector auto-creates indexes)
       if (validatedInput.createIndex) {
         try {
-          await createVectorIndex(
-            validatedInput.indexName,
-            VECTOR_CONFIG.EMBEDDING_DIMENSION, // 384 dimensions for fastembed compatibility
-            VECTOR_CONFIG.DISTANCE_METRIC // cosine similarity
-          );
-          logger.info('Upstash Vector index validated', { indexName: validatedInput.indexName });
+          await upstashVectorClient.createIndex({
+            indexName: validatedInput.indexName,
+            dimension: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION,
+            metric: VECTOR_PROFILES[vectorProfileName].DISTANCE_METRIC
+          });
+          logger.info('Upstash Vector index validated', { indexName: validatedInput.indexName, vectorProfile: vectorProfileName });
         } catch (error) {
           // Index might already exist, continue
           logger.warn('Index validation warning (might already exist)', {
             indexName: validatedInput.indexName,
+            vectorProfile: vectorProfileName,
             error: error instanceof Error ? error.message : String(error)
           });
         }
@@ -199,7 +217,9 @@ export const graphRAGUpsertTool = createTool({
 
       // Upsert embeddings and metadata
       const chunkIds: string[] = [];
-      const metadataArray = chunks.map((chunk, index) => {
+      const { chunkParams } = validatedInput;
+      const { metadata } = validatedInput.document;
+      const metadataArray = chunks.map((chunk: { text: string; metadata: Record<string, unknown> }, index: number) => {
         const chunkId = generateId();
         chunkIds.push(chunkId);
         return {
@@ -209,18 +229,18 @@ export const graphRAGUpsertTool = createTool({
           ...metadata,
           chunkIndex: index,
           totalChunks: chunks.length,
-          strategy: chunkParams.strategy,
+          strategy: chunkParams?.strategy || 'recursive',
           chunkSize: chunk.text.length
         };
       });
 
       // Upsert vectors to Upstash Vector with sparse cosine similarity
-      await upsertVectors(
-        validatedInput.indexName,
-        embeddings,
-        metadataArray,
-        chunkIds
-      );
+      await upstashVectorClient.upsert({
+        indexName: validatedInput.indexName,
+        vectors: embeddings,
+        metadata: metadataArray,
+        ids: chunkIds
+      });
 
       const processingTime = Date.now() - startTime;
       
@@ -261,10 +281,10 @@ export const graphRAGUpsertTool = createTool({
  */
 export const graphRAGTool = createGraphRAGTool({
   vectorStoreName: 'upstashVector',
-  indexName: VECTOR_CONFIG.DEFAULT_INDEX_NAME,
-  model: fastembed,
+  indexName: VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME,
+  model: fastembed, // This will be replaced by the dynamic embedder from VectorStoreFactory
   graphOptions: {
-    dimension: VECTOR_CONFIG.EMBEDDING_DIMENSION, // 384 dimensions for fastembed
+    dimension: VECTOR_PROFILES.default.EMBEDDING_DIMENSION, // 384 dimensions for fastembed
     threshold: 0.7
   }
 });
@@ -282,10 +302,10 @@ export const graphRAGQueryTool = createTool({
     runtimeContext?: RuntimeContext<GraphRAGRuntimeContext>;
   }): Promise<z.infer<typeof queryOutputSchema>> => {
     const startTime = Date.now();
-    
+
     try {
       const validatedInput = queryInputSchema.parse(input);
-      
+
       // Get runtime context values
       const userId = runtimeContext?.get('userId') || 'anonymous';
       const sessionId = runtimeContext?.get('sessionId') || 'default';
@@ -293,15 +313,21 @@ export const graphRAGQueryTool = createTool({
       const indexName = runtimeContext?.get('indexName') || validatedInput.indexName;
       const topK = runtimeContext?.get('topK') || validatedInput.topK;
       const threshold = runtimeContext?.get('threshold') || validatedInput.threshold;
-      
+      const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
+
+      // Get the vector store and embedder from the factory
+      const { vectorStore: upstashVectorClient, embedder } = VectorStoreFactory.get(vectorProfileName);
+
+
       if (debug) {
-        logger.info('Starting GraphRAG query', { 
+        logger.info('Starting GraphRAG query', {
           query: validatedInput.query,
           indexName,
           topK,
           threshold,
           userId,
-          sessionId
+          sessionId,
+          vectorProfile: vectorProfileName
         });
       }
 
@@ -311,6 +337,8 @@ export const graphRAGQueryTool = createTool({
       graphRAGContext.set('topK', topK);
       graphRAGContext.set('threshold', threshold);
       graphRAGContext.set('minScore', validatedInput.minScore);
+      graphRAGContext.set('dimension', VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION);
+
 
       // Execute the GraphRAG query
       const graphResult = await graphRAGTool.execute({
@@ -318,7 +346,10 @@ export const graphRAGQueryTool = createTool({
           queryText: validatedInput.query,
           topK: validatedInput.topK,
           includeVector: validatedInput.includeVector,
-          minScore: validatedInput.minScore
+          minScore: validatedInput.minScore,
+          // Pass the embedder and vectorStore to the underlying graphRAGTool
+          embedder: embedder,
+          vectorStore: upstashVectorClient,
         },
         runtimeContext: graphRAGContext
       });
@@ -356,11 +387,11 @@ export const graphRAGQueryTool = createTool({
         processingTime
       };
 
-      logger.info('GraphRAG query completed successfully', { 
+      logger.info('GraphRAG query completed successfully', {
         relevantContextLength: result.relevantContext.length,
         totalResults: result.totalResults,
         avgScore: result.graphStats.avgScore,
-        processingTime: result.processingTime 
+        processingTime: result.processingTime
       });
 
       return queryOutputSchema.parse(result);
@@ -393,11 +424,10 @@ export const graphRAGQueryTool = createTool({
 export const graphRAGRuntimeContext = new RuntimeContext<GraphRAGRuntimeContext>();
 
 // Set default runtime context values for Upstash Vector with sparse cosine similarity
-graphRAGRuntimeContext.set("indexName", VECTOR_CONFIG.DEFAULT_INDEX_NAME);
+graphRAGRuntimeContext.set("indexName", VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME);
 graphRAGRuntimeContext.set("topK", VECTOR_CONFIG.DEFAULT_TOP_K);
 graphRAGRuntimeContext.set("threshold", 0.7);
 graphRAGRuntimeContext.set("minScore", 0.0);
-graphRAGRuntimeContext.set("dimension", VECTOR_CONFIG.EMBEDDING_DIMENSION); // 384 for fastembed
+graphRAGRuntimeContext.set("dimension", VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].EMBEDDING_DIMENSION);
 graphRAGRuntimeContext.set("category", "document");
 graphRAGRuntimeContext.set("debug", false);
-

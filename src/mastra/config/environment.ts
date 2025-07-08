@@ -15,6 +15,12 @@ const envSchema = z.object({
   // Upstash Redis configuration (optional for logging)
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+  // Upstash Vector configuration
+  UPSTASH_VECTOR_REST_URL: z.string().url().optional(),
+  UPSTASH_VECTOR_REST_TOKEN: z.string().optional(),
+  // Upstash Vector 2 configuration (for 1536-dimension embeddings)
+  UPSTASH_VECTOR_REST_URL2: z.string().url().optional(),
+  UPSTASH_VECTOR_REST_TOKEN2: z.string().optional(),
   // Diffbot configuration for web scraping
   // Freestyle configuration for code execution and Git management
 });

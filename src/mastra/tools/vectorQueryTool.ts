@@ -26,9 +26,11 @@ import { z } from 'zod';
 import {
   searchUpstashMessages,
   queryVectors,
+  VECTOR_PROFILES,
   VECTOR_CONFIG,
   type VectorQueryResult,
-  type MetadataFilter
+  type MetadataFilter,
+  VectorStoreFactory
 } from '../upstashMemory';
 import type { UIMessage, CoreMessage } from 'ai';
 import { PinoLogger } from '@mastra/loggers';
@@ -45,11 +47,10 @@ export type VectorQueryRuntimeContext = {
   'debug'?: boolean;
   'max-results'?: number;
   'include-metadata'?: boolean;
+  'vectorProfile'?: 'default' | 'gemini';
 };
 
 const logger = new PinoLogger({ name: 'VectorQueryTool', level: 'info' });
-
-// Enhanced schemas based on Mastra documentation patterns
 const vectorQueryInputSchema = z.object({
   query: z.string().min(1).describe('The query to search for in the vector store'),
   threadId: z.string().optional().describe('Optional thread ID to search within a specific conversation thread'),
@@ -77,15 +78,15 @@ const vectorQueryOutputSchema = z.object({
   processingTime: z.number().min(0).describe('Time taken to process the query in milliseconds'),
   queryEmbedding: z.array(z.number()).optional().describe('The embedding vector of the query'),
 }).strict();
-
 // Basic vector query tool using Mastra's createVectorQueryTool for compatibility with Upstash
 export const vectorQueryTool = createVectorQueryTool({
   vectorStoreName: "upstashVector",
-  indexName: VECTOR_CONFIG.DEFAULT_INDEX_NAME,
+  indexName: VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME,
   model: fastembed,
   enableFilter: true,
   description: "Search for semantically similar content in the Upstash vector store using embeddings with sparse cosine similarity. Supports filtering, ranking, and context retrieval."
 });
+
 
 // Enhanced vector query tool that integrates with UpstashMemory
 export const enhancedVectorQueryTool = createTool({
@@ -185,7 +186,7 @@ export const enhancedVectorQueryTool = createTool({
 
         // Query the Upstash vector store directly with sparse cosine similarity
         const vectorResults = await queryVectors(
-          VECTOR_CONFIG.DEFAULT_INDEX_NAME,
+          VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME,
           queryEmbedding,
           validatedInput.topK,
           validatedInput.enableFilter ? (validatedInput.filter as MetadataFilter) : undefined,
@@ -271,7 +272,8 @@ export const hybridVectorSearchTool = createTool({
   }),
   outputSchema: vectorQueryOutputSchema.extend({
     hybridScores: z.array(hybridScoreSchema).describe('Breakdown of hybrid scoring'),
-  }),  execute: async ({ context, runtimeContext }: {
+  }),
+  execute: async ({ context, runtimeContext }: {
     context: z.infer<typeof vectorQueryInputSchema> & {
       metadataQuery?: Record<string, unknown>;
       semanticWeight?: number;

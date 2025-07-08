@@ -1,10 +1,11 @@
 // vNext Agent Network Workflow - Powered by Mastra
 import { NewAgentNetwork } from '@mastra/core/network/vNext';
 import { Agent } from '@mastra/core/agent';
-import { upstashMemory } from '../upstashMemory';
+import { upstashMemory, createUpstashThread } from '../upstashMemory';
 import { createGemini25Provider } from '../config/googleProvider';
 import { RuntimeContext } from '@mastra/core/runtime-context';
 import { PinoLogger } from "@mastra/loggers";
+import { generateId } from 'ai';
 // Agent imports
 import { masterAgent } from '../agents/master-agent';
 import { supervisorAgent } from '../agents/supervisor-agent';
@@ -97,10 +98,24 @@ const vNextNetwork = new NewAgentNetwork({
     tavilySearchTool: createTavilySearchTool(),
     }, // No additional tools at the network level
 });
-
 // Single task execution (as per documentation)
-export async function vNextSingleTask(task: string, options = {}) {
+export async function vNextSingleTask(task: string, options: {
+  resourceId?: string;
+  threadId?: string;
+  context?: Record<string, unknown>;
+} = {}) {
   const runtimeContext = new RuntimeContext();
+
+  // Generate or use provided resourceId and threadId
+  const resourceId = options.resourceId || (options.context?.resourceId as string) || `user-${generateId()}`;
+  const threadId = options.threadId || (options.context?.threadId as string) || `thread-${generateId()}`;
+
+  runtimeContext.set('user-id', resourceId);
+  runtimeContext.set('session-id', threadId); // Use session-id as threadId for consistency with upstashMemory
+
+  // Ensure the thread exists in Upstash before proceeding
+  await createUpstashThread(resourceId, undefined, undefined, threadId);
+
   return vNextNetwork.generate(task, {
     runtimeContext,
     ...options
@@ -108,13 +123,30 @@ export async function vNextSingleTask(task: string, options = {}) {
 }
 
 // Complex task execution (as per documentation)
-export async function vNextComplexTask(task: string, options = {}) {
+export async function vNextComplexTask(task: string, options: {
+  resourceId?: string;
+  threadId?: string;
+  maxIterations?: number;
+  context?: Record<string, unknown>;
+} = {}) {
   const runtimeContext = new RuntimeContext();
+
+  // Generate or use provided resourceId and threadId
+  const resourceId = options.resourceId || (options.context?.resourceId as string) || `user-${generateId()}`;
+  const threadId = options.threadId || (options.context?.threadId as string) || `thread-${generateId()}`;
+
+  runtimeContext.set('user-id', resourceId);
+  runtimeContext.set('session-id', threadId); // Use session-id as threadId for consistency with upstashMemory
+
+  // Ensure the thread exists in Upstash before proceeding
+  await createUpstashThread(resourceId, undefined, undefined, threadId);
+
   return vNextNetwork.loop(task, {
     runtimeContext,
     ...options
   });
 }
+
 
 /**
  * Main vNext Workflow function that routes to single or complex execution

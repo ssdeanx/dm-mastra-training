@@ -6,13 +6,15 @@ import { PinoLogger } from '@mastra/loggers';
 import { RuntimeContext } from '@mastra/core/runtime-context';
 import {
   upsertVectors,
-  createVectorIndex,
+  validateVectorIndexConfiguration,
+  VECTOR_PROFILES,
   VECTOR_CONFIG,
+  VectorStoreFactory,
   extractChunkMetadata,
   type ExtractParams
 } from '../upstashMemory';
 import { embedMany } from 'ai';
-import { fastembed } from '@mastra/fastembed';
+// import { fastembed } from '@mastra/fastembed'; // No longer directly imported
 
 const logger = new PinoLogger({ name: 'ChunkerTool', level: 'info' });
 
@@ -51,8 +53,9 @@ const chunkerInputSchema = z.object({
   vectorOptions: z.object({
     createEmbeddings: z.boolean().default(false).describe('Whether to create embeddings for chunks'),
     upsertToVector: z.boolean().default(false).describe('Whether to upsert chunks to Upstash vector store'),
-    indexName: z.string().default(VECTOR_CONFIG.DEFAULT_INDEX_NAME).describe('Vector index name for upserting'),
-    createIndex: z.boolean().default(true).describe('Whether to create the vector index if it does not exist')
+    indexName: z.string().default(VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME).describe('Vector index name for upserting'),
+    createIndex: z.boolean().default(true).describe('Whether to create the vector index if it does not exist'),
+    vectorProfile: z.enum(['default', 'gemini']).default('default').describe('Vector profile to use for embeddings and upserting'),
   }).optional().describe('Vector store integration options'),
   extractParams: z.object({
     title: z.union([z.boolean(), z.object({
@@ -196,15 +199,20 @@ export const chunkerTool = createTool({
     try {
       // Validate input against schema
       const validatedInput = chunkerInputSchema.parse(context);
-      logger.info('Document chunker input validated', { 
+      logger.info('Document chunker input validated', {
         documentType: validatedInput.document.type,
         strategy: validatedInput.chunkParams?.strategy || 'recursive'
-      });      // Get runtime context values with defaults
+      });
+      // Get runtime context values with defaults
       const contextChunkSize = (runtimeContext?.get('chunk-size') as number) || validatedInput.chunkParams?.size || 512;
       const contextOverlap = (runtimeContext?.get('chunk-overlap') as number) || validatedInput.chunkParams?.overlap || 50;
       const contextStrategy = (runtimeContext?.get('chunk-strategy') as 'recursive' | 'sentence' | 'paragraph' | 'fixed' | 'semantic') || validatedInput.chunkParams?.strategy || 'recursive';
       const preserveStructure = (runtimeContext?.get('preserve-structure') as boolean) ?? validatedInput.chunkParams?.preserveStructure ?? true;
       const includeMetadata = (runtimeContext?.get('include-metadata') as boolean) ?? true;
+      const vectorProfileName = validatedInput.vectorOptions?.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
+
+      // Get the vector store and embedder from the factory
+      const { vectorStore: upstashVectorClient, embedder } = VectorStoreFactory.get(vectorProfileName);
 
       // Create MDocument based on document type
       let doc: MDocument;
@@ -220,21 +228,24 @@ export const chunkerTool = createTool({
         case 'json':
           doc = MDocument.fromJSON(content, { title, source, ...metadata });
           break;
-        case 'latex':
+        case 'latex': {
           // For LaTeX, treat as text with special preprocessing
           const preprocessedLatex = preprocessLatex(content);
           doc = MDocument.fromText(preprocessedLatex, { title, source, type: 'latex', ...metadata });
           break;
-        case 'csv':
+        }
+        case 'csv': {
           // Convert CSV to structured text format
           const csvText = preprocessCSV(content);
           doc = MDocument.fromText(csvText, { title, source, type: 'csv', ...metadata });
           break;
-        case 'xml':
+        }
+        case 'xml': {
           // Convert XML to readable text format
           const xmlText = preprocessXML(content);
           doc = MDocument.fromText(xmlText, { title, source, type: 'xml', ...metadata });
           break;
+        }
         case 'text':
         default:
           doc = MDocument.fromText(content, { title, source, ...metadata });
@@ -347,13 +358,14 @@ export const chunkerTool = createTool({
         logger.info('Starting vector processing for chunks', {
           createEmbeddings: validatedInput.vectorOptions?.createEmbeddings,
           upsertToVector: validatedInput.vectorOptions?.upsertToVector,
-          indexName: validatedInput.vectorOptions?.indexName
+          indexName: validatedInput.vectorOptions?.indexName,
+          vectorProfile: vectorProfileName
         });
 
-        // Create embeddings for chunks using fastembed (384 dimensions)
+        // Create embeddings for chunks using the selected embedder
         const chunkTexts = chunks.map(chunk => chunk.content);
         const { embeddings } = await embedMany({
-          model: fastembed,
+          model: embedder,
           values: chunkTexts
         });
 
@@ -366,19 +378,20 @@ export const chunkerTool = createTool({
 
         // Upsert to vector store if requested
         if (validatedInput.vectorOptions?.upsertToVector) {
-          const indexName = validatedInput.vectorOptions.indexName || VECTOR_CONFIG.DEFAULT_INDEX_NAME;
+          const indexName = validatedInput.vectorOptions.indexName || VECTOR_PROFILES[vectorProfileName].INDEX_NAME;
 
-          // Create index if needed
+          // Validate index configuration using the vector client directly
           if (validatedInput.vectorOptions.createIndex) {
             try {
-              await createVectorIndex(
+              // Use upstashVectorClient for direct index validation
+              const indexInfo = await upstashVectorClient.describeIndex({ indexName });
+              logger.info('Vector index validated using upstashVectorClient', {
                 indexName,
-                VECTOR_CONFIG.EMBEDDING_DIMENSION,
-                VECTOR_CONFIG.DISTANCE_METRIC
-              );
-              logger.info('Vector index validated for chunker', { indexName });
+                dimension: indexInfo.dimension,
+                count: indexInfo.count
+              });
             } catch (error) {
-              logger.warn('Vector index validation warning', {
+              logger.warn('Vector index validation via upstashVectorClient failed, proceeding with upsert', {
                 indexName,
                 error: error instanceof Error ? error.message : String(error)
               });
@@ -393,10 +406,32 @@ export const chunkerTool = createTool({
             chunkIndex: index,
             totalChunks: chunks.length,
             documentType: type,
-            strategy: chunkConfig.strategy
+            strategy: chunkConfig.strategy,
+            vectorProfile: vectorProfileName
           }));
 
-          // Upsert vectors with sparse cosine similarity
+          // Use both the direct client and helper function for comprehensive operation
+          try {
+            // First, use upstashVectorClient for direct operation verification
+            const testQuery = await upstashVectorClient.query({
+              indexName,
+              queryVector: embeddings[0], // Use first embedding as test
+              topK: 1,
+              includeVector: false
+            });
+            
+            logger.info('Vector store connection verified via upstashVectorClient', {
+              indexName,
+              testQueryResults: testQuery.length
+            });
+          } catch (error) {
+            logger.warn('Vector store test query failed, but proceeding with upsert', {
+              indexName,
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+
+          // Upsert vectors using the helper function from upstashMemory.ts
           const upsertResult = await upsertVectors(
             indexName,
             embeddings,
@@ -410,6 +445,11 @@ export const chunkerTool = createTool({
             chunks.forEach((chunk) => {
               chunk.vectorId = chunk.id; // Vector ID is same as chunk ID
             });
+          } else {
+            logger.error('Failed to upsert vectors during chunking', {
+              indexName,
+              error: upsertResult.error
+            });
           }
         }
 
@@ -417,7 +457,7 @@ export const chunkerTool = createTool({
           embeddingsCreated: embeddings.length,
           vectorsUpserted,
           indexName: validatedInput.vectorOptions?.indexName,
-          embeddingDimension: VECTOR_CONFIG.EMBEDDING_DIMENSION,
+          embeddingDimension: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION,
           vectorProcessingTime: Date.now() - vectorStartTime
         };
 
