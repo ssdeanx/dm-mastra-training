@@ -14,9 +14,7 @@
 ![Zod](https://img.shields.io/badge/Zod-Schema%20Validation-blue?logo=zod&logoColor=white)
 ![Ky](https://img.shields.io/badge/Ky-HTTP%20Client-blueviolet?logo=ky&logoColor=white)
 ![PinoLogger](https://img.shields.io/badge/Pino-Logger-green?logo=pino&logoColor=white)
-
-## AI & Orchestration
-
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Observability-blue?logo=opentelemetry&logoColor=white)
 ![Google AI](https://img.shields.io/badge/Google%20AI-Generative-red?logo=google&logoColor=white)
 ![AI SDK](https://img.shields.io/badge/AI%20SDK-Vercel-black?logo=vercel&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-JS-orange?logo=langchain&logoColor=white)
