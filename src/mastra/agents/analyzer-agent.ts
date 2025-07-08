@@ -1,12 +1,12 @@
 import { Agent } from "@mastra/core/agent";
 import { upstashMemory } from '../upstashMemory';
-import { vectorQueryTool } from "../tools/vectorQueryTool";
+import { hybridVectorSearchTool, vectorQueryTool } from "../tools/vectorQueryTool";
 import { createGemini25Provider } from '../config/googleProvider';
 import { chunkerTool } from "../tools/chunker-tool";
 import { z } from "zod";
 import { UPSTASH_PROMPT } from "@mastra/upstash";
 import { PinoLogger } from "@mastra/loggers";
-import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool, diffbotAnalyzeUrlTool, diffbotExtractArticleFromUrlTool, diffbotEnhanceKnowledgeGraphTool, diffbotSearchKnowledgeGraphTool, diffbotEnhanceEntityTool, arxivSearch, redditGetSubredditPosts, hackerNewsGetBestStories, hackerNewsGetSearchUser, hackerNewsSearchItems, hackerNewsGetSearchTopStories, hackerNewsGetSearchItem, hackerNewsGetItem, hackerNewsGetTopStories, hackerNewsGetNewStories } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool, diffbotAnalyzeUrlTool, diffbotExtractArticleFromUrlTool, diffbotEnhanceKnowledgeGraphTool, diffbotSearchKnowledgeGraphTool, diffbotEnhanceEntityTool, arxivSearch, redditGetSubredditPosts, hackerNewsGetBestStories, hackerNewsGetSearchUser, hackerNewsSearchItems, hackerNewsGetSearchTopStories, hackerNewsGetSearchItem, hackerNewsGetItem, hackerNewsGetTopStories, hackerNewsGetNewStories, graphRAGTool, graphRAGQueryTool, graphRAGUpsertTool, rerankTool, listDataDirTool, readDataFileTool, writeDataFileTool, deleteDataFileTool } from "../tools";
 const logger = new PinoLogger({ name: 'AnalyzerAgent', level: 'info' });
 logger.info('Initializing AnalyzerAgent');
 
@@ -194,11 +194,11 @@ GUIDELINES FOR ATOMICALLY FLAWLESS EXECUTION:
 ${UPSTASH_PROMPT}
 `;
   },
-  model: createGemini25Provider('gemini-2.5-flash', {
+  model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17', {
     responseModalities: ["TEXT"],
     thinkingConfig: {
-      thinkingBudget: 0, // -1 means dynamic thinking budget
-      includeThoughts: false, // Include thoughts for debugging and monitoring purposes
+      thinkingBudget: -1, // -1 means dynamic thinking budget
+      includeThoughts: true, // Include thoughts for debugging and monitoring purposes
     },
     useSearchGrounding: true, // Enable Google Search integration for current events
     // Dynamic retrieval configuration
@@ -211,10 +211,19 @@ ${UPSTASH_PROMPT}
   tools: {
     vectorQueryTool,
     chunkerTool,
+    rerankTool,
+    hybridVectorSearchTool,
+    graphRAGTool,
+    graphRAG: graphRAGQueryTool,
+    graphRAGUpsertTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
     webScraperTool,
     gitOperationsTool,
+    listDataDirTool,
+    readDataFileTool,
+    writeDataFileTool,
+    deleteDataFileTool,
     diffbotAnalyzeUrlTool,
     diffbotExtractArticleFromUrlTool,
     diffbotEnhanceKnowledgeGraphTool,
