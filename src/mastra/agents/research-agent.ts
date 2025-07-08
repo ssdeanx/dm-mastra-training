@@ -34,6 +34,12 @@ export type ResearchAgentRuntimeContext = {
   "language-filter": string[];
   /** Research focus area */
   "focus-area": string;
+  /** Confidence score of the input data, influencing analysis rigor and bias mitigation */
+  "input-confidence": number;
+  /** Flag to enable or disable bias mitigation strategies during analysis */
+  "bias-mitigation-enabled": boolean;
+  /** Strategy for handling low-confidence data */
+  "low-confidence-strategy": "flag" | "verify" | "discard";
 };
 
 const logger = new PinoLogger({ name: 'ResearchAgent', level: 'info' });
@@ -68,7 +74,10 @@ const researchAgentConfigSchema = z.object({
     'max-sources': z.number().positive().describe('Maximum sources to gather'),
     'include-academic': z.boolean().describe('Include academic sources'),
     'language-filter': z.array(z.string()).describe('Language preferences for sources'),
-    'focus-area': z.string().describe('Research focus area')
+    'focus-area': z.string().describe('Research focus area'),
+    'input-confidence': z.number().min(0).max(1).describe('Confidence score of the input data'),
+    'bias-mitigation-enabled': z.boolean().describe('Enable or disable bias mitigation strategies'),
+    'low-confidence-strategy': z.enum(["flag", "verify", "discard"]).describe('Strategy for handling low-confidence data')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   evals: z.record(z.any()).describe('Evaluation metrics for the agent'),
@@ -94,6 +103,9 @@ export const researchAgent = new Agent({
     const includeAcademic = runtimeContext?.get("include-academic") || false;
     const languageFilter = (runtimeContext?.get("language-filter") as string[]) || ["en"];
     const focusArea = runtimeContext?.get("focus-area") || "general";
+    const inputConfidence = runtimeContext?.get("input-confidence") || 1.0;
+    const biasMitigationEnabled = runtimeContext?.get("bias-mitigation-enabled") || false;
+    const lowConfidenceStrategy = runtimeContext?.get("low-confidence-strategy") || "flag";
 
     return `You are a highly specialized Research Agent, adept at comprehensive information gathering, rigorous fact-checking, and insightful knowledge synthesis. Your expertise encompasses diverse research methodologies, advanced information retrieval techniques, and critical analysis skills. You are proficient in acquiring data from various sources, validating facts, and transforming complex information into actionable insights.
 
@@ -106,6 +118,9 @@ CURRENT OPERATIONAL CONTEXT:
 - Include Academic Sources: ${includeAcademic ? 'YES' : 'NO'}
 - Language Filter: ${languageFilter.join(', ')}
 - Focus Area: ${focusArea}
+- Input Confidence: ${inputConfidence}
+- Bias Mitigation Enabled: ${biasMitigationEnabled ? 'YES' : 'NO'}
+- Low Confidence Strategy: ${lowConfidenceStrategy}
 
 YOUR CORE RESPONSIBILITIES:
 1.  **Information Gathering**: Systematically collect data from a wide array of reliable sources.
