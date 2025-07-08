@@ -173,7 +173,7 @@ const initializeResearchStep = createStep({
 
     try {
       // Use langGraphAgent to plan research strategy
-      const { text: strategyText } = await langGraphAgent.generate([
+      const { text: strategyOutput } = await langGraphAgent.generate([
         {
           role: 'user',
           content: `Plan a comprehensive research strategy for: "${inputData.topic}"
@@ -181,12 +181,12 @@ const initializeResearchStep = createStep({
             Focus Areas: ${inputData.options?.focusAreas?.join(', ') || 'general'}
             Target Audience: ${inputData.options?.audience || 'general'}
 
-            Return a JSON object with:
-            1. strategy: overall approach description
-            2. discoveredSources: initial list of relevant sources (URLs, databases, etc.)
-            3. researchPlan: structured plan with phases
-            4. estimatedDuration: expected research time
-            5. qualityMetrics: how to measure research quality
+            Return a JSON object with the following fields:
+            - strategy: overall approach description (string)
+            - discoveredSources: initial list of relevant sources (array of strings, e.g., URLs, databases)
+            - researchPlan: structured plan with phases (array of strings)
+            - estimatedDuration: expected research time (string)
+            - qualityMetrics: how to measure research quality (array of strings)
 
             Ensure all sources are real, accessible, and relevant to the topic.
             Return only the JSON object with the specified fields.
@@ -197,7 +197,7 @@ const initializeResearchStep = createStep({
 
       let planData;
       try {
-        planData = JSON.parse(strategyText || '{}');
+        planData = JSON.parse(strategyOutput || '{}');
       } catch {
         // Fallback with real, structured approach
         planData = {
@@ -275,16 +275,43 @@ const conductResearchStep = createStep({
             3. Use 'github' server if relevant repositories exist
             4. Use 'neo4j' and 'memoryGraph' for knowledge graph analysis
             5. Use vector search tools for related content discovery
+            6. Use 'diffbot' for structured data extraction from web pages
+            7. Use 'arxiv' for academic papers and research articles
+            8. Use 'reddit' for community discussions and insights
+            9. Use 'hackernews' for technology and startup news
+            10. Use 'brave' and 'tavily' for additional search capabilities
 
-            Provide comprehensive research findings with:
-            - Current state and recent developments
-            - Key insights and findings with evidence
+            Ensure the research is comprehensive, structured, and evidence-based.
+            Provide a detailed summary of findings, including:
+            - Key themes and categories identified
+            - Relevant statistics and quantitative data
             - Expert opinions and analysis from credible sources
-            - Statistical data and quantitative evidence
-            - Challenges and opportunities
-            - Future trends and predictions
+            - Challenges and opportunities identified
+            - Future trends and predictions based on research
             - Properly cited sources with credibility assessment
-            - Structured key themes and categories
+
+            Format the research findings as a structured JSON object with:
+            {
+              "primaryResearch": "Detailed research summary",
+              "webResearch": "Web research summary using MCP tools",
+              "sources": ["source1", "source2", ...],
+              "keyThemes": ["theme1", "theme2", ...]
+            }
+            Ensure the output is comprehensive and actionable.
+            Use the following data:
+            Topic: ${inputData.topic}
+            Research Depth: ${depth}
+            Sources: ${inputData.discoveredSources.join(', ')}
+            Focus Areas: ${focusAreas?.join(', ') || 'general'}
+            Audience: ${inputData.options?.audience || 'general'}
+            Provide a detailed, structured research report with:
+            - primaryResearch: 2-3 paragraphs summarizing key findings
+            - webResearch: summary of web research conducted using MCP tools
+            - sources: array of sources used in the research (array of strings)
+            - keyThemes: array of key themes identified (array of strings)
+            - Ensure all findings are evidence-based and properly cited
+            - Provide confidence and relevance scores for each finding (0.0-1.0)
+            - Use real data from the sources provided
 
             Format as structured research with clear sections and citations.
             `
@@ -361,42 +388,77 @@ const analyzeResearchStep = createStep({
 
     try {
       // Use analyzerAgent for comprehensive analysis
-      const { text: analysisText } = await analyzerAgent.generate([
+      const { text: analysisOutput } = await analyzerAgent.generate([
         {
           role: 'user',
           content: `Analyze research data for: "${inputData.topic}"
-
-            Primary Research: ${inputData.researchData.primaryResearch}
+            Research Summary: ${inputData.researchData.primaryResearch}
             Web Research: ${inputData.researchData.webResearch}
+            Sources Analyzed: ${inputData.researchData.sources.length}
             Key Themes: ${inputData.researchData.keyThemes.join(', ')}
+            Use the following structured approach:
+            - Analyze the primary research findings
+            - Validate sources for credibility and relevance
+            - Identify key patterns and insights across themes
+            - Assess data quality and completeness
+            - Identify gaps and limitations in the research
+            - Provide actionable insights based on analysis
 
-            Provide comprehensive analysis including:
-            1. Executive summary (2-3 paragraphs highlighting key findings)
-            2. Detailed findings by category with:
-              - Content analysis
-              - Source credibility assessment
-              - Confidence scores (0.0-1.0)
-              - Relevance scores (0.0-1.0)
-            3. Key insights and patterns discovered
-            4. Data quality assessment
-            5. Gaps and limitations identified
+            Ensure the analysis is comprehensive, structured, and evidence-based.
+            Use the following data:
+            Topic: ${inputData.topic}
+            Research Depth: ${inputData.options?.depth || 'moderate'}
+            Sources: ${inputData.researchData.sources.join(', ')}
+            Focus Areas: ${inputData.options?.focusAreas?.join(', ') || 'general'}
+            Audience: ${inputData.options?.audience || 'general'}
+            Research Data:
+            ${JSON.stringify(inputData.researchData, null, 2)}
+            Provide structured analysis with:
+            - executiveSummary: 2-3 paragraphs summarizing key findings
+            - detailedFindings: array of objects with content analysis, source credibility, confidence (0.0-1.0), and relevance scores (0.0-1.0)
+            - insights: array of key insights and patterns discovered (array of strings)
+            - dataQualityAssessment: assessment of data quality (string)
+            - gapsAndLimitations: identified gaps and limitations (array of strings)
+            - sources: array of sources used in the analysis (array of strings)
+            - Ensure all findings are evidence-based and properly cited
+            - Provide confidence and relevance scores for each finding (0.0-1.0)
+            - Use real data from the research data and sources
+            - Provide a structured JSON output with the following format:
+            {
+              "executiveSummary": "Summary of key findings",
+              "detailedFindings": [
+                {
+                  "category": "theme",
+                  "content": "Detailed analysis content",
+                  "sources": ["source1", "source2"],
+                  "confidence": 0.85,
+                  "relevance": 0.9
+                }
+              ],
+              "insights": ["Key insight 1", "Key insight 2"],
+              "dataQualityAssessment": "Assessment of data quality",
+              "gapsAndLimitations": ["Gap 1", "Limitation 1"],
+              "sources": ["source1", "source2"]
+            }
 
-            Return structured analysis in JSON format with proper scoring.`
+            Ensure the analysis is directly parsable as JSON.
+            Return structured analysis in JSON format with proper scoring.
+            `
         }
       ]);
-
+      // Parse the analysis output and handle potential errors
+      logger.info('Research analysis output received', { analysisOutput });
       let analysisResults;
       try {
-        const parsedAnalysis = JSON.parse(analysisText || '{}');
-          // Ensure proper structure and scoring
+        const parsedAnalysis = JSON.parse(analysisOutput || '{}');
         analysisResults = {
-          executiveSummary: parsedAnalysis.executiveSummary || analysisText.substring(0, 500) || 'Analysis completed with comprehensive findings',
+          executiveSummary: parsedAnalysis.executiveSummary || 'Analysis completed with comprehensive findings',
           detailedFindings: parsedAnalysis.detailedFindings || inputData.researchData.keyThemes.map((theme) => ({
             category: theme,
             content: `Analysis findings for ${theme} based on research data`,
             sources: inputData.researchData.sources.slice(0, Math.max(1, Math.floor(inputData.researchData.sources.length / inputData.researchData.keyThemes.length))),
-            confidence: Math.max(0.7, Math.min(0.95, 0.8 + (Math.random() * 0.15))), // Realistic confidence scoring
-            relevance: Math.max(0.75, Math.min(0.98, 0.85 + (Math.random() * 0.13))), // Realistic relevance scoring
+            confidence: Math.max(0.7, Math.min(0.95, 0.8 + (Math.random() * 0.15))),
+            relevance: Math.max(0.75, Math.min(0.98, 0.85 + (Math.random() * 0.13))),
           })),
           insights: parsedAnalysis.insights || [
             `Key patterns identified in ${inputData.topic} research`,
@@ -404,10 +466,11 @@ const analyzeResearchStep = createStep({
             'Evidence-based conclusions drawn from credible sources'
           ],
         };
-      } catch {
+      } catch (e) {
+        console.warn(`Failed to parse analyzer agent JSON, falling back to default. Error: ${e}`);
         // Robust fallback with real analysis structure
         analysisResults = {
-          executiveSummary: analysisText || `Comprehensive analysis of ${inputData.topic} reveals significant insights across multiple dimensions`,
+          executiveSummary: analysisOutput || `Comprehensive analysis of ${inputData.topic} reveals significant insights across multiple dimensions`,
           detailedFindings: inputData.researchData.keyThemes.map((theme) => ({
             category: theme,
             content: `Detailed analysis of ${theme} shows important trends and developments relevant to ${inputData.topic}`,
@@ -422,7 +485,7 @@ const analyzeResearchStep = createStep({
           ],
         };
       }
-        logger.info('Research analysis completed', {
+      logger.info('Research analysis completed', {
         workflowId: inputData.workflowId,
         findingsCount: analysisResults.detailedFindings.length,
         averageConfidence: analysisResults.detailedFindings.reduce((sum: number, finding: { confidence: number }) => sum + finding.confidence, 0) / analysisResults.detailedFindings.length,
@@ -476,21 +539,44 @@ const generateVisualizationsStep = createStep({
 
     try {
       // Use supervisorAgent to create structured visualizations
-      const { text: vizText } = await supervisorAgent.generate([
+      const { text: vizOutput } = await supervisorAgent.generate([
         {
           role: 'user',
           content: `Create visualization specifications for research on: "${inputData.topic}"
-
+            Research Summary: ${inputData.researchData.primaryResearch}
+            Web Research: ${inputData.researchData.webResearch}
             Analysis Summary: ${inputData.analysisResults.executiveSummary}
             Detailed Findings: ${JSON.stringify(inputData.analysisResults.detailedFindings)}
             Key Themes: ${inputData.researchData.keyThemes.join(', ')}
+            Sources Analyzed: ${inputData.researchData.sources.length}
+            Audience: ${inputData.options?.audience || 'general'}
+            Visualizations should be structured and actionable, providing insights into:
+            - Key themes and trends
+            - Confidence and relevance of findings
+            - Source credibility and coverage
+            - Data quality and gaps
+            - Actionable insights and recommendations
+            Use the following guidelines:
+            - Generate visualizations that are clear, concise, and informative
+            - Ensure visualizations are tailored to the target audience
+            - Use appropriate chart types (bar, line, pie, etc.) based on data
+            - Include metadata for each visualization (description, source, date)
+            - Provide insights and key takeaways for each visualization
+            - Ensure visualizations are directly parsable as JSON
+            - Use real data from the analysis results and research data
 
             Generate structured visual representations including:
-            1. Executive dashboard summary with key metrics
-            2. Theme distribution analysis
-            3. Confidence and relevance scoring charts
-            4. Source credibility assessment
-            5. Trend analysis visualization
+            - Executive summary dashboard with key metrics
+            - Theme distribution analysis with confidence and relevance scores
+            - Source credibility assessment with coverage and reliability
+            - Trend analysis visualization with key patterns
+            - Actionable insights and recommendations
+            - Use appropriate chart types based on data characteristics
+            - Ensure visualizations are tailored to the target audience
+            - Include metadata for each visualization (description, source, date)
+            - Provide insights and key takeaways for each visualization
+            - Ensure visualizations are directly parsable as JSON
+            - Use real data from the analysis results and research data
 
             Return JSON with visualization specifications in this format:
             {
@@ -499,21 +585,28 @@ const generateVisualizationsStep = createStep({
                   "type": "dashboard|chart|table|heatmap",
                   "title": "descriptive title",
                   "data": {
-                    "chartData": [{"label": "string", "value": number, "category": "string"}],
-                    "tableData": [{"column1": "value", "column2": number}],
-                    "metadata": {"description": "string", "source": "string"}
+                    "chartData": [{"label": "string", "value": number, "category": "string", "additionalInfo": "string"}],
+                    "tableData": [{"column1": "value", "column2": number, "column3": boolean, "column4": "string", "column5": number, "rowId": "string", "additionalInfo": "string"}],
+                    "heatmapData": [{"x": "string", "y": "string", "value": number, "category": "string", "additionalInfo": "string"}],
+                    "metadata": {"description": "string", "source": "string", "generated": "ISO date string", "sourcesAnalyzed": number, "additionalInfo": "string"}
                   },
-                  "insights": "key insights from this visualization"
+                  "insights": "key insights from this visualization",
+                  "additionalInfo": "any additional information or context",
+                  "crossReferences": [{"type": "string", "id": "string", "description": "string"}]
                 }
               ]
-            }`
+            }
+            Ensure the JSON is valid and directly parsable.
+            `
         }
       ]);
-
+      // Parse the visualization output
+      logger.info('Visualization generation output received', { vizOutput });
       let visualizations;
       try {
-        const vizData = JSON.parse(vizText || '{}');
-        visualizations = vizData.visualizations || [];        // Ensure visualizations have proper structure
+        const vizData = JSON.parse(vizOutput || '{}');
+        visualizations = vizData.visualizations || [];
+        // Ensure visualizations have proper structure
         visualizations = visualizations.map((viz: { type?: string; title?: string; data?: { chartData?: unknown[]; tableData?: unknown[]; metadata?: Record<string, unknown> }; insights?: string }) => ({
           type: viz.type || 'dashboard',
           title: viz.title || `Research Analysis: ${inputData.topic}`,
@@ -631,28 +724,31 @@ const generateRecommendationsStep = createStep({
       const audience = inputData.options?.audience || 'general';
 
       // Use supervisorAgent for strategic recommendations
-      const { text: recText } = await masterAgent.generate([
+      const { text: recOutput } = await masterAgent.generate([
         {
           role: 'user',
-          content: `Generate strategic recommendations for: "${inputData.topic}"
-
+          content: `Generate strategic recommendations and action items for: "${inputData.topic}"
+            Research Summary: ${inputData.analysisResults.executiveSummary}
+            Detailed Findings: ${JSON.stringify(inputData.analysisResults.detailedFindings)}
             Analysis: ${JSON.stringify(inputData.analysisResults)}
             Target Audience: ${audience}
+            Visualizations: ${JSON.stringify(inputData.visualizations || [])}
 
-            Provide:
-            1. Prioritized recommendations
-            2. Implementation strategies
-            3. Expected impact
-            4. Action items
-
-            Return structured recommendations in JSON format.`
+            Return a JSON object with two fields:
+            - recommendations: array of prioritized recommendations (each with priority, text, rationale, steps, impact)
+            - actionItems: array of action items (each with task, priority, deadline)
+            Ensure the JSON is valid and directly parsable.
+            Recommendations should be actionable, relevant to the analysis, and tailored to the audience.
+            Action items should be specific tasks with clear priorities and deadlines.
+            `
         }
       ]);
 
       let recommendationData;
       try {
-        recommendationData = JSON.parse(recText || '{}');
-      } catch {
+        recommendationData = JSON.parse(recOutput || '{}');
+      } catch (e) {
+        console.warn(`Failed to parse master agent recommendations JSON, falling back to default. Error: ${e}`);
         recommendationData = {
           recommendations: [{
             priority: 'high' as const,

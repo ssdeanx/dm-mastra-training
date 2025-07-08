@@ -2,13 +2,32 @@ import { Memory } from '@mastra/memory';
 import { UpstashStore, UpstashVector } from '@mastra/upstash';
 import { z } from 'zod';
 import { PinoLogger } from '@mastra/loggers';
-import type { CoreMessage } from '@mastra/core';
+import type { CoreMessage as OriginalCoreMessage } from '@mastra/core';
 import { maskStreamTags } from '@mastra/core/utils';
 import { MemoryProcessor, MemoryProcessorOpts } from '@mastra/core/memory';
 import { UIMessage, EmbeddingModel } from 'ai';
 import { fastembed } from '@mastra/fastembed';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
 import { createGeminiEmbeddingModel } from './config/googleProvider';
+
+/**
+ * Extends MemoryProcessorOpts to include workflow-specific options.
+ */
+interface WorkflowMemoryProcessorOpts extends MemoryProcessorOpts {
+  currentWorkflowStage?: string;
+  stageRelevanceStrategy?: 'adjacent' | 'semantic';
+  workflowStageDefinitions?: Record<string, string>;
+  workflowStageEmbeddings?: Record<string, number[]>; // New: Pre-computed embeddings for stages
+  semanticRelevanceThreshold?: number;
+}
+
+/**
+ * Redefine CoreMessage to include a metadata property for custom data.
+ * This is necessary because CoreMessage is a union type and cannot be directly extended.
+ */
+type CoreMessage = OriginalCoreMessage & {
+  metadata?: Record<string, unknown>;
+};
 
 /**
  * VectorStoreError for proper error handling following Mastra patterns
@@ -146,10 +165,6 @@ export interface ExtractParams {
     nodes?: number;
     nodeTemplate?: string;
     combineTemplate?: string;
-  };
-  summary?: boolean | {
-    summaries?: ('self' | 'prev' | 'next')[];
-    promptTemplate?: string;
   };
   keywords?: boolean | {
     keywords?: number;
@@ -318,7 +333,6 @@ export class VectorStoreFactory {
  * Features:
  * - Removes redundant messages using semantic similarity
  * - Prioritizes high-importance content based on keywords
- * - Applies attention-guided summarization for verbose messages
  * - Maintains conversation flow and context coherence
  *
  * @example
@@ -355,7 +369,7 @@ export class AttentionGuidedMemoryProcessor extends MemoryProcessor {
     this.maxMessages = options.maxMessages ?? 50;
     this.similarityThreshold = options.similarityThreshold ?? 0.85;
     this.importanceKeywords = options.importanceKeywords ?? [
-      'error', 'critical', 'urgent', 'important', 'warning', 'issue', 
+      'error', 'critical', 'urgent', 'important', 'warning', 'issue',
       'problem', 'fix', 'solution', 'bug', 'security', 'performance', 'update', 'correct'
     ];
     this.verboseMessageThreshold = options.verboseMessageThreshold ?? 500;
@@ -629,6 +643,256 @@ export class ContextualRelevanceProcessor extends MemoryProcessor {
   private selectRelevantSegments(segments: CoreMessage[][]): CoreMessage[][] {
     // Keep the most recent segments up to maxTopicShifts
     return segments.slice(-this.maxTopicShifts);
+  }
+}
+
+/**
+ * Workflow-Aware Memory Processor
+ *
+ * Dynamically adjusts the messages included in the agent's context based on the current stage of an ongoing workflow.
+ * This processor prioritizes messages relevant to the current workflow stage and prunes irrelevant ones to optimize context size.
+ *
+ * @mastra Memory Processor implementation for Upstash Memory
+ * @class WorkflowAwareMemoryProcessor
+ * @version 1.0.0
+ * @author Roo
+ * @date 2025-07-08
+ *
+ * @example
+ * ```typescript
+ * const memory = new Memory({
+ *   processors: [
+ *     new WorkflowAwareMemoryProcessor({
+ *       workflowStages: ['data_collection', 'analysis', 'reporting'],
+ *       defaultRetentionStrategy: 'prune_irrelevant',
+ *     }),
+ *   ]
+ * });
+ * ```
+ */
+export class WorkflowAwareMemoryProcessor extends MemoryProcessor {
+  private readonly workflowStages: string[];
+  private readonly defaultRetentionStrategy: 'keep_all' | 'prune_irrelevant';
+  private readonly stageRelevanceStrategy: 'adjacent' | 'semantic';
+  private readonly workflowStageDefinitions?: Record<string, string>;
+  private readonly workflowStageEmbeddings?: Record<string, number[]>; // Added this line
+  private readonly semanticRelevanceThreshold: number;
+  private readonly attentionGuidedProcessor?: AttentionGuidedMemoryProcessor;
+
+  /**
+   * Creates an instance of WorkflowAwareMemoryProcessor.
+   * @param options - Configuration options for the processor.
+   * @param options.workflowStages - An array of defined workflow stage names.
+   * @param options.defaultRetentionStrategy - The strategy to apply to messages without a specific workflow stage tag.
+   * @param options.stageRelevanceStrategy - Strategy for determining relevant stages ('adjacent' or 'semantic').
+   * @param options.workflowStageDefinitions - Optional map of stage names to descriptions for semantic relevance.
+   * @param options.semanticRelevanceThreshold - Threshold for semantic similarity when using 'semantic' strategy.
+   */
+  constructor(options: {
+    workflowStages: string[];
+    defaultRetentionStrategy: 'keep_all' | 'prune_irrelevant';
+    stageRelevanceStrategy?: 'adjacent' | 'semantic';
+    workflowStageDefinitions?: Record<string, string>;
+    semanticRelevanceThreshold?: number;
+    workflowStageEmbeddings?: Record<string, number[]>; // New: Pre-computed embeddings
+    attentionGuidedProcessor?: AttentionGuidedMemoryProcessor;
+  }) {
+    super({ name: 'WorkflowAwareMemoryProcessor' });
+    this.workflowStages = options.workflowStages;
+    this.defaultRetentionStrategy = options.defaultRetentionStrategy;
+    this.stageRelevanceStrategy = options.stageRelevanceStrategy ?? 'adjacent';
+    this.workflowStageDefinitions = options.workflowStageDefinitions;
+    this.workflowStageEmbeddings = options.workflowStageEmbeddings; // Assign new property
+    this.semanticRelevanceThreshold = options.semanticRelevanceThreshold ?? 0.7; // Default threshold
+    this.attentionGuidedProcessor = options.attentionGuidedProcessor;
+
+    logger.info('WorkflowAwareMemoryProcessor initialized', {
+      workflowStages: this.workflowStages,
+      defaultRetentionStrategy: this.defaultRetentionStrategy,
+      stageRelevanceStrategy: this.stageRelevanceStrategy,
+      hasWorkflowStageDefinitions: !!this.workflowStageDefinitions,
+      semanticRelevanceThreshold: this.semanticRelevanceThreshold,
+      hasAttentionGuidedProcessor: !!this.attentionGuidedProcessor,
+    });
+  }
+
+  /**
+   * Processes messages to dynamically adjust context based on the current workflow stage.
+   * @param messages - The array of CoreMessage objects to process.
+   * @param opts - Optional processing options, including `currentWorkflowStage`.
+   * @returns A filtered and prioritized array of CoreMessage objects.
+   */
+  process(messages: CoreMessage[], opts: MemoryProcessorOpts = {}): CoreMessage[] {
+    const workflowOpts = opts as WorkflowMemoryProcessorOpts;
+    const currentWorkflowStage = workflowOpts.currentWorkflowStage;
+
+    if (!currentWorkflowStage || !this.workflowStages.includes(currentWorkflowStage)) {
+      logger.warn('No valid currentWorkflowStage provided or stage not recognized. Applying default retention strategy.', { currentWorkflowStage });
+      return this.applyDefaultRetention(messages);
+    }
+
+    logger.info('Processing messages for workflow stage', { currentWorkflowStage });
+
+    let relevantStages: Set<string>;
+
+    try {
+      if (this.stageRelevanceStrategy === 'semantic') {
+        if (!this.workflowStageDefinitions || !this.workflowStageEmbeddings) {
+          logger.warn('Semantic relevance strategy chosen but workflowStageDefinitions or workflowStageEmbeddings not provided. Falling back to adjacent strategy.');
+          relevantStages = this._getAdjacentRelevantStages(currentWorkflowStage);
+        } else {
+          relevantStages = this._getSemanticRelevantStages(currentWorkflowStage); // Now synchronous
+        }
+      } else { // 'adjacent' strategy
+        relevantStages = this._getAdjacentRelevantStages(currentWorkflowStage);
+      }
+    } catch (error: unknown) { // Catch error as unknown
+      logger.error('Error determining relevant stages. Falling back to adjacent strategy.', { error: (error as Error).message });
+      relevantStages = this._getAdjacentRelevantStages(currentWorkflowStage);
+    }
+
+    let processedMessages: CoreMessage[] = [];
+    const messagesToPrune: CoreMessage[] = [];
+
+    for (const msg of messages) {
+      const messageStage = msg.metadata?.workflowStage as string | undefined;
+
+      if (messageStage && relevantStages.has(messageStage)) {
+        processedMessages.push(msg);
+      } else if (!messageStage) {
+        // Messages without a stage tag are handled by default retention
+        if (this.defaultRetentionStrategy === 'keep_all') {
+          processedMessages.push(msg);
+        } else {
+          messagesToPrune.push(msg); // Mark for pruning if strategy is 'prune_irrelevant'
+        }
+      } else {
+        // Messages from irrelevant stages are temporarily pruned
+        messagesToPrune.push(msg);
+      }
+    }
+
+    // Apply AttentionGuidedMemoryProcessor if configured
+    if (this.attentionGuidedProcessor) {
+      logger.info('Applying AttentionGuidedMemoryProcessor to relevant messages.');
+      processedMessages = this.attentionGuidedProcessor.process(processedMessages, opts);
+    }
+
+    logger.info('WorkflowAwareMemoryProcessor results', {
+      currentWorkflowStage,
+      retainedMessages: processedMessages.length,
+      prunedMessages: messagesToPrune.length,
+      relevantStages: Array.from(relevantStages),
+    });
+
+    return processedMessages;
+  }
+
+  /**
+   * Determines relevant stages based on the 'adjacent' strategy.
+   * @param currentWorkflowStage - The current workflow stage.
+   * @returns A Set of relevant stage names.
+   */
+  private _getAdjacentRelevantStages(currentWorkflowStage: string): Set<string> {
+    const relevantStages = new Set<string>();
+    const stageIndex = this.workflowStages.indexOf(currentWorkflowStage);
+
+    relevantStages.add(currentWorkflowStage);
+    if (stageIndex > 0) {
+      relevantStages.add(this.workflowStages[stageIndex - 1]);
+    }
+    if (stageIndex < this.workflowStages.length - 1) {
+      relevantStages.add(this.workflowStages[stageIndex + 1]);
+    }
+    return relevantStages;
+  }
+
+  /**
+   * Determines relevant stages based on the 'semantic' strategy.
+   * @param currentWorkflowStage - The current workflow stage.
+   * @returns A Set of semantically relevant stage names.
+   */
+  private _getSemanticRelevantStages(currentWorkflowStage: string): Set<string> {
+    const relevantStages = new Set<string>();
+    relevantStages.add(currentWorkflowStage); // Always include the current stage
+
+    if (!this.workflowStageDefinitions || !this.workflowStageEmbeddings) {
+      // This case should be caught by the caller, but as a safeguard
+      logger.warn('Semantic relevance strategy chosen but workflowStageDefinitions or workflowStageEmbeddings not provided. Returning only current stage.');
+      return relevantStages;
+    }
+
+    const currentStageEmbedding = this.workflowStageEmbeddings[currentWorkflowStage];
+    if (!currentStageEmbedding) {
+      logger.warn(`No pre-computed embedding found for current workflow stage '${currentWorkflowStage}'. Cannot apply semantic relevance.`);
+      return this._getAdjacentRelevantStages(currentWorkflowStage); // Fallback
+    }
+
+    for (const stageName of this.workflowStages) {
+      if (stageName === currentWorkflowStage) continue;
+
+      const stageEmbedding = this.workflowStageEmbeddings[stageName];
+      if (!stageEmbedding) {
+        logger.warn(`No pre-computed embedding found for stage '${stageName}'. Skipping semantic comparison.`);
+        continue;
+      }
+
+      const similarity = this._cosineSimilarity(currentStageEmbedding, stageEmbedding);
+
+      if (similarity >= this.semanticRelevanceThreshold) {
+        relevantStages.add(stageName);
+        logger.info(`Semantically relevant stage identified: ${stageName} (Similarity: ${similarity.toFixed(2)})`);
+      }
+    }
+
+    return relevantStages;
+  }
+
+  /**
+   * Calculates cosine similarity between two vectors.
+   * @param vec1 - First vector.
+   * @param vec2 - Second vector.
+   * @returns Cosine similarity score.
+   */
+  private _cosineSimilarity(vec1: number[], vec2: number[]): number {
+    if (vec1.length !== vec2.length) {
+      throw new Error('Vectors must be of the same length for cosine similarity calculation.');
+    }
+
+    let dotProduct = 0;
+    let magnitude1 = 0;
+    let magnitude2 = 0;
+
+    for (let i = 0; i < vec1.length; i++) {
+      dotProduct += vec1[i] * vec2[i];
+      magnitude1 += vec1[i] * vec1[i];
+      magnitude2 += vec2[i] * vec2[i];
+    }
+
+    magnitude1 = Math.sqrt(magnitude1);
+    magnitude2 = Math.sqrt(magnitude2);
+
+    if (magnitude1 === 0 || magnitude2 === 0) {
+      return 0; // Avoid division by zero
+    }
+
+    return dotProduct / (magnitude1 * magnitude2);
+  }
+
+  /**
+   * Applies the default retention strategy to messages.
+   * @param messages - The array of CoreMessage objects.
+   * @returns The messages array based on the default retention strategy.
+   */
+  private applyDefaultRetention(messages: CoreMessage[]): CoreMessage[] {
+    if (this.defaultRetentionStrategy === 'keep_all') {
+      return messages;
+    }
+    // For 'prune_irrelevant' when no specific stage is active, we might keep a minimal set or apply other logic.
+    // For now, if no stage is active and pruning is default, we'll return an empty array or a very small subset.
+    // This can be refined based on specific requirements.
+    logger.info('Applying default retention strategy: prune_irrelevant (no active stage)');
+    return []; // Or return a small, recent subset if desired
   }
 }
 
@@ -1805,21 +2069,6 @@ export async function extractChunkMetadata(
       }
     }
 
-    // Summary extraction
-    if (extractParams.summary) {
-      const summaryConfig = typeof extractParams.summary === 'boolean' ? { summaries: ['self'] } : extractParams.summary;
-      const summaries = summaryConfig.summaries || ['self'];
-
-      enhancedChunks.forEach((chunk) => {
-        if (summaries.includes('self')) {
-          // Simplified summary generation
-          const summary = chunk.content.length > 200
-            ? `${chunk.content.substring(0, 200)}...`
-            : chunk.content;
-          chunk.metadata.sectionSummary = summary;
-        }
-      });
-    }
 
     // Keywords extraction
     if (extractParams.keywords) {

@@ -46,16 +46,29 @@ const supervisorInitialPlanStep = createInngestStep({
     supervisorRuntimeContext.set("coordination-strategy", "hierarchical");
     supervisorRuntimeContext.set("qa-level", "rigorous");
 
-    const { text: plan } = await supervisorAgent.generate(
-      `Create a detailed plan for a research and analysis workflow on the topic: "${query}" with a research depth of "${researchDepth}". Identify the key steps and the agents best suited for each step (e.g., researchAgent, analyzerAgent, synthesisAgent, dataAgent).`,
+    const { text: planOutput } = await supervisorAgent.generate(
+      `Create a detailed plan for a research and analysis workflow on the topic: "${query}" with a research depth of "${researchDepth}".
+      Identify the key steps and the agents best suited for each step (e.g., researchAgent, analyzerAgent, synthesisAgent, dataAgent).
+      Return a JSON object with two fields: "plan" (string) and "agentsToUse" (array of strings, e.g., ["researchAgent", "analyzerAgent"]).`,
       {
         runtimeContext: supervisorRuntimeContext
       }
     );
-    // Dummy agent extraction for now, replace with actual parsing from plan
-    const agentsToUse = ['researchAgent', 'analyzerAgent', 'synthesisAgent']; // Default agents
-    if (plan.includes('dataAgent')) agentsToUse.push('dataAgent');
-    if (plan.includes('supervisorAgent')) agentsToUse.push('supervisorAgent'); // Self-referential for planning
+
+    let plan: string;
+    let agentsToUse: string[];
+
+    try {
+      const parsedPlan = JSON.parse(planOutput);
+      plan = parsedPlan.plan;
+      agentsToUse = parsedPlan.agentsToUse;
+    } catch (e) {
+      console.warn(`Failed to parse supervisor plan JSON, falling back to default. Error: ${e}`);
+      plan = planOutput; // Fallback to raw text if JSON parsing fails
+      agentsToUse = ['researchAgent', 'analyzerAgent', 'synthesisAgent']; // Default agents
+      if (plan.includes('dataAgent')) agentsToUse.push('dataAgent');
+      if (plan.includes('supervisorAgent')) agentsToUse.push('supervisorAgent');
+    }
 
     return { plan, agentsToUse };
   },
@@ -183,15 +196,30 @@ const supervisorQualityCheckStep = createInngestStep({
     const supervisorRuntimeContext = new RuntimeContext();
     supervisorRuntimeContext.set("qa-level", "rigorous");
 
-    const { text: feedback } = await supervisorAgent.generate(
-      `Assess the quality of the following analysis report for "${originalQuery}". Provide a quality score (0-100) and detailed feedback for improvement.\n\nReport:\n${analysisReport}`,
+    const { text: qualityCheckOutput } = await supervisorAgent.generate(
+      `Assess the quality of the following analysis report for "${originalQuery}".
+      Provide a quality score (0-100) and detailed feedback for improvement.
+      Return a JSON object with two fields: "qualityScore" (number) and "feedback" (string).
+      Report:\n${analysisReport}`,
       {
         runtimeContext: supervisorRuntimeContext
       }
     );
-    // Dummy score extraction for now
-    const qualityScoreMatch = feedback.match(/Quality Score: (\d+)/);
-    const qualityScore = qualityScoreMatch ? parseInt(qualityScoreMatch[1]) : 75; // Default to 75 if not found
+
+    let qualityScore: number;
+    let feedback: string;
+
+    try {
+      const parsedQualityCheck = JSON.parse(qualityCheckOutput);
+      qualityScore = parsedQualityCheck.qualityScore;
+      feedback = parsedQualityCheck.feedback;
+    } catch (e) {
+      console.warn(`Failed to parse supervisor quality check JSON, falling back to default. Error: ${e}`);
+      feedback = qualityCheckOutput; // Fallback to raw text if JSON parsing fails
+      const qualityScoreMatch = feedback.match(/Quality Score: (\d+)/);
+      qualityScore = qualityScoreMatch ? parseInt(qualityScoreMatch[1]) : 75; // Default to 75 if not found
+    }
+
     return { qualityScore, feedback };
   },
 });
