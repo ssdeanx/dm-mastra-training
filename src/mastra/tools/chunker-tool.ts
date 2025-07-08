@@ -6,7 +6,6 @@ import { PinoLogger } from '@mastra/loggers';
 import { RuntimeContext } from '@mastra/core/runtime-context';
 import {
   upsertVectors,
-  validateVectorIndexConfiguration,
   VECTOR_PROFILES,
   VECTOR_CONFIG,
   VectorStoreFactory,
