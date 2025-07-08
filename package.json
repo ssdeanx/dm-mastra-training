@@ -42,6 +42,7 @@
     "@mastra/memory": "^0.11.1",
     "@mastra/rag": "^1.0.1",
     "@mastra/upstash": "^0.12.0",
+    "@nangohq/node": "^0.62.1",
     "@octokit/rest": "^22.0.0",
     "@octokit/types": "^14.1.0",
     "cheerio": "^1.1.0",
@@ -59,6 +60,7 @@
     "p-throttle": "^6.2.0",
     "simple-git": "^3.28.0",
     "turndown": "^7.2.0",
+    "twitter-api-sdk": "^1.2.1",
     "wikibase-sdk": "^10.2.3",
     "xml-js": "^1.6.11",
     "zod": "^3.25.76"
