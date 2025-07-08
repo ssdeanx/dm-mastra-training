@@ -3,8 +3,9 @@
 **Empowering the next generation of AI applications with modularity, scalability, and precision.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub last commit](https://img.shields.io/github/last-commit/your-username/mastra)](https://github.com/your-username/mastra)
-[![GitHub stars](https://img.shields.io/github/stars/your-username/mastra?style=social)](https://github.com/your-username/mastra)
+[![GitHub last commit](https://img.shields.io/github/last-commit/ssdeanx/mastra)](https://github.com/ssdeanx/dm-mastra-training)
+[![GitHub stars](https://img.shields.io/github/stars/ssdeanx/mastra?style=social)](https://github.com/ssdeanx/dm-mastra-training/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/ssdeanx/mastra)](https://github.com/ssdeanx/dm-mastra-training/issues)
 
 ## Core Technologies
 
@@ -25,15 +26,9 @@
 ![Agentic](https://img.shields.io/badge/Agentic-AI%20Framework-orange?logo=robot-framework&logoColor=white)
 ![MCP](https://img.shields.io/badge/MCP-Multi--Agent%20Coordination-blue?logo=data-transfer&logoColor=white)
 ![Inngest](https://img.shields.io/badge/Inngest-Event%20Driven-purple?logo=inngest&logoColor=white)
-
-## Data & Memory
-
 ![Upstash](https://img.shields.io/badge/Upstash-Redis%2FVector-red?logo=upstash&logoColor=white)
 ![Mem0](https://img.shields.io/badge/Mem0-Memory%20DB-yellowgreen?logo=memory&logoColor=white)
 ![GraphRAG](https://img.shields.io/badge/GraphRAG-Knowledge%20Graphs-darkgreen?logo=neo4j&logoColor=white)
-
-## Integrations & Tools
-
 ![Brave Search](https://img.shields.io/badge/Brave%20Search-API-orange?logo=brave&logoColor=white)
 ![Tavily](https://img.shields.io/badge/Tavily-Search%20API-green?logo=tavily&logoColor=white)
 ![Arxiv](https://img.shields.io/badge/Arxiv-Research%20Papers-B31B1B?logo=arxiv&logoColor=white)
@@ -105,11 +100,11 @@ Follow these steps for a swift and efficient setup:
 1. **Clone the Mastra Repository**:
 
     ```bash
-    git clone https://github.com/your-username/mastra.git
+    git clone https://github.com/ssdeanx/dm-mastra-training.git
     cd mastra
     ```
 
-    *(**Note**: Replace `https://github.com/your-username/mastra.git` with the actual, up-to-date repository URL for your project.)*
+    *(**Note**: Replace `https://github.com/ssdeanx/dm-mastra-training.git` with the actual, up-to-date repository URL for your project.)*
 
 2. **Install Core Dependencies**:
     Navigate to the project root and unleash the power of your package manager:
@@ -285,6 +280,6 @@ This project is proudly licensed under the highly permissive [MIT License](LICEN
 For any profound questions, invaluable feedback, dedicated support, or strategic inquiries regarding the revolutionary Mastra framework, we invite you to connect with our vibrant community:
 
 * **Open an Issue**: Leverage the integrated GitHub issue tracker for reporting bugs, proposing visionary feature requests, or engaging in insightful general discussions.
-* **Direct Email**: Reach out to our dedicated support team directly at [support@mastra-framework.com](mailto:support@mastra-framework.com) for personalized assistance.
+* **Direct Email**: Reach out to our dedicated support team directly at [support@deanmachines.com](mailto:support@deanmachines.com) for personalized assistance.
 
 We profoundly appreciate your interest, active engagement, and invaluable contributions to the Mastra ecosystem!
