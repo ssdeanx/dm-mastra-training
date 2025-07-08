@@ -3,13 +3,14 @@ import { PinoLogger } from '@mastra/loggers';
 import { agentRegistry } from './agents';
 import { weatherWorkflow } from './workflows/weather-workflow';
 import { researchAnalysisWorkflow } from './workflows/research-analysis-workflow';
+import { inngestMultiAgentWorkflow } from './workflows/inngest-multi-agent-workflow';
 import { baseNetwork } from './networks/base-network';
 import { vNextNetwork } from './workflows/vnext-workflow';
 import { LangfuseExporter } from 'langfuse-vercel';
 import { env } from './config/environment';
 
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow, researchAnalysisWorkflow },
+  workflows: { weatherWorkflow, researchAnalysisWorkflow, inngestMultiAgentWorkflow },
   vnext_networks: { 'dean-machines-vnext': vNextNetwork },
   networks: { baseNetwork },
   agents: agentRegistry,

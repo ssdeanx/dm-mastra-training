@@ -163,7 +163,10 @@ export function createWikidataClientTools(config: {
     wikidataGetEntityById: createTool({
       id: "wikidata-get-entity-by-id",
       description: "Gets a Wikidata entity by ID.",
-      inputSchema: z.object({ id: z.string().describe('The ID of the Wikidata entity.') }),
+      inputSchema: z.object({
+        id: z.string().describe('The ID of the Wikidata entity.'),
+        languages: z.array(z.string()).optional().describe('Optional array of language codes (e.g., "en", "fr") to retrieve labels and descriptions in.')
+      }),
       outputSchema: WikidataEntitySchema,
       execute: async ({ context }) => {
         logger.info('Getting Wikidata entity by ID', { id: context.id });
@@ -180,7 +183,10 @@ export function createWikidataClientTools(config: {
     wikidataGetEntitiesByIds: createTool({
       id: "wikidata-get-entities-by-ids",
       description: "Gets multiple Wikidata entities by their IDs.",
-      inputSchema: z.object({ ids: z.array(z.string()).describe('An array of Wikidata entity IDs.') }),
+      inputSchema: z.object({
+        ids: z.array(z.string()).describe('An array of Wikidata entity IDs.'),
+        languages: z.array(z.string()).optional().describe('Optional array of language codes (e.g., "en", "fr") to retrieve labels and descriptions in.')
+      }),
       outputSchema: WikidataEntityMapSchema,
       execute: async ({ context }) => {
         logger.info('Getting Wikidata entities by IDs', { ids: context.ids });

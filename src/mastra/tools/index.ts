@@ -9,7 +9,10 @@ export {
 
 export { createBraveSearchTool } from './brave-search';
 export { createTavilySearchTool } from './tavily';
-export { wikidataTools } from './agentic/wikidata-client';
+export { wikidataTools } from './wikidata-client';
+export { createRedditClient, redditGetSubredditPosts } from './reddit';
+export { createHackerNewsClient, hackerNewsGetSearchItem, hackerNewsGetSearchUser, hackerNewsSearchItems, hackerNewsGetSearchTopStories, hackerNewsGetItem, hackerNewsGetTopStories, hackerNewsGetNewStories, hackerNewsGetBestStories } from './hacker-news-client';
+export { createArxivClient, arxivSearch } from './arxiv-client';
 export { codeSearchTool } from './code-search-tool';
 export { webScraperTool } from './web-scraper-tool';
 export { gitOperationsTool } from './git-operations-tool';

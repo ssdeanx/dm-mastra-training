@@ -1874,27 +1874,28 @@ export async function extractChunkMetadata(
 
 /**
  * @deprecated Current Implementation Status
- * 
+ *
  * IMPORTANT: Type Safety Limitation Notice
- * 
+ *
  * The current implementation uses `any` type casting for Upstash Vector filters
  * due to the inability to import proper types from the local Upstash package.
- * 
+ *
  * This is a temporary workaround that maintains functionality while we await:
  * 1. Updated Upstash package exports
  * 2. Proper TypeScript type definitions
  * 3. Enhanced type safety implementation
- * 
+ *
  * The functionality works correctly, but lacks compile-time type checking
  * for the filter parameter in vector operations.
- * 
+ *
  * Future improvements should:
  * - Import proper UpstashVectorFilter types when available
  * - Replace `any` type casting with proper type definitions
  * - Implement full type safety for metadata filtering
- * 
- * @author GitHub Copilot
- * @date 2025-01-27
+ *
+ * @author SSD
+ * @version 1.0.0
+ * @date 2025-07-08
  */
 export const UPSTASH_TYPE_SAFETY_STATUS = {
   current: 'Limited - using any type casting',
