@@ -22,7 +22,8 @@ import {
   VectorStoreError,
   VectorStoreFactory,
   MetadataFilter,
-  VectorQueryResult
+  VectorQueryResult,
+  ExtractParams // Import ExtractParams
 } from '../upstashMemory';
 import { embedMany } from 'ai';
 import { fastembed } from '@mastra/fastembed';
@@ -49,6 +50,12 @@ const chunkParamsSchema = z.object({
 const upsertInputSchema = z.object({
   document: documentInputSchema,
   chunkParams: chunkParamsSchema.optional(),
+  extractParams: z.object({ // Add extractParams field
+    title: z.any().optional(),
+    summary: z.any().optional(),
+    keywords: z.any().optional(),
+    questions: z.any().optional(),
+  }).optional() as z.ZodType<ExtractParams | undefined>, // Cast to ExtractParams
   indexName: z.string().default('context').describe('Name of the index to upsert to'),
   createIndex: z.boolean().default(true).describe('Whether to create the index if it does not exist'),
   vectorProfile: z.enum(['default', 'gemini']).default('default').describe('Vector profile to use for embeddings and upserting'),
@@ -70,6 +77,7 @@ const queryInputSchema = z.object({
   includeVector: z.boolean().default(false).describe('Whether to include vector data in results'),
   minScore: z.number().min(0).max(1).default(0).describe('Minimum similarity score threshold'),
   vectorProfile: z.enum(['default', 'gemini']).default('default').describe('Vector profile to use for embeddings and querying'),
+  filter: z.record(z.any()).optional().describe('Optional metadata filter using Upstash-compatible MongoDB/Sift query syntax'), // Add filter field
 }).strict();
 
 const queryResultSchema = z.object({
@@ -170,7 +178,8 @@ export const graphRAGUpsertTool = createTool({
             indexName: validatedInput.indexName, // Add missing indexName
             createIndex: validatedInput.createIndex, // Add missing createIndex
             vectorProfile: vectorProfileName,
-          }
+          },
+          extractParams: validatedInput.extractParams, // Pass extractParams directly to chunkerTool context
         },
         runtimeContext,
       });
@@ -230,7 +239,8 @@ export const graphRAGUpsertTool = createTool({
           chunkIndex: index,
           totalChunks: chunks.length,
           strategy: chunkParams?.strategy || 'recursive',
-          chunkSize: chunk.text.length
+          chunkSize: chunk.text.length,
+          vectorProfile: vectorProfileName, // Include vectorProfile in metadata
         };
       });
 
@@ -347,6 +357,7 @@ export const graphRAGQueryTool = createTool({
           topK: validatedInput.topK,
           includeVector: validatedInput.includeVector,
           minScore: validatedInput.minScore,
+          filter: validatedInput.filter, // Pass filter to graphRAGTool.execute
           // Pass the embedder and vectorStore to the underlying graphRAGTool
           embedder: embedder,
           vectorStore: upstashVectorClient,

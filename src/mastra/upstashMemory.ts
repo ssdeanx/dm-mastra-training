@@ -1314,7 +1314,7 @@ export async function queryVectors(
  * with the current system while maintaining functionality.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function transformToUpstashFilter(filter: MetadataFilter): any {
+export function transformToUpstashFilter(filter: MetadataFilter): any {
   const transformed: Record<string, unknown> = {};
   
   Object.entries(filter).forEach(([key, value]) => {
