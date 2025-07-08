@@ -1,0 +1,35 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' # Or your preferred Node.js version
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build project
+      run: npm run build # Adjust if your build command is different
+
+    - name: Deploy to Staging Environment
+      run: |
+        echo "Starting deployment to staging..."
+        # Replace with your actual deployment commands.
+        # Examples:
+        # - rsync -avz --delete . user@your-staging-server:/var/www/html
+        # - ssh user@your-staging-server "cd /path/to/app && git pull && npm install && npm run restart"
+        # - Your cloud provider's CLI deployment command (e.g., aws s3 sync, gcloud app deploy)
+        echo "Deployment to staging completed successfully!"

@@ -1,0 +1,33 @@
+name: Generate Changelog
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  generate-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required to get all history for changelog generation
+
+      - name: Generate Changelog
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v3.1.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          output-file: CHANGELOG.md
+          git-message: "docs(changelog): update changelog for new release"
+          skip-on-empty: false # Ensure the action runs even if no conventional commits are found, to allow for manual updates if needed.
+
+      - name: Commit and Push Changelog
+        if: steps.changelog.outputs.skipped == 'false'
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+          git add CHANGELOG.md
+          git commit -m "docs(changelog): update changelog" || echo "No changes to commit"
+          git push

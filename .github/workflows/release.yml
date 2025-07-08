@@ -1,0 +1,86 @@
+name: Automated Release Management
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required to get all history for changelog generation
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Or your preferred Node.js version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build # Adjust this command if your build process is different
+
+      - name: Generate Release Notes
+        id: generate_release_notes
+        run: |
+          # This is a placeholder. You might use tools like 'conventional-changelog'
+          # or parse commit messages to generate more structured release notes.
+          # For simplicity, this example uses commit messages since the last tag.
+          TAG_NAME="${{ github.ref_name }}"
+          VERSION_WITHOUT_V="${TAG_NAME#v}" # Remove 'v' prefix if present
+
+          # Extract release notes from CHANGELOG.md
+          # This awk command finds the section starting with '## [VERSION]'
+          # and prints lines until the next '## [' heading or end of file.
+          RELEASE_NOTES=$(awk -v tag_version="${VERSION_WITHOUT_V}" '
+            /^## \[/ {
+              if (found_tag) { exit } # Stop if we found the tag and now hit another heading
+              if ($0 ~ ("^## \\[" tag_version "\\]")) {
+                found_tag = 1;
+                next # Skip the heading line itself
+              }
+            }
+            found_tag { print }
+          ' CHANGELOG.md | sed -e 's/^[[:space:]]*//' -e '/^$/d') # Trim leading spaces and remove empty lines
+
+          if [ -z "$RELEASE_NOTES" ]; then
+            echo "Warning: No release notes found for tag ${TAG_NAME} in CHANGELOG.md. Using default message."
+            RELEASE_NOTES="Release ${TAG_NAME}"
+          fi
+
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.generate_release_notes.outputs.RELEASE_NOTES }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Example: Upload build artifacts (uncomment and adjust as needed)
+      # - name: Upload build artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: my-app-build
+      #     path: dist/ # Adjust to your build output directory
+      # - name: Upload artifact to Release
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./dist/your-artifact.zip # Path to your artifact
+      #     asset_name: your-artifact-${{ github.ref_name }}.zip
+      #     asset_content_type: application/zip
