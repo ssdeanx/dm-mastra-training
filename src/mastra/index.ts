@@ -10,7 +10,7 @@ import { LangfuseExporter } from 'langfuse-vercel';
 import { env } from './config/environment';
 
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow, researchAnalysisWorkflow, inngestMultiAgentWorkflow },
+  workflows: { weatherWorkflow, researchAnalysisWorkflow },
   vnext_networks: { 'dean-machines-vnext': vNextNetwork },
   networks: { baseNetwork },
   agents: agentRegistry,

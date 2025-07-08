@@ -43,6 +43,8 @@
     "@mastra/rag": "^1.0.1",
     "@mastra/upstash": "^0.12.0",
     "@nangohq/node": "^0.62.1",
+    "@nangohq/types": "^0.62.1",
+    "@nangohq/frontend": "^0.62.1",
     "@octokit/rest": "^22.0.0",
     "@octokit/types": "^14.1.0",
     "cheerio": "^1.1.0",
@@ -72,7 +74,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/json-schema": "^7.0.15",
     "@types/json2xml": "^0.1.4",
-    "@types/node": "^24.0.10",
+    "@types/node": "^22.16.1",
     "@types/turndown": "^5.0.5",
     "@typescript-eslint/eslint-plugin": "^8.36.0",
     "@typescript-eslint/parser": "^8.36.0",
@@ -89,6 +91,8 @@
     "@opentelemetry/core": "^2.0.1",
     "@opentelemetry/auto-instrumentations-node": "^0.61.0",
     "@qdrant/js-client-rest": "^1.14.1",
-    "axios": "^1.10.0"
+    "axios": "^1.10.0",
+    "rimraf": "^6.0.1",
+    "glob": "^11.0.3"
   }
 }

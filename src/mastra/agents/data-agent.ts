@@ -9,16 +9,17 @@ import {
   deleteDataFileTool,
   listDataDirTool,
   chunkerTool,
-  graphRAGQueryTool,
   graphRAGTool,
-  graphRAGUpsertTool,
   vectorQueryTool,
-  hybridVectorSearchTool,
   diffbotAnalyzeUrlTool,
   diffbotExtractArticleFromUrlTool,
   diffbotEnhanceKnowledgeGraphTool,
   diffbotSearchKnowledgeGraphTool,
-  diffbotEnhanceEntityTool
+  diffbotEnhanceEntityTool,
+  hackerNewsGetBestStories,
+  hackerNewsGetSearchTopStories,
+  arxivSearch,
+  redditGetSubredditPosts,
 } from "../tools";
 import { createGemini25Provider } from '../config/googleProvider';
 
@@ -125,7 +126,7 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'diffbotEnhanceKnowledgeGraphTool': For enhancing entities within the Diffbot Knowledge Graph.
 
 GUIDELINES FOR EXECUTION:
-- **Strict Path Validation**: Never attempt to access files outside the '${dataDir}' directory.
+- **Strict Path Validation**: Never attempt to access files outside the {dataDir} directory.
 - **Error Handling**: If an operation fails (e.g., file not found, permission denied), log the error and provide a user-friendly message.
 - **Security First**: Prioritize data security and prevent any potential data leakage or unauthorized operations.
 - **Concise Responses**: Provide only the requested information or confirmation of action.
@@ -134,8 +135,8 @@ GUIDELINES FOR EXECUTION:
   model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17', {
     responseModalities: ["TEXT"],
     thinkingConfig: {
-      thinkingBudget: 256,
-      includeThoughts: false,
+      thinkingBudget: -1,
+      includeThoughts: true,
     },
   }),
   memory: upstashMemory,
@@ -145,16 +146,17 @@ GUIDELINES FOR EXECUTION:
     deleteDataFileTool,
     listDataDirTool,
     chunkerTool,
-    graphRAGQueryTool,
     graphRAGTool,
-    graphRAGUpsertTool,
     vectorQueryTool,
-    hybridVectorSearchTool,
     diffbotAnalyzeUrlTool,
     diffbotExtractArticleFromUrlTool,
     diffbotEnhanceEntityTool,
     diffbotSearchKnowledgeGraphTool,
-    diffbotEnhanceKnowledgeGraphTool
+    diffbotEnhanceKnowledgeGraphTool,
+    hackerNewsGetBestStories,
+    hackerNewsGetSearchTopStories,
+    arxivSearch,
+    redditGetSubredditPosts
     }
 });
 

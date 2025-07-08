@@ -1,5 +1,6 @@
 import { getEnv } from '@agentic/core'
-import { type Connection, Nango } from '@nangohq/node'
+import { Nango } from '@nangohq/node'
+import type { Connection } from '@nangohq/node/dist/types/types'; // Assuming this is the correct path based on common patterns
 
 // This is intentionally left as a global singleton to avoid re-creating the
 // Nango connection instance on successive calls in serverless environments.
@@ -26,7 +27,7 @@ export function validateNangoConnectionOAuthScopes({
   scopes: string[]
 }) {
   const connectionScopes = new Set<string>(
-    (connection.credentials as any).raw.scope.split(' ')
+    (connection.credentials as { raw: { scope: string } }).raw.scope.split(' ')
   )
   const missingScopes = new Set<string>()
 

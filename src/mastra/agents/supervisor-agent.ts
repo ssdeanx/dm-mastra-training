@@ -1,8 +1,8 @@
 import { Agent } from "@mastra/core/agent";
 import { upstashMemory } from '../upstashMemory';
-import { vectorQueryTool, hybridVectorSearchTool } from "../tools/vectorQueryTool";
+import { vectorQueryTool } from "../tools/vectorQueryTool";
 import { chunkerTool } from "../tools/chunker-tool";
-import { graphRAGTool, graphRAGUpsertTool } from "../tools/graphRAG";
+import { graphRAGTool } from "../tools/graphRAG";
 import { createGemini25Provider } from '../config/googleProvider';
 import { z } from 'zod';
 import { UPSTASH_PROMPT } from "@mastra/upstash";
@@ -149,8 +149,8 @@ ${UPSTASH_PROMPT}
   model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17', {
     responseModalities: ["TEXT"],
     thinkingConfig: {
-      thinkingBudget: 0, // -1 means dynamic thinking budget
-      includeThoughts: false, // Include thoughts for debugging and monitoring purposes
+      thinkingBudget: -1, // -1 means dynamic thinking budget
+      includeThoughts: true, // Include thoughts for debugging and monitoring purposes
     },
     useSearchGrounding: true, // Enable Google Search integration for current events
     // Dynamic retrieval configuration
@@ -162,10 +162,8 @@ ${UPSTASH_PROMPT}
   }),
   tools: {
     vectorQueryTool,
-    hybridVectorSearchTool,
     chunkerTool,
     graphRAGTool,
-    graphRAGUpsertTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
   },

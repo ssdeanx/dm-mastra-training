@@ -6,7 +6,7 @@ import { chunkerTool } from "../tools/chunker-tool";
 import { z } from "zod";
 import { UPSTASH_PROMPT } from "@mastra/upstash";
 import { PinoLogger } from "@mastra/loggers";
-import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool, diffbotAnalyzeUrlTool, diffbotExtractArticleFromUrlTool, diffbotEnhanceKnowledgeGraphTool, diffbotSearchKnowledgeGraphTool, diffbotEnhanceEntityTool, arxivSearch, redditGetSubredditPosts, hackerNewsGetBestStories, hackerNewsGetSearchUser, hackerNewsSearchItems, hackerNewsGetSearchTopStories, hackerNewsGetSearchItem, hackerNewsGetItem, hackerNewsGetTopStories, hackerNewsGetNewStories } from "../tools";
 const logger = new PinoLogger({ name: 'AnalyzerAgent', level: 'info' });
 logger.info('Initializing AnalyzerAgent');
 
@@ -131,7 +131,7 @@ GUIDELINES FOR EXECUTION:
 ${UPSTASH_PROMPT}
 `;
   },
-  model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17', {
+  model: createGemini25Provider('gemini-2.5-flash', {
     responseModalities: ["TEXT"],
     thinkingConfig: {
       thinkingBudget: 0, // -1 means dynamic thinking budget
@@ -152,6 +152,21 @@ ${UPSTASH_PROMPT}
     tavilySearchTool: createTavilySearchTool(),
     webScraperTool,
     gitOperationsTool,
+    diffbotAnalyzeUrlTool,
+    diffbotExtractArticleFromUrlTool,
+    diffbotEnhanceKnowledgeGraphTool,
+    diffbotSearchKnowledgeGraphTool,
+    diffbotEnhanceEntityTool,
+    arxivSearch,
+    redditGetSubredditPosts,
+    hackerNewsGetSearchItem,
+    hackerNewsGetSearchUser,
+    hackerNewsSearchItems,
+    hackerNewsGetSearchTopStories,
+    hackerNewsGetItem,
+    hackerNewsGetTopStories,
+    hackerNewsGetNewStories,
+    hackerNewsGetBestStories
   },
   memory: upstashMemory,
 });

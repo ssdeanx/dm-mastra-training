@@ -9,9 +9,6 @@ import {
   graphRAGTool,
   vectorQueryTool,
   chunkerTool,
-  //graphRAGUpsertTool,
-  hybridVectorSearchTool,
-  graphRAGQueryTool,
   diffbotAnalyzeUrlTool,
   diffbotEnhanceEntityTool,
   diffbotEnhanceKnowledgeGraphTool,
@@ -158,13 +155,12 @@ ${UPSTASH_PROMPT}
   },
   model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17', {
     thinkingConfig: {
-      thinkingBudget: 1024, // Higher budget for complex reasoning
+      thinkingBudget: 512, // Higher budget for complex reasoning
       includeThoughts: true, // Show reasoning process
     },
   }),
   tools: {
     graphRAGTool,
-    graphRAGQueryTool,
     diffbotAnalyzeUrlTool,
     diffbotExtractArticleFromUrlTool,
     diffbotEnhanceKnowledgeGraphTool,
@@ -172,7 +168,6 @@ ${UPSTASH_PROMPT}
     diffbotEnhanceEntityTool,
     //graphRAGUpsertTool, # FIXME: temporarily disabled due to issues
     vectorQueryTool,
-    hybridVectorSearchTool,
     //rerankTool, # FIXME: temporarily disabled due to issues
     chunkerTool,
     braveSearchTool: createBraveSearchTool(),

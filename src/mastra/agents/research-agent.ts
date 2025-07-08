@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { UPSTASH_PROMPT } from "@mastra/upstash";
 import { createBraveSearchTool, createTavilySearchTool, codeSearchTool, webScraperTool, gitOperationsTool, diffbotAnalyzeUrlTool, diffbotExtractArticleFromUrlTool, diffbotEnhanceKnowledgeGraphTool, diffbotSearchKnowledgeGraphTool, diffbotEnhanceEntityTool } from "../tools";
 
+
 /**
  * Runtime context type for the Research Agent
  * Stores research preferences and source filtering context
@@ -157,10 +158,10 @@ GUIDELINES FOR EXECUTION:
 ${UPSTASH_PROMPT}
 `;
   },
-  model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17',  {
+  model: createGemini25Provider('gemini-2.5-flash',  {
     responseModalities: ["TEXT"],
     thinkingConfig: {
-      thinkingBudget: 512, // -1 means dynamic thinking budget
+      thinkingBudget: 0, // -1 means dynamic thinking budget
       includeThoughts: false, // Include thoughts for debugging and monitoring purposes
     },
   }),

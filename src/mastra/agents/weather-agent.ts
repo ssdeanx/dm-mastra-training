@@ -3,8 +3,8 @@ import { createGemini25Provider } from '../config/googleProvider';
 import { weatherTool } from '../tools/weather-tool';
 import { chunkerTool } from "../tools/chunker-tool";
 import { upstashMemory } from '../upstashMemory';
-import { vectorQueryTool, hybridVectorSearchTool } from "../tools/vectorQueryTool";
-import { graphRAGTool, graphRAGUpsertTool } from "../tools/graphRAG";
+import { vectorQueryTool } from "../tools/vectorQueryTool";
+import { graphRAGTool } from "../tools/graphRAG";
 import { PinoLogger } from "@mastra/loggers";
 import { createBraveSearchTool, createTavilySearchTool } from "../tools";
 
@@ -106,9 +106,7 @@ GUIDELINES FOR EXECUTION:
     weatherTool,
     chunkerTool,
     vectorQueryTool,
-    hybridVectorSearchTool,
     graphRAGTool,
-    graphRAGUpsertTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
   },

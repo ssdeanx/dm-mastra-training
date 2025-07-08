@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { assert, getEnv } from '@agentic/core'
 import { auth, Client as TwitterV2Client } from 'twitter-api-sdk'
 
@@ -39,7 +40,7 @@ async function createTwitterAuth({
     scopes
   })
 
-  const token = connection.credentials.raw
+  const token = (connection.credentials as { raw: any }).raw
   assert(token)
 
   return new auth.OAuth2User({

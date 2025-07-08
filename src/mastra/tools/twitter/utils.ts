@@ -10,76 +10,79 @@ import { TwitterError } from './error'
  * Re-throws the error if not recognized and will never return.
  */
 export function handleTwitterError(
-  err: any,
+  err: unknown,
   { label = '' }: { label?: string } = {}
 ): never {
-  if (err.status === 403) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const error = err as any; // Temporarily cast to any for property access
+
+  if (error.status === 403) {
     // user may have deleted the tweet we're trying to respond to
-    throw new TwitterError(err.error?.detail || `${label}: 403 forbidden`, {
+    throw new TwitterError(error.error?.detail || `${label}: 403 forbidden`, {
       type: 'twitter:forbidden',
       isFinal: true,
-      cause: err
+      cause: error
     })
-  } else if (err.status === 401) {
+  } else if (error.status === 401) {
     throw new TwitterError(`${label}: unauthorized`, {
       type: 'twitter:auth',
-      cause: err
+      cause: error
     })
-  } else if (err.status === 400) {
+  } else if (error.status === 400) {
     if (
       /value passed for the token was invalid/i.test(
-        err.error?.error_description
+        error.error?.error_description
       )
     ) {
       throw new TwitterError(`${label}: invalid auth token`, {
         type: 'twitter:auth',
-        cause: err
+        cause: error
       })
     }
-  } else if (err.status === 429) {
+  } else if (error.status === 429) {
     throw new TwitterError(`${label}: too many requests`, {
       type: 'twitter:rate-limit',
-      cause: err
+      cause: error
     })
-  } else if (err.status === 404) {
-    throw new TwitterError(err.toString(), {
+  } else if (error.status === 404) {
+    throw new TwitterError(String(error), {
       type: 'twitter:forbidden',
       isFinal: true,
-      cause: err
+      cause: error
     })
   }
 
-  if (err.status >= 400 && err.status < 500) {
+  if (error.status >= 400 && error.status < 500) {
     throw new TwitterError(
-      `${label}: ${err.status} ${err.error?.description || err.toString()}`,
+      `${label}: ${error.status} ${error.error?.description || String(error)}`,
       {
         type: 'twitter:unknown',
         isFinal: true,
-        cause: err
+        cause: error
       }
     )
-  } else if (err.status >= 500) {
+  } else if (error.status >= 500) {
     throw new TwitterError(
-      `${label}: ${err.status} ${err.error?.description || err.toString()}`,
+      `${label}: ${error.status} ${error.error?.description || String(error)}`,
       {
         type: 'twitter:unknown',
         isFinal: false,
-        cause: err
+        cause: error
       }
     )
   }
 
-  const reason = err.toString().toLowerCase()
+  const reason = String(error).toLowerCase()
 
   if (reason.includes('fetcherror') || reason.includes('enotfound')) {
-    throw new TwitterError(err.toString(), {
+    throw new TwitterError(String(error), {
       type: 'network',
-      cause: err
+      cause: error
     })
   }
 
   // Otherwise, propagate the original error
-  throw err
+  throw error
 }
 
 export function getPrunedTweet(
