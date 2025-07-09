@@ -90,9 +90,16 @@ const researchAgentConfigSchema = z.object({
 logger.info('Initializing researchAgent');
 
 /**
- * Research agent for information gathering, analysis, and knowledge synthesis
- * Specializes in comprehensive research, fact-checking, and insight generation
+ * The code defines a Research Agent with specific instructions, tools, and validation functions for
+ * input and output data.
+ * @param {unknown} config - The `config` parameter in the code snippet refers to the configuration
+ * object used to initialize the `researchAgent`. This configuration object contains various settings
+ * and options that define how the `Research Agent` operates.
+ * @returns The code snippet is defining a `researchAgent` object using the `Agent` constructor. The
+ * `researchAgent` object contains various properties such as `name`, `instructions`, `model`, `tools`,
+ * and `memory`.
  */
+
 export const researchAgent = new Agent({
   name: "Research Agent",
   instructions: async ({ runtimeContext }) => {

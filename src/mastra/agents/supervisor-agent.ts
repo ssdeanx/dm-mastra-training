@@ -77,10 +77,16 @@ const supervisorAgentConfigSchema = z.object({
   workflows: z.record(z.any()).describe('Available workflows for the agent')
 }).strict();
 
-
 /**
- * Supervisor agent for agent orchestration, coordination, and quality control
- * Specializes in managing multi-agent workflows and ensuring optimal task distribution
+ * Supervisor Agent for orchestrating and managing multi-agent workflows
+ * Specializes in task delegation, quality assurance, and performance monitoring
+ * @examples
+ * 
+ *
+ * @mastra SupervisorAgent
+ * @since 2025-07-09
+ * @remarks
+ * 
  */
 export const supervisorAgent = new Agent({
   name: "Supervisor Agent",
