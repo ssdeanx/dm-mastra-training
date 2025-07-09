@@ -2,6 +2,7 @@
 
 **Empowering the next generation of AI applications with modularity, scalability, and precision.**
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a93b0a977dbe45c4a40793504df5a01b)](https://app.codacy.com/gh/ssdeanx/dm-mastra-training?utm_source=github.com&utm_medium=referral&utm_content=ssdeanx/dm-mastra-training&utm_campaign=Badge_Grade)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub last commit](https://img.shields.io/github/last-commit/ssdeanx/mastra)](https://github.com/ssdeanx/dm-mastra-training)
 [![GitHub stars](https://img.shields.io/github/stars/ssdeanx/mastra?style=social)](https://github.com/ssdeanx/dm-mastra-training/stargazers)
