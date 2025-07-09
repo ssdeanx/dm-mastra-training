@@ -6,7 +6,7 @@ import { chunkerTool } from "../tools/chunker-tool";
 import { z } from "zod";
 import { UPSTASH_PROMPT } from "@mastra/upstash";
 import { PinoLogger } from "@mastra/loggers";
-import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool, diffbotAnalyzeUrlTool, diffbotExtractArticleFromUrlTool, diffbotEnhanceKnowledgeGraphTool, diffbotSearchKnowledgeGraphTool, diffbotEnhanceEntityTool, arxivSearch, redditGetSubredditPosts, hackerNewsGetBestStories, hackerNewsGetSearchUser, hackerNewsSearchItems, hackerNewsGetSearchTopStories, hackerNewsGetSearchItem, hackerNewsGetItem, hackerNewsGetTopStories, hackerNewsGetNewStories, graphRAGTool, graphRAGQueryTool, graphRAGUpsertTool, rerankTool, listDataDirTool, readDataFileTool, writeDataFileTool, deleteDataFileTool, collaborativeReasoningTool, decisionFrameworkTool, metacognitiveMonitoringTool, scientificMethodTool } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool, diffbotAnalyzeUrlTool, diffbotExtractArticleFromUrlTool, diffbotEnhanceKnowledgeGraphTool, diffbotSearchKnowledgeGraphTool, diffbotEnhanceEntityTool, arxivSearch, redditGetSubredditPosts, hackerNewsGetBestStories, hackerNewsGetSearchUser, hackerNewsSearchItems, hackerNewsGetSearchTopStories, hackerNewsGetSearchItem, hackerNewsGetItem, hackerNewsGetTopStories, hackerNewsGetNewStories, graphRAGTool, graphRAGQueryTool, graphRAGUpsertTool, rerankTool, listDataDirTool, readDataFileTool, writeDataFileTool, deleteDataFileTool, collaborativeReasoningTool, decisionFrameworkTool, metacognitiveMonitoringTool, scientificMethodTool, stockPriceTool, historicalStockPriceTool, stockNewsTool, earningsCalendarTool, sportsOddsTool, historicalOddsTool, listSportsTool, listBookmakersTool, cryptoPriceTool, historicalCryptoPriceTool, cryptoMarketDataTool, listCryptoCoinsTool } from "../tools";
 const logger = new PinoLogger({ name: 'AnalyzerAgent', level: 'info' });
 logger.info('Initializing AnalyzerAgent');
 
@@ -37,6 +37,12 @@ export type AnalyzerAgentRuntimeContext = {
   "bias-mitigation-enabled": boolean;
   /** Strategy for handling low-confidence data */
   "low-confidence-strategy": "flag" | "verify" | "ignore" | "escalate" | "reassess" | "accept" | "reject" | "adjust" | "accept-with-caution";
+  /** Financial market focus for analysis */
+  "financial-market-focus"?: "stocks" | "crypto" | "commodities" | "forex" | "all";
+  /** Sports league preference for analysis */
+  "sports-league-preference"?: string;
+  /** Cryptocurrency asset focus for analysis */
+  "crypto-asset-focus"?: string;
 };
 
 /**
@@ -59,7 +65,10 @@ const analyzerAgentInputSchema = z.object({
   domainContext: z.string().optional().describe('Domain context'),
   inputConfidence: z.number().min(0).max(1).optional().describe('Input confidence'),
   biasMitigationEnabled: z.boolean().optional().describe('Bias mitigation enabled'),
-  lowConfidenceStrategy: z.enum(["flag", "verify", "ignore", "escalate", "reassess", "accept", "reject", "adjust", "accept-with-caution"]).optional().describe('Low confidence strategy')
+  lowConfidenceStrategy: z.enum(["flag", "verify", "ignore", "escalate", "reassess", "accept", "reject", "adjust", "accept-with-caution"]).optional().describe('Low confidence strategy'),
+  financialMarketFocus: z.enum(["stocks", "crypto", "commodities", "forex", "all"]).optional().describe('Financial market focus'),
+  sportsLeaguePreference: z.string().optional().describe('Sports league preference'),
+  cryptoAssetFocus: z.string().optional().describe('Cryptocurrency asset focus')
 }).strict();
 
 const structuredInsightSchema = z.object({
@@ -99,6 +108,9 @@ const analyzerAgentConfigSchema = z.object({
     'input-confidence': z.number().min(0).max(1).optional().describe('Confidence score of the input data'),
     'bias-mitigation-enabled': z.boolean().optional().describe('Flag to enable or disable bias mitigation strategies'),
     'low-confidence-strategy': z.enum(["flag", "verify", "ignore", "escalate", "reassess", "accept", "reject", "adjust", "accept-with-caution"]).optional().describe('Strategy for handling low-confidence data'),
+    'financial-market-focus': z.enum(["stocks", "crypto", "commodities", "forex", "all"]).optional().describe('Financial market focus'),
+    'sports-league-preference': z.string().optional().describe('Sports league preference'),
+    'crypto-asset-focus': z.string().optional().describe('Cryptocurrency asset focus')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   tools: z.record(z.any()).describe('Available tools for the agent'),
@@ -124,7 +136,9 @@ export const analyzerAgent = new Agent({
     const inputConfidence = runtimeContext?.get("input-confidence") || 1.0; // Default to high confidence
     const biasMitigationEnabled = runtimeContext?.get("bias-mitigation-enabled") || false;
     const lowConfidenceStrategy = runtimeContext?.get("low-confidence-strategy") || "flag";
-
+    const financialMarketFocus = runtimeContext?.get("financial-market-focus") || "all";
+    const sportsLeaguePreference = runtimeContext?.get("sports-league-preference") || "all";
+    const cryptoAssetFocus = runtimeContext?.get("crypto-asset-focus") || "all";
 
     return `You are an A++ rated, atomically flawless Data Analyst Agent, specializing in extracting profoundly meaningful insights from complex, multi-faceted datasets. Your expertise encompasses rigorous statistical analysis, advanced pattern recognition, and the generation of highly actionable, bias-mitigated recommendations. You excel in data manipulation, meticulous cleaning, sophisticated statistical modeling, and the creation of compelling, information-rich data visualizations.
 
@@ -140,6 +154,9 @@ CURRENT OPERATIONAL CONTEXT:
 - Input Confidence: ${inputConfidence} (influences analysis rigor and depth of scrutiny)
 - Bias Mitigation: ${biasMitigationEnabled ? 'Enabled' : 'Disabled'} (strategy: ${lowConfidenceStrategy})
 - Low Confidence Strategy: ${lowConfidenceStrategy} (e.g., flag, verify, ignore, escalate, reassess, accept, reject, adjust, accept-with-caution)
+- Financial Market Focus: ${financialMarketFocus}
+- Sports League Preference: ${sportsLeaguePreference}
+- Crypto Asset Focus: ${cryptoAssetFocus}
 
 YOUR CORE RESPONSIBILITIES:
 1.  **Atomic Data Acquisition & Preparation**: Meticulously utilize available tools to access, rigorously validate, clean, and precisely preprocess data from diverse, potentially disparate sources, ensuring absolute data integrity.
@@ -193,6 +210,18 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'mentalModelTool': For employing mental models to enhance understanding and analysis of complex systems, ensuring that insights are grounded in robust cognitive frameworks.
 - 'debuggingApproachTool': For systematically identifying and resolving issues in data or analysis processes, ensuring that all outputs are accurate and reliable.
 - 'visualReasoningTool': For applying visual reasoning techniques, enhancing the clarity and effectiveness of data visualizations and ensuring that insights are communicated effectively.
+- 'stockPriceTool': For real-time stock price data, useful for financial market analysis.
+- 'historicalStockPriceTool': For historical stock price data, enabling trend analysis and backtesting.
+- 'stockNewsTool': For news articles related to specific stocks, providing qualitative context for market movements.
+- 'earningsCalendarTool': For upcoming earnings reports, crucial for event-driven financial analysis.
+- 'sportsOddsTool': For real-time sports betting odds, useful for sports analytics and predictive modeling.
+- 'historicalOddsTool': For historical sports odds, enabling analysis of past performance and model validation.
+- 'listSportsTool': For listing available sports, useful for understanding the scope of sports data.
+- 'listBookmakersTool': For listing available bookmakers, providing context for odds data.
+- 'cryptoPriceTool': For real-time cryptocurrency prices, essential for crypto market analysis.
+- 'historicalCryptoPriceTool': For historical cryptocurrency prices, enabling trend analysis and pattern recognition in crypto markets.
+- 'cryptoMarketDataTool': For comprehensive cryptocurrency market data, including market cap and volume.
+- 'listCryptoCoinsTool': For listing all supported cryptocurrencies, useful for broad market overviews.
 
 GUIDELINES FOR ATOMICALLY FLAWLESS EXECUTION:
 - **Absolute Data Integrity**: Always, without exception, rigorously validate the quality, consistency, and integrity of all data before commencing any analysis.
@@ -259,7 +288,19 @@ ${UPSTASH_PROMPT}
     hackerNewsGetItem,
     hackerNewsGetTopStories,
     hackerNewsGetNewStories,
-    hackerNewsGetBestStories
+    hackerNewsGetBestStories,
+    stockPriceTool,
+    historicalStockPriceTool,
+    stockNewsTool,
+    earningsCalendarTool,
+    sportsOddsTool,
+    historicalOddsTool,
+    listSportsTool,
+    listBookmakersTool,
+    cryptoPriceTool,
+    historicalCryptoPriceTool,
+    cryptoMarketDataTool,
+    listCryptoCoinsTool
   },
   memory: upstashMemory
 });

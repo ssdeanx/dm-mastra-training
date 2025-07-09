@@ -68,13 +68,13 @@ export const rerankTool = createTool({
 
     try {
       const validatedInput = rerankInputSchema.parse(input);      // Get runtime context values
-      const userId = runtimeContext?.get('user-id') || 'anonymous';
-      const sessionId = runtimeContext?.get('session-id') || 'default';
-      const modelPreference = (runtimeContext?.get('model-preference') as string) || 'gemini-2.5-flash-lite-preview-06-17';
-      const semanticWeight = Number(runtimeContext?.get('semantic-weight')) || validatedInput.semanticWeight;
-      const vectorWeight = Number(runtimeContext?.get('vector-weight')) || validatedInput.vectorWeight;
-      const positionWeight = Number(runtimeContext?.get('position-weight')) || validatedInput.positionWeight;
-      const debug = runtimeContext?.get('debug') || false;
+      const userId = (runtimeContext?.get('user-id') as string | undefined) ?? 'anonymous';
+      const sessionId = (runtimeContext?.get('session-id') as string | undefined) ?? 'default';
+      const modelPreference = (runtimeContext?.get('model-preference') as string | undefined) ?? 'gemini-2.5-flash-lite-preview-06-17';
+      const semanticWeight = (runtimeContext?.get('semantic-weight') as number | undefined) ?? validatedInput.semanticWeight;
+      const vectorWeight = (runtimeContext?.get('vector-weight') as number | undefined) ?? validatedInput.vectorWeight;
+      const positionWeight = (runtimeContext?.get('position-weight') as number | undefined) ?? validatedInput.positionWeight;
+      const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
       if (debug) {
         logger.info('Rerank tool executed with runtime context', {

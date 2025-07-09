@@ -92,10 +92,10 @@ export const weatherTool = createTool({
     input: z.infer<typeof inputSchema>;
     runtimeContext?: RuntimeContext<WeatherRuntimeContext>;
   }): Promise<z.infer<typeof outputSchema>> => {
-    const temperatureScale = runtimeContext?.get('temperature-scale') || 'celsius';
-    const userId = runtimeContext?.get('user-id');
-    const sessionId = runtimeContext?.get('session-id');
-    const debug = runtimeContext?.get('debug') || false;
+    const temperatureScale = (runtimeContext?.get('temperature-scale') as 'celsius' | 'fahrenheit' | undefined) ?? 'celsius';
+    const userId = (runtimeContext?.get('user-id') as string | undefined);
+    const sessionId = (runtimeContext?.get('session-id') as string | undefined);
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
     if (debug) {
       logger.info('Weather tool executed with runtime context', {
@@ -265,8 +265,8 @@ export const hourlyWeatherForecastTool = createTool({
     input: z.infer<typeof hourlyWeatherInputSchema>;
     runtimeContext?: RuntimeContext<WeatherRuntimeContext>;
   }): Promise<z.infer<typeof hourlyWeatherOutputSchema>> => {
-    const temperatureScale = runtimeContext?.get('temperature-scale') || 'celsius';
-    const debug = runtimeContext?.get('debug') || false;
+    const temperatureScale = (runtimeContext?.get('temperature-scale') as 'celsius' | 'fahrenheit' | undefined) ?? 'celsius';
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
     if (debug) {
       logger.info('Hourly weather forecast tool executed with runtime context', {

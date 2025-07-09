@@ -191,10 +191,10 @@ export const chunkerTool = createTool({
   id: 'comprehensive_chunker',
   description: 'Advanced document chunking tool supporting multiple formats (text, HTML, Markdown, JSON, LaTeX, CSV, XML) with configurable strategies and runtime context integration',
   inputSchema: chunkerInputSchema,
-  outputSchema: chunkerOutputSchema,  
+  outputSchema: chunkerOutputSchema,
   execute: async ({ context, runtimeContext }) => {
     const startTime = Date.now();
-    
+
     try {
       // Validate input against schema
       const validatedInput = chunkerInputSchema.parse(context);
@@ -203,11 +203,11 @@ export const chunkerTool = createTool({
         strategy: validatedInput.chunkParams?.strategy || 'recursive'
       });
       // Get runtime context values with defaults
-      const contextChunkSize = (runtimeContext?.get('chunk-size') as number) || validatedInput.chunkParams?.size || 512;
-      const contextOverlap = (runtimeContext?.get('chunk-overlap') as number) || validatedInput.chunkParams?.overlap || 50;
-      const contextStrategy = (runtimeContext?.get('chunk-strategy') as 'recursive' | 'sentence' | 'paragraph' | 'fixed' | 'semantic') || validatedInput.chunkParams?.strategy || 'recursive';
-      const preserveStructure = (runtimeContext?.get('preserve-structure') as boolean) ?? validatedInput.chunkParams?.preserveStructure ?? true;
-      const includeMetadata = (runtimeContext?.get('include-metadata') as boolean) ?? true;
+      const contextChunkSize = (runtimeContext?.get('chunk-size') as number | undefined) ?? validatedInput.chunkParams?.size ?? 512;
+      const contextOverlap = (runtimeContext?.get('chunk-overlap') as number | undefined) ?? validatedInput.chunkParams?.overlap ?? 50;
+      const contextStrategy = (runtimeContext?.get('chunk-strategy') as 'recursive' | 'sentence' | 'paragraph' | 'fixed' | 'semantic' | undefined) ?? validatedInput.chunkParams?.strategy ?? 'recursive';
+      const preserveStructure = (runtimeContext?.get('preserve-structure') as boolean | undefined) ?? validatedInput.chunkParams?.preserveStructure ?? true;
+      const includeMetadata = (runtimeContext?.get('include-metadata') as boolean | undefined) ?? true;
       const vectorProfileName = validatedInput.vectorOptions?.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
 
       // Get the vector store and embedder from the factory
@@ -216,7 +216,7 @@ export const chunkerTool = createTool({
       // Create MDocument based on document type
       let doc: MDocument;
       const { content, type, title, source, metadata } = validatedInput.document;
-      
+
       switch (type) {
         case 'html':
           doc = MDocument.fromHTML(content, { title, source, ...metadata });

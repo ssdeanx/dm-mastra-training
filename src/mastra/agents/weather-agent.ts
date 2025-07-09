@@ -6,7 +6,7 @@ import { upstashMemory } from '../upstashMemory';
 import { vectorQueryTool } from "../tools/vectorQueryTool";
 import { graphRAGTool } from "../tools/graphRAG";
 import { PinoLogger } from "@mastra/loggers";
-import { createBraveSearchTool, createTavilySearchTool } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, stockPriceTool, historicalStockPriceTool, stockNewsTool, earningsCalendarTool, sportsOddsTool, historicalOddsTool, listSportsTool, listBookmakersTool, cryptoPriceTool, historicalCryptoPriceTool, cryptoMarketDataTool, listCryptoCoinsTool } from "../tools";
 
 const logger = new PinoLogger({ name: 'weatherAgent', level: 'info' });
 logger.info('Initializing weatherAgent');
@@ -87,6 +87,17 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'mem0RememberTool', 'mem0MemorizeTool': For remembering user-specific weather preferences or past queries.
 - 'rerankTool': To prioritize weather data sources or forecast models.
 - 'stockPriceTool': For providing context on how weather might impact financial markets.
+- 'historicalStockPriceTool': For historical stock data, useful for analyzing long-term weather impacts on markets.
+- 'stockNewsTool': For news related to stocks, which might be influenced by weather events.
+- 'earningsCalendarTool': For earnings reports, which can be affected by weather.
+- 'sportsOddsTool': For sports odds, useful for understanding how weather might affect sporting events.
+- 'historicalOddsTool': For historical sports odds, to analyze past weather impacts on sports outcomes.
+- 'listSportsTool': For listing sports, to identify events that might be weather-dependent.
+- 'listBookmakersTool': For listing bookmakers, to understand sources of sports data.
+- 'cryptoPriceTool': For cryptocurrency prices, to see if extreme weather events correlate with market shifts.
+- 'historicalCryptoPriceTool': For historical crypto prices, for deeper analysis of weather correlations.
+- 'cryptoMarketDataTool': For comprehensive crypto market data, for broader economic context.
+- 'listCryptoCoinsTool': For listing crypto coins, to understand the scope of crypto assets.
 
 GUIDELINES FOR EXECUTION:
 - **Location First**: Always request a location if not provided, unless a default is set.
@@ -109,6 +120,18 @@ GUIDELINES FOR EXECUTION:
     graphRAGTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
+    stockPriceTool,
+    historicalStockPriceTool,
+    stockNewsTool,
+    earningsCalendarTool,
+    sportsOddsTool,
+    historicalOddsTool,
+    listSportsTool,
+    listBookmakersTool,
+    cryptoPriceTool,
+    historicalCryptoPriceTool,
+    cryptoMarketDataTool,
+    listCryptoCoinsTool
   },
   memory: upstashMemory
 });

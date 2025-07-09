@@ -102,11 +102,11 @@ export const enhancedVectorQueryTool = createTool({
     try {
       // Validate input
       const validatedInput = vectorQueryInputSchema.parse(input);        // Get runtime context values for personalization
-      const userId = runtimeContext?.get('user-id') || 'anonymous';
-      const sessionId = runtimeContext?.get('session-id') || 'default';
-      const searchPreference = runtimeContext?.get('search-preference') || 'semantic';
-      const qualityThreshold = Number(runtimeContext?.get('quality-threshold')) || validatedInput.minScore;
-      const debug = runtimeContext?.get('debug') || false;
+      const userId = (runtimeContext?.get('user-id') as string | undefined) ?? 'anonymous';
+      const sessionId = (runtimeContext?.get('session-id') as string | undefined) ?? 'default';
+      const searchPreference = (runtimeContext?.get('search-preference') as 'semantic' | 'hybrid' | 'metadata' | undefined) ?? 'semantic';
+      const qualityThreshold = (runtimeContext?.get('quality-threshold') as number | undefined) ?? validatedInput.minScore;
+      const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
       if (debug) {
         logger.info('Vector query input validated', {
           query: validatedInput.query,
@@ -290,9 +290,9 @@ export const hybridVectorSearchTool = createTool({
       });
       const validatedInput = extendedSchema.parse(context);
       // Get runtime context values
-      const userId = runtimeContext?.get('user-id') || 'anonymous';
-      const sessionId = runtimeContext?.get('session-id') || 'default';
-      const searchPreference = runtimeContext?.get('search-preference') || 'hybrid';
+      const userId = (runtimeContext?.get('user-id') as string | undefined) ?? 'anonymous';
+      const sessionId = (runtimeContext?.get('session-id') as string | undefined) ?? 'default';
+      const searchPreference = (runtimeContext?.get('search-preference') as 'semantic' | 'hybrid' | 'metadata' | undefined) ?? 'hybrid';
       logger.info('Hybrid vector search initiated', { 
         query: validatedInput.query,
         semanticWeight: validatedInput.semanticWeight,

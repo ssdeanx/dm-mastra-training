@@ -48,7 +48,18 @@ import {
   decisionFrameworkTool,
   metacognitiveMonitoringTool,
   visualReasoningTool,
-  scientificMethodTool
+  scientificMethodTool,
+  historicalStockPriceTool,
+  stockNewsTool,
+  earningsCalendarTool,
+  sportsOddsTool,
+  historicalOddsTool,
+  listSportsTool,
+  listBookmakersTool,
+  cryptoPriceTool,
+  historicalCryptoPriceTool,
+  cryptoMarketDataTool,
+  listCryptoCoinsTool
 } from "../tools";
 
 const logger = new PinoLogger({ name: 'ChanceAgent', level: 'info' });
@@ -77,6 +88,12 @@ export type ChanceAgentRuntimeContext = {
   "bias-awareness-enabled": boolean;
   /** Domain context for decision-making */
   "domain-context": string;
+  /** Financial market focus for decision-making */
+  "financial-market-focus"?: "stocks" | "crypto" | "commodities" | "forex" | "all";
+  /** Sports league preference for decision-making */
+  "sports-league-preference"?: string;
+  /** Cryptocurrency asset focus for decision-making */
+  "crypto-asset-focus"?: string;
 };
 
 /**
@@ -98,6 +115,9 @@ const chanceAgentInputSchema = z.object({
   confidenceThreshold: z.number().min(0).max(1).optional().describe('Confidence threshold for decision'),
   biasAwarenessEnabled: z.boolean().optional().describe('Bias awareness enabled'),
   domainContext: z.string().optional().describe('Domain context for decision-making'),
+  financialMarketFocus: z.enum(["stocks", "crypto", "commodities", "forex", "all"]).optional().describe('Financial market focus'),
+  sportsLeaguePreference: z.string().optional().describe('Sports league preference'),
+  cryptoAssetFocus: z.string().optional().describe('Cryptocurrency asset focus')
 }).strict();
 
 /**
@@ -132,6 +152,9 @@ const chanceAgentConfigSchema = z.object({
     'confidence-threshold': z.number().min(0).max(1).optional().describe('Confidence threshold for decision'),
     'bias-awareness-enabled': z.boolean().optional().describe('Flag to enable or disable bias awareness'),
     'domain-context': z.string().optional().describe('Domain context for decision-making'),
+    'financial-market-focus': z.enum(["stocks", "crypto", "commodities", "forex", "all"]).optional().describe('Financial market focus'),
+    'sports-league-preference': z.string().optional().describe('Sports league preference'),
+    'crypto-asset-focus': z.string().optional().describe('Cryptocurrency asset focus')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   tools: z.record(z.any()).describe('Available tools for the agent'),
@@ -155,6 +178,9 @@ export const chanceAgent = new Agent({
     const confidenceThreshold = runtimeContext?.get("confidence-threshold") || 0.7;
     const biasAwarenessEnabled = runtimeContext?.get("bias-awareness-enabled") || true;
     const domainContext = runtimeContext?.get("domain-context") || "general";
+    const financialMarketFocus = runtimeContext?.get("financial-market-focus") || "all";
+    const sportsLeaguePreference = runtimeContext?.get("sports-league-preference") || "all";
+    const cryptoAssetFocus = runtimeContext?.get("crypto-asset-focus") || "all";
 
     return `You are the Chance Agent, an expert in navigating uncertainty and making optimal decisions by balancing exploration and exploitation. Your core function is to analyze available options, assess probabilities, evaluate risks, and select the most advantageous path forward, continuously learning from outcomes.
 
@@ -168,6 +194,9 @@ CURRENT OPERATIONAL CONTEXT:
 - Confidence Threshold: ${confidenceThreshold} (minimum confidence required for a definitive decision)
 - Bias Awareness: ${biasAwarenessEnabled ? 'Enabled' : 'Disabled'}
 - Domain Specificity: ${domainContext}
+- Financial Market Focus: ${financialMarketFocus}
+- Sports League Preference: ${sportsLeaguePreference}
+- Crypto Asset Focus: ${cryptoAssetFocus}
 
 YOUR CORE RESPONSIBILITIES:
 1.  **Option Evaluation**: Systematically analyze all provided options, gathering relevant data and assessing potential outcomes.
@@ -190,7 +219,18 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'rerankTool': For prioritizing and re-ranking information or options based on relevance or potential impact.
 - 'listDataDirTool', 'readDataFileTool', 'writeDataFileTool', 'deleteDataFileTool': For managing internal data files that might contain historical decision logs or relevant datasets.
 - 'mem0RememberTool', 'mem0MemorizeTool': For storing and retrieving long-term memory about past decisions, their outcomes, and learned lessons.
-- 'stockPriceTool', 'weatherTool': For real-time external data that might influence time-sensitive decisions.
+- 'stockPriceTool': For real-time stock price data, useful for financial market analysis and decision-making.
+- 'historicalStockPriceTool': For historical stock price data, enabling trend analysis and backtesting of financial strategies.
+- 'stockNewsTool': For news articles related to specific stocks, providing qualitative context for market-related decisions.
+- 'earningsCalendarTool': For upcoming earnings reports, crucial for event-driven financial decisions.
+- 'sportsOddsTool': For real-time sports betting odds, useful for sports analytics and probabilistic decision-making in sports.
+- 'historicalOddsTool': For historical sports odds, enabling analysis of past performance and model validation in sports.
+- 'listSportsTool': For listing available sports, useful for understanding the scope of sports data for decision-making.
+- 'listBookmakersTool': For listing available bookmakers, providing context for odds data.
+- 'cryptoPriceTool': For real-time cryptocurrency prices, essential for crypto market analysis and trading decisions.
+- 'historicalCryptoPriceTool': For historical cryptocurrency prices, enabling trend analysis and pattern recognition in crypto markets for investment decisions.
+- 'cryptoMarketDataTool': For comprehensive cryptocurrency market data, including market cap and volume, for strategic crypto decisions.
+- 'listCryptoCoinsTool': For listing all supported cryptocurrencies, useful for broad market overviews and identifying new opportunities.
 - 'chunkerTool': For breaking down large texts or data into manageable chunks for detailed analysis.
 
 GUIDELINES FOR EXECUTION:
@@ -259,7 +299,18 @@ ${UPSTASH_PROMPT}
     hackerNewsGetItem,
     hackerNewsGetTopStories,
     hackerNewsGetNewStories,
-    hackerNewsGetBestStories
+    hackerNewsGetBestStories,
+    historicalStockPriceTool,
+    stockNewsTool,
+    earningsCalendarTool,
+    sportsOddsTool,
+    historicalOddsTool,
+    listSportsTool,
+    listBookmakersTool,
+    cryptoPriceTool,
+    historicalCryptoPriceTool,
+    cryptoMarketDataTool,
+    listCryptoCoinsTool
   },
   memory: upstashMemory
 });

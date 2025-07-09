@@ -4,7 +4,9 @@ import { graphRAGQueryTool, graphRAGTool, graphRAGUpsertTool } from '../tools/gr
 import { vectorQueryTool, hybridVectorSearchTool } from "../tools/vectorQueryTool";
 import { mem0RememberTool, mem0MemorizeTool } from "../tools/mem0-tool";
 import { weatherTool } from "../tools/weather-tool";
-import { stockPriceTool } from "../tools/stock-tools";
+import { stockPriceTool, historicalStockPriceTool, stockNewsTool, earningsCalendarTool } from "../tools/stock-tools";
+import { sportsOddsTool, historicalOddsTool, listSportsTool, listBookmakersTool } from "../tools/sports-odds-tool";
+import { cryptoPriceTool, historicalCryptoPriceTool, cryptoMarketDataTool, listCryptoCoinsTool } from "../tools/crypto-tool";
 import { chunkerTool } from "../tools/chunker-tool";
 import {
   ToneConsistencyMetric,
@@ -184,7 +186,18 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'mem0RememberTool': For storing information in memory.
 - 'mem0MemorizeTool': For memorizing information.
 - 'rerankTool': For re-ranking search results.
-- 'stockPriceTool': For fetching stock prices.
+- 'stockPriceTool': For fetching current stock prices.
+- 'historicalStockPriceTool': For fetching historical stock price data.
+- 'stockNewsTool': For fetching news articles related to specific stocks.
+- 'earningsCalendarTool': For fetching upcoming earnings calendar events.
+- 'sportsOddsTool': For fetching sports odds for a given sport.
+- 'historicalOddsTool': For fetching historical sports odds for a specific event.
+- 'listSportsTool': For listing all available sports.
+- 'listBookmakersTool': For listing all available bookmakers.
+- 'cryptoPriceTool': For fetching current cryptocurrency prices.
+- 'historicalCryptoPriceTool': For fetching historical cryptocurrency prices.
+- 'cryptoMarketDataTool': For fetching comprehensive cryptocurrency market data.
+- 'listCryptoCoinsTool': For listing all supported cryptocurrency coins.
 - 'weatherTool': For fetching weather information.
 - 'vectorQueryTool': For performing semantic searches and retrieving relevant information from vector databases.
 - 'hybridVectorSearchTool': For performing hybrid searches combining keyword and vector search.
@@ -239,6 +252,17 @@ ${UPSTASH_PROMPT}
     hybridVectorSearchTool,
     weatherTool,
     stockPriceTool,
+    historicalStockPriceTool,
+    stockNewsTool,
+    earningsCalendarTool,
+    sportsOddsTool,
+    historicalOddsTool,
+    listSportsTool,
+    listBookmakersTool,
+    cryptoPriceTool,
+    historicalCryptoPriceTool,
+    cryptoMarketDataTool,
+    listCryptoCoinsTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
     codeSearchTool,

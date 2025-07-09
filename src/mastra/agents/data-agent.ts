@@ -20,6 +20,18 @@ import {
   hackerNewsGetSearchTopStories,
   arxivSearch,
   redditGetSubredditPosts,
+  stockPriceTool,
+  historicalStockPriceTool,
+  stockNewsTool,
+  earningsCalendarTool,
+  sportsOddsTool,
+  historicalOddsTool,
+  listSportsTool,
+  listBookmakersTool,
+  cryptoPriceTool,
+  historicalCryptoPriceTool,
+  cryptoMarketDataTool,
+  listCryptoCoinsTool
 } from "../tools";
 import { createGemini25Provider } from '../config/googleProvider';
 
@@ -124,6 +136,18 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'diffbotEnhanceEntityTool': For enriching information about entities (persons, organizations) using Diffbot Knowledge Graph.
 - 'diffbotSearchKnowledgeGraphTool': For searching the Diffbot Knowledge Graph.
 - 'diffbotEnhanceKnowledgeGraphTool': For enhancing entities within the Diffbot Knowledge Graph.
+- 'stockPriceTool': For fetching real-time stock prices, which can then be stored or managed.
+- 'historicalStockPriceTool': For fetching historical stock data, useful for populating datasets.
+- 'stockNewsTool': For retrieving stock-related news, which can be archived or analyzed.
+- 'earningsCalendarTool': For fetching earnings report schedules, which can be used to update financial datasets.
+- 'sportsOddsTool': For fetching real-time sports odds, useful for sports data collection.
+- 'historicalOddsTool': For fetching historical sports odds, for building sports analytics datasets.
+- 'listSportsTool': For listing available sports, to inform data collection strategies.
+- 'listBookmakersTool': For listing available bookmakers, to inform data collection strategies.
+- 'cryptoPriceTool': For fetching real-time cryptocurrency prices, for crypto data storage.
+- 'historicalCryptoPriceTool': For fetching historical cryptocurrency prices, for building crypto datasets.
+- 'cryptoMarketDataTool': For fetching comprehensive crypto market data, for detailed crypto analysis.
+- 'listCryptoCoinsTool': For listing all supported cryptocurrencies, to inform crypto data collection.
 
 GUIDELINES FOR EXECUTION:
 - **Strict Path Validation**: Never attempt to access files outside the {dataDir} directory.
@@ -156,7 +180,19 @@ GUIDELINES FOR EXECUTION:
     hackerNewsGetBestStories,
     hackerNewsGetSearchTopStories,
     arxivSearch,
-    redditGetSubredditPosts
+    redditGetSubredditPosts,
+    stockPriceTool,
+    historicalStockPriceTool,
+    stockNewsTool,
+    earningsCalendarTool,
+    sportsOddsTool,
+    historicalOddsTool,
+    listSportsTool,
+    listBookmakersTool,
+    cryptoPriceTool,
+    historicalCryptoPriceTool,
+    cryptoMarketDataTool,
+    listCryptoCoinsTool
     }
 });
 

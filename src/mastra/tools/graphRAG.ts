@@ -134,9 +134,9 @@ export const graphRAGUpsertTool = createTool({
       const validatedInput = upsertInputSchema.parse(input);
 
       // Get runtime context values
-      const userId = runtimeContext?.get('userId') || 'anonymous';
-      const sessionId = runtimeContext?.get('sessionId') || 'default';
-      const debug = runtimeContext?.get('debug') || false;
+      const userId = (runtimeContext?.get('userId') as string | undefined) ?? 'anonymous';
+      const sessionId = (runtimeContext?.get('sessionId') as string | undefined) ?? 'default';
+      const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
       const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
 
       // Get the vector store and embedder from the factory
@@ -317,12 +317,12 @@ export const graphRAGQueryTool = createTool({
       const validatedInput = queryInputSchema.parse(input);
 
       // Get runtime context values
-      const userId = runtimeContext?.get('userId') || 'anonymous';
-      const sessionId = runtimeContext?.get('sessionId') || 'default';
-      const debug = runtimeContext?.get('debug') || false;
-      const indexName = runtimeContext?.get('indexName') || validatedInput.indexName;
-      const topK = runtimeContext?.get('topK') || validatedInput.topK;
-      const threshold = runtimeContext?.get('threshold') || validatedInput.threshold;
+      const userId = (runtimeContext?.get('userId') as string | undefined) ?? 'anonymous';
+      const sessionId = (runtimeContext?.get('sessionId') as string | undefined) ?? 'default';
+      const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+      const indexName = (runtimeContext?.get('indexName') as string | undefined) ?? validatedInput.indexName;
+      const topK = (runtimeContext?.get('topK') as number | undefined) ?? validatedInput.topK;
+      const threshold = (runtimeContext?.get('threshold') as number | undefined) ?? validatedInput.threshold;
       const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
 
       // Get the vector store and embedder from the factory

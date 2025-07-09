@@ -15,6 +15,18 @@ import {
   diffbotExtractArticleFromUrlTool,
   diffbotSearchKnowledgeGraphTool,
   //rerankTool,
+  stockPriceTool,
+  historicalStockPriceTool,
+  stockNewsTool,
+  earningsCalendarTool,
+  sportsOddsTool,
+  historicalOddsTool,
+  listSportsTool,
+  listBookmakersTool,
+  cryptoPriceTool,
+  historicalCryptoPriceTool,
+  cryptoMarketDataTool,
+  listCryptoCoinsTool
 } from '../tools';
 import { UPSTASH_PROMPT } from '@mastra/upstash';
 import { PinoLogger } from "@mastra/loggers";
@@ -138,7 +150,18 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'mem0RememberTool': For storing information in memory.
 - 'mem0MemorizeTool': For memorizing information.
 - 'rerankTool': For re-ranking search results.
-- 'stockPriceTool': For fetching stock prices.
+- 'stockPriceTool': For fetching real-time stock prices, enabling financial analysis within workflows.
+- 'historicalStockPriceTool': For historical stock price data, useful for trend analysis and backtesting in financial workflows.
+- 'stockNewsTool': For news articles related to specific stocks, providing qualitative context for financial decisions.
+- 'earningsCalendarTool': For upcoming earnings reports, crucial for event-driven financial workflows.
+- 'sportsOddsTool': For real-time sports betting odds, useful for sports analytics and predictive modeling within workflows.
+- 'historicalOddsTool': For historical sports odds, enabling analysis of past performance and model validation in sports workflows.
+- 'listSportsTool': For listing available sports, useful for understanding the scope of sports data.
+- 'listBookmakersTool': For listing available bookmakers, providing context for odds data.
+- 'cryptoPriceTool': For real-time cryptocurrency prices, essential for crypto market analysis within workflows.
+- 'historicalCryptoPriceTool': For historical cryptocurrency prices, enabling trend analysis and pattern recognition in crypto markets.
+- 'cryptoMarketDataTool': For comprehensive cryptocurrency market data, including market cap and volume.
+- 'listCryptoCoinsTool': For listing all supported cryptocurrencies, useful for broad market overviews.
 - 'weatherTool': For fetching weather information.
 
 GUIDELINES FOR EXECUTION:
@@ -172,6 +195,18 @@ ${UPSTASH_PROMPT}
     chunkerTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
+    stockPriceTool,
+    historicalStockPriceTool,
+    stockNewsTool,
+    earningsCalendarTool,
+    sportsOddsTool,
+    historicalOddsTool,
+    listSportsTool,
+    listBookmakersTool,
+    cryptoPriceTool,
+    historicalCryptoPriceTool,
+    cryptoMarketDataTool,
+    listCryptoCoinsTool
   },
   memory: upstashMemory
 });

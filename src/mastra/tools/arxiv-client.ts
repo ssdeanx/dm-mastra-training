@@ -139,6 +139,16 @@ export const ArxivSearchParamsSchema = z
 export type ArxivSearchParams = z.infer<typeof ArxivSearchParamsSchema>;
 
 /**
+ * Runtime context type for Arxiv tools configuration
+ */
+export type ArxivRuntimeContext = {
+  'user-id'?: string;
+  'session-id'?: string;
+  'max-results'?: number;
+  'debug'?: boolean;
+};
+
+/**
  * Lightweight wrapper around ArXiv for academic / scholarly research articles.
  *
  * @see https://arxiv.org
@@ -274,11 +284,20 @@ export function createArxivClient(options?: {
       description: "Searches for research articles published on arXiv.",
       inputSchema: ArxivSearchParamsSchema,
       outputSchema: ArxivResponseSchema,
-      execute: async ({ context }) => {
-        logger.info('Searching arXiv', { query: context.searchQuery || context.ids });
+      execute: async ({ context, runtimeContext }) => {
+        // Ensure maxResults is a number, defaulting to 5 if not provided or invalid
+        const effectiveMaxResults = (runtimeContext?.get('max-results') as number | undefined) ?? (typeof context.maxResults === 'number' ? context.maxResults : 5);
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+
+        if (debug) {
+          logger.info('Searching arXiv', { query: context.searchQuery || context.ids, maxResults: effectiveMaxResults });
+        }
+        
         try {
-          const response = await arxivClient.search(context);
-          logger.info('arXiv search completed successfully', { query: context.searchQuery || context.ids });
+          const response = await arxivClient.search({ ...context, maxResults: effectiveMaxResults });
+          if (debug) {
+            logger.info('arXiv search completed successfully', { query: context.searchQuery || context.ids, totalResults: response.totalResults });
+          }
           return response;
         } catch (error) {
           logger.error('arXiv search failed', { query: context.searchQuery || context.ids, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -290,3 +309,13 @@ export function createArxivClient(options?: {
 }
 
 export const { arxivSearch } = createArxivClient();
+
+/**
+ * Runtime context instance for Arxiv tools with defaults
+ */
+import { RuntimeContext } from '@mastra/core/di';
+export const arxivRuntimeContext = new RuntimeContext<ArxivRuntimeContext>();
+arxivRuntimeContext.set('user-id', 'anonymous');
+arxivRuntimeContext.set('session-id', 'default');
+arxivRuntimeContext.set('max-results', 5);
+arxivRuntimeContext.set('debug', false);

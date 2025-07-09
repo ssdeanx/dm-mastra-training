@@ -7,7 +7,7 @@ import { createGemini25Provider } from '../config/googleProvider';
 import { z } from 'zod';
 import { UPSTASH_PROMPT } from "@mastra/upstash";
 import { PinoLogger } from "@mastra/loggers";
-import { createBraveSearchTool, createTavilySearchTool } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, stockPriceTool, historicalStockPriceTool, stockNewsTool, earningsCalendarTool, sportsOddsTool, historicalOddsTool, listSportsTool, listBookmakersTool, cryptoPriceTool, historicalCryptoPriceTool, cryptoMarketDataTool, listCryptoCoinsTool } from "../tools";
 
 /**
  * Runtime context type for the Supervisor Agent
@@ -140,7 +140,19 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'diffbotAnalyzeUrlTool', 'diffbotExtractArticleFromUrlTool', 'diffbotEnhanceEntityTool', 'diffbotSearchKnowledgeGraphTool', 'diffbotEnhanceKnowledgeGraphTool': For analyzing external data sources that agents might interact with.
 - 'mem0RememberTool', 'mem0MemorizeTool': For managing the supervisor's own memory of agent performance and past decisions.
 - 'rerankTool': To prioritize agent outputs or task queues.
-- 'stockPriceTool', 'weatherTool': For monitoring external conditions that might impact agent operations (e.g., market data for financial agents, weather for logistics agents).
+- 'stockPriceTool': For monitoring real-time stock market conditions that might impact financial agents.
+- 'historicalStockPriceTool': For analyzing historical market trends to inform long-term agent strategies.
+- 'stockNewsTool': For monitoring news that could affect agent performance or task relevance.
+- 'earningsCalendarTool': For tracking upcoming financial events relevant to agents.
+- 'sportsOddsTool': For monitoring real-time sports data relevant to sports analytics agents.
+- 'historicalOddsTool': For analyzing past sports data to evaluate agent predictions.
+- 'listSportsTool': For understanding the scope of sports data available for agents.
+- 'listBookmakersTool': For understanding the sources of sports odds data.
+- 'cryptoPriceTool': For monitoring real-time cryptocurrency market conditions.
+- 'historicalCryptoPriceTool': For analyzing historical crypto trends.
+- 'cryptoMarketDataTool': For comprehensive crypto market overview.
+- 'listCryptoCoinsTool': For understanding the range of crypto assets agents can work with.
+- 'weatherTool': For monitoring weather conditions that might impact logistics or event-based agents.
 
 GUIDELINES FOR EXECUTION:
 - **Proactive Monitoring**: Continuously observe agent activities and system health.
@@ -172,6 +184,18 @@ ${UPSTASH_PROMPT}
     graphRAGTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
+    stockPriceTool,
+    historicalStockPriceTool,
+    stockNewsTool,
+    earningsCalendarTool,
+    sportsOddsTool,
+    historicalOddsTool,
+    listSportsTool,
+    listBookmakersTool,
+    cryptoPriceTool,
+    historicalCryptoPriceTool,
+    cryptoMarketDataTool,
+    listCryptoCoinsTool
   },
   memory: upstashMemory
 });

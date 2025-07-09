@@ -254,11 +254,11 @@ export const stockPriceTool = createTool({
     const requestId = generateId();
     
     // Get runtime context values
-    const userId = runtimeContext?.get('user-id') || 'anonymous';
-    const sessionId = runtimeContext?.get('session-id') || 'default';
-    const currencyPreference = (runtimeContext?.get('currency-preference') as string) || 'USD';
-    const dataSource = (runtimeContext?.get('data-source') as string) || 'mastra-stock-data';
-    const debug = runtimeContext?.get('debug') || false;
+    const userId = (runtimeContext?.get('user-id') as string | undefined) ?? 'anonymous';
+    const sessionId = (runtimeContext?.get('session-id') as string | undefined) ?? 'default';
+    const currencyPreference = (runtimeContext?.get('currency-preference') as 'USD' | 'EUR' | 'GBP' | 'JPY' | undefined) ?? 'USD';
+    const dataSource = (runtimeContext?.get('data-source') as string | undefined) ?? 'mastra-stock-data';
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
     
     if (debug) {
       logger.info(`[${requestId}] Stock price request started`, {
@@ -316,7 +316,7 @@ export const historicalStockPriceTool = createTool({
   }): Promise<z.infer<typeof historicalStockPriceOutputSchema>> => {
     const requestId = generateId();
     const apiKey = getAlphaVantageApiKey();
-    const debug = runtimeContext?.get('debug') || false;
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
     if (debug) {
       logger.info(`[${requestId}] Historical stock price request started`, {
@@ -445,7 +445,7 @@ export const stockNewsTool = createTool({
   }): Promise<z.infer<typeof stockNewsOutputSchema>> => {
     const requestId = generateId();
     const apiKey = getAlphaVantageApiKey();
-    const debug = runtimeContext?.get('debug') || false;
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
     if (debug) {
       logger.info(`[${requestId}] Stock news request started`, {
@@ -517,7 +517,7 @@ export const earningsCalendarTool = createTool({
   }): Promise<z.infer<typeof earningsCalendarOutputSchema>> => {
     const requestId = generateId();
     const apiKey = getAlphaVantageApiKey();
-    const debug = runtimeContext?.get('debug') || false;
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
     if (debug) {
       logger.info(`[${requestId}] Earnings calendar request started`, {
@@ -592,7 +592,7 @@ export const companyOverviewTool = createTool({
   }): Promise<z.infer<typeof companyOverviewOutputSchema>> => {
     const requestId = generateId();
     const apiKey = getAlphaVantageApiKey();
-    const debug = runtimeContext?.get('debug') || false;
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
     if (debug) {
       logger.info(`[${requestId}] Company overview request started`, {

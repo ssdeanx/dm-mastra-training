@@ -65,7 +65,7 @@ export const sportsOddsTool = createTool({
     runtimeContext?: RuntimeContext<SportsOddsRuntimeContext>;
   }): Promise<z.infer<typeof outputSchema>> => {
     const apiKey = process.env.THE_ODDS_API_KEY;
-    const debug = runtimeContext?.get('debug') || false;
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
     if (!apiKey) {
       logger.error('THE_ODDS_API_KEY environment variable not set.');
@@ -118,7 +118,7 @@ export const historicalOddsTool = createTool({
     runtimeContext?: RuntimeContext<SportsOddsRuntimeContext>;
   }): Promise<z.infer<typeof historicalOddsOutputSchema>> => {
     const apiKey = process.env.THE_ODDS_API_KEY;
-    const debug = runtimeContext?.get('debug') || false;
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
 
     if (!apiKey) {
       logger.error('THE_ODDS_API_KEY environment variable not set.');
@@ -177,7 +177,7 @@ export const listSportsTool = createTool({
   outputSchema: listSportsOutputSchema,
   execute: async ({ runtimeContext }) => {
     const apiKey = process.env.THE_ODDS_API_KEY;
-    const debug = (runtimeContext as RuntimeContext<SportsOddsRuntimeContext>)?.get('debug') || false;
+    const debug = (runtimeContext as RuntimeContext<SportsOddsRuntimeContext>)?.get('debug') ?? false;
 
     if (!apiKey) {
       logger.error('THE_ODDS_API_KEY environment variable not set.');
@@ -226,7 +226,7 @@ export const listBookmakersTool = createTool({
   outputSchema: listBookmakersOutputSchema,
   execute: async ({ runtimeContext }) => {
     const apiKey = process.env.THE_ODDS_API_KEY;
-    const debug = (runtimeContext as RuntimeContext<SportsOddsRuntimeContext>)?.get('debug') || false;
+    const debug = (runtimeContext as RuntimeContext<SportsOddsRuntimeContext>)?.get('debug') ?? false;
 
     if (!apiKey) {
       logger.error('THE_ODDS_API_KEY environment variable not set.');

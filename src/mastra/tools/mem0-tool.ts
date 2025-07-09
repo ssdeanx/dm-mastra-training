@@ -55,10 +55,10 @@ export const mem0RememberTool = createTool({
     runtimeContext?: RuntimeContext<Mem0RuntimeContext>;
   }): Promise<z.infer<typeof rememberOutputSchema>> => {    
     // Get runtime context values
-    const userId = (runtimeContext?.get('user-id') as string) || 'anonymous';
-    const sessionId = runtimeContext?.get('session-id') || 'default';
-    const namespace = runtimeContext?.get('memory-namespace') || 'default';
-    const debug = runtimeContext?.get('debug') || false;
+    const userId = (runtimeContext?.get('user-id') as string | undefined) ?? 'anonymous';
+    const sessionId = (runtimeContext?.get('session-id') as string | undefined) ?? 'default';
+    const namespace = (runtimeContext?.get('memory-namespace') as string | undefined) ?? 'default';
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
     
     if (debug) {
       logger.info('Mem0 remember tool executed', {
@@ -123,11 +123,11 @@ export const mem0MemorizeTool = createTool({
     runtimeContext?: RuntimeContext<Mem0RuntimeContext>;
   }): Promise<z.infer<typeof memorizeOutputSchema>> => {    
     // Get runtime context values
-    const userId = (runtimeContext?.get('user-id') as string) || 'anonymous';
-    const sessionId = runtimeContext?.get('session-id') || 'default';
-    const namespace = runtimeContext?.get('memory-namespace') || 'default';
-    const debug = runtimeContext?.get('debug') || false;
-    const asyncSave = runtimeContext?.get('async-save') ?? true;
+    const userId = (runtimeContext?.get('user-id') as string | undefined) ?? 'anonymous';
+    const sessionId = (runtimeContext?.get('session-id') as string | undefined) ?? 'default';
+    const namespace = (runtimeContext?.get('memory-namespace') as string | undefined) ?? 'default';
+    const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+    const asyncSave = (runtimeContext?.get('async-save') as boolean | undefined) ?? true;
     
     if (debug) {
       logger.info('Mem0 memorize tool executed', {

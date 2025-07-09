@@ -38,7 +38,18 @@ import {
   mem0RememberTool,
   mem0MemorizeTool,
   stockPriceTool,
-  weatherTool
+  weatherTool,
+  historicalStockPriceTool,
+  stockNewsTool,
+  earningsCalendarTool,
+  sportsOddsTool,
+  historicalOddsTool,
+  listSportsTool,
+  listBookmakersTool,
+  cryptoPriceTool,
+  historicalCryptoPriceTool,
+  cryptoMarketDataTool,
+  listCryptoCoinsTool
 } from "../tools";
 
 const logger = new PinoLogger({ name: 'MappingAgent', level: 'info' });
@@ -189,7 +200,19 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'rerankTool': For prioritizing mapping rules or data fields based on their importance or complexity.
 - 'listDataDirTool', 'readDataFileTool', 'writeDataFileTool', 'deleteDataFileTool': For managing internal data files, including source data, target schemas, and mapping configurations.
 - 'mem0RememberTool', 'mem0MemorizeTool': For storing and retrieving long-term memory about common mapping patterns, past transformations, and learned schema relationships.
-- 'stockPriceTool', 'weatherTool': For real-time external data that might need to be integrated or mapped into existing datasets.
+- 'stockPriceTool': For real-time stock price data that might need to be integrated or mapped into existing financial datasets.
+- 'historicalStockPriceTool': For historical stock price data, useful for transforming raw historical data into a standardized format.
+- 'stockNewsTool': For news articles related to specific stocks, which might need to be parsed and mapped into a news schema.
+- 'earningsCalendarTool': For earnings report schedules, which can be mapped into a corporate events calendar.
+- 'sportsOddsTool': For real-time sports odds data, useful for mapping into sports analytics databases.
+- 'historicalOddsTool': For historical sports odds data, enabling the creation of historical sports performance datasets.
+- 'listSportsTool': For listing available sports, to inform the structure of sports-related data mapping.
+- 'listBookmakersTool': For listing available bookmakers, providing context for odds data mapping.
+- 'cryptoPriceTool': For real-time cryptocurrency prices, which can be mapped into a standardized crypto price feed.
+- 'historicalCryptoPriceTool': For historical cryptocurrency prices, useful for transforming into time-series crypto data.
+- 'cryptoMarketDataTool': For comprehensive cryptocurrency market data, which can be mapped into a market overview schema.
+- 'listCryptoCoinsTool': For listing all supported cryptocurrencies, to inform the mapping of crypto-related data.
+- 'weatherTool': For real-time weather data that might need to be integrated or mapped into location-based datasets.
 - 'chunkerTool': For breaking down large data files or schemas into manageable chunks for processing.
 
 GUIDELINES FOR EXECUTION:
@@ -247,7 +270,18 @@ ${UPSTASH_PROMPT}
     hackerNewsGetItem,
     hackerNewsGetTopStories,
     hackerNewsGetNewStories,
-    hackerNewsGetBestStories
+    hackerNewsGetBestStories,
+    historicalStockPriceTool,
+    stockNewsTool,
+    earningsCalendarTool,
+    sportsOddsTool,
+    historicalOddsTool,
+    listSportsTool,
+    listBookmakersTool,
+    cryptoPriceTool,
+    historicalCryptoPriceTool,
+    cryptoMarketDataTool,
+    listCryptoCoinsTool
   },
   memory: upstashMemory
 });
