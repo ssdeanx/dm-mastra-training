@@ -1,9 +1,9 @@
 name: Codacy CLI Analysis
 on:
   push:
-    branches: [ main ]
+    branches: [ develop, main ]
   pull_request:
-    branches: [ main ]
+    branches: [ develop, main ]
 jobs:
   codacy-cli:
     runs-on: ubuntu-latest
@@ -13,6 +13,6 @@ jobs:
       - name: Run Codacy CLI
         uses: codacy/codacy-cli-v2-action@main
         with:
-          token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          project_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           tool: eslint
           upload_report: true
