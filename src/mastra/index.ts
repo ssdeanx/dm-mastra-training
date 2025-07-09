@@ -13,6 +13,7 @@ import { LangfuseExporter } from 'langfuse-vercel';
 import { env } from './config/environment';
 //import { inngest } from './inngest';
 //import { serve as inngestServe } from "@mastra/inngest";
+import { NetlifyDeployer } from "@mastra/deployer-netlify";
 
 export const mastra = new Mastra({
   workflows: { weatherWorkflow, researchAnalysisWorkflow, documentAnalysisWorkflow, researchReportWorkflow, agentPerformanceWorkflow},
@@ -37,6 +38,7 @@ export const mastra = new Mastra({
                 baseUrl: process.env.LANGFUSE_HOST,
         })},
         },
+  deployer: new NetlifyDeployer()
 //  server: {
     // The server configuration is required to allow local docker container can connect to the mastra server
     //host: "0.0.0.0",
