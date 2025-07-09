@@ -17,6 +17,7 @@ import { supervisorAgent } from './supervisor-agent';
 import { researchAgent } from './research-agent';
 import { dataAgent } from './data-agent';
 import { langGraphAgent } from './langgraph-agent';
+import { chanceAgent } from './chance-agent';
 import { synthesisAgent } from '../workflows/vnext-workflow';
 
 // Export all agents for external use
@@ -27,6 +28,7 @@ export { supervisorAgent } from './supervisor-agent';
 export { researchAgent } from './research-agent';
 export { dataAgent } from './data-agent';
 export { langGraphAgent } from './langgraph-agent';
+export { chanceAgent } from './chance-agent';
 export { synthesisAgent } from '../workflows/vnext-workflow';
 
 // Runtime Context Types - Export all agent-specific runtime contexts
@@ -37,6 +39,7 @@ export type { DataAgentRuntimeContext } from './data-agent';
 export type { SupervisorAgentRuntimeContext } from './supervisor-agent';
 export type { AnalyzerAgentRuntimeContext } from './analyzer-agent';
 export type { LangGraphAgentRuntimeContext } from './langgraph-agent';
+export type { ChanceAgentRuntimeContext } from './chance-agent';
 
 /**
  * Agent registry object for easy access and management
@@ -54,6 +57,7 @@ export const agentRegistry = {
   research: researchAgent,
   data: dataAgent,
   langgraph: langGraphAgent,
+  chance: chanceAgent,
 
   // Workflow agents
   synthesize: synthesisAgent,
@@ -65,7 +69,7 @@ export const agentRegistry = {
  */
 
 export const agentCategories = {
-  core: ['master', 'supervisor', 'analyzer', 'langgraph', 'research', 'data'] as const,
+  core: ['master', 'supervisor', 'analyzer', 'langgraph', 'research', 'data', 'chance'] as const,
   development: ['master'] as const,
   data: ['data', 'research', 'weather'] as const,
   management: ['supervisor'] as const,
@@ -144,5 +148,9 @@ export const agentMetadata = {
   langgraph: {
     description: 'LangGraph agent for graph-based reasoning and analysis',
     tags: ['langgraph', 'graph', 'reasoning']
+  },
+  chance: {
+    description: 'Agent for decision-making under uncertainty, balancing exploration and exploitation',
+    tags: ['core', 'decision-making', 'uncertainty', 'stochastic']
   },
 } as const;

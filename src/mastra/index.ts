@@ -60,6 +60,14 @@ export const mastra = new Mastra({
           console.log("Research agent context:", runtimeContext);
         }
         return next();
+      },
+      // Chance Agent middleware
+      (c, next) => {
+        const runtimeContext = c.get("runtimeContext");
+        if (runtimeContext) {
+          console.log("Chance agent context:", runtimeContext);
+        }
+        return next();
       }
     ],
     port: env.PORT,
