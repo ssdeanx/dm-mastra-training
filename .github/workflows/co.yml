@@ -1,0 +1,18 @@
+name: Codacy CLI Analysis
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  codacy-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Run Codacy CLI
+        uses: codacy/codacy-cli-v2-action@main
+        with:
+          token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          tool: eslint
+          upload_report: true
