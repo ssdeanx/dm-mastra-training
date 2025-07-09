@@ -3,7 +3,7 @@ import { UpstashStore, UpstashVector } from '@mastra/upstash';
 import { z } from 'zod';
 import { PinoLogger } from '@mastra/loggers';
 import type { CoreMessage as OriginalCoreMessage } from '@mastra/core';
-import { maskStreamTags } from '@mastra/core/utils';
+import { maskStreamTags } from '@mastra/core';
 import { MemoryProcessor, MemoryProcessorOpts } from '@mastra/core/memory';
 import { UIMessage, EmbeddingModel } from 'ai';
 import { fastembed } from '@mastra/fastembed';
