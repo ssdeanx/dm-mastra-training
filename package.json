@@ -32,6 +32,7 @@
     "@mastra/agui": "^1.0.6",
     "@mastra/auth": "^0.1.0",
     "@mastra/core": "^0.10.11",
+    "@mastra/deployer": "^0.10.11",
     "@mastra/evals": "^0.10.5",
     "@mastra/fastembed": "^0.10.1",
     "@mastra/firecrawl": "^1.2.6",

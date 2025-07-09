@@ -11,9 +11,11 @@ import { baseNetwork } from './networks/base-network';
 import { vNextNetwork } from './workflows/vnext-workflow';
 import { LangfuseExporter } from 'langfuse-vercel';
 import { env } from './config/environment';
+import { inngest } from './inngest';
+import { serve as inngestServe } from "@mastra/inngest";
 
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow, researchAnalysisWorkflow, documentAnalysisWorkflow, researchReportWorkflow, agentPerformanceWorkflow },
+  workflows: { weatherWorkflow, researchAnalysisWorkflow, documentAnalysisWorkflow, researchReportWorkflow, agentPerformanceWorkflow, inngestMultiAgentWorkflow },
   vnext_networks: { 'dean-machines-vnext': vNextNetwork },
   networks: { baseNetwork },
   agents: agentRegistry,
@@ -36,50 +38,26 @@ export const mastra = new Mastra({
         })},
         },
   server: {
-    middleware: [
-      // Weather Agent middleware
-      (c, next) => {
-        const runtimeContext = c.get("runtimeContext");
-        if (runtimeContext) {
-          console.log("Weather agent context:", runtimeContext);
-        }
-        return next();
+    // The server configuration is required to allow local docker container can connect to the mastra server
+    host: "0.0.0.0",
+    apiRoutes: [
+      // This API route is used to register the Mastra workflow (inngest function) on the inngest server
+      {
+        path: "/api/inngest",
+        method: "ALL",
+        createHandler: async ({ mastra }) => inngestServe({ mastra, inngest }),
+        // The inngestServe function integrates Mastra workflows with Inngest by:
+        // 1. Creating Inngest functions for each workflow with unique IDs (workflow.${workflowId})
+        // 2. Setting up event handlers that:
+        //    - Generate unique run IDs for each workflow execution
+        //    - Create an InngestExecutionEngine to manage step execution
+        //    - Handle workflow state persistence and real-time updates
+        // 3. Establishing a publish-subscribe system for real-time monitoring
+        //    through the workflow:${workflowId}:${runId} channel
       },
-      // Master Agent middleware
-      (c, next) => {
-        const runtimeContext = c.get("runtimeContext");
-        if (runtimeContext) {
-          console.log("Master agent context:", runtimeContext);
-        }
-        return next();
-      },
-      // Research Agent middleware
-      (c, next) => {
-        const runtimeContext = c.get("runtimeContext");
-        if (runtimeContext) {
-          console.log("Research agent context:", runtimeContext);
-        }
-        return next();
-      },
-      // Chance Agent middleware
-      (c, next) => {
-        const runtimeContext = c.get("runtimeContext");
-        if (runtimeContext) {
-          console.log("Chance agent context:", runtimeContext);
-        }
-        return next();
-      },
-      // Mapping Agent middleware
-      (c, next) => {
-        const runtimeContext = c.get("runtimeContext");
-        if (runtimeContext) {
-          console.log("Mapping agent context:", runtimeContext);
-        }
-        return next();
-      }
     ],
-    port: env.PORT,
   },
+
 });
 
 
