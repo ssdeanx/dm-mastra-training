@@ -120,9 +120,9 @@ export {
  * @category Vector & RAG
  * @description Tools for vector-based retrieval, chunking and graph RAG workflows.
  */
-export * from './vectorQueryTool';
-export * from './chunker-tool';
-export * from './graphRAG';
+export { vectorQueryTool, enhancedVectorQueryTool, hybridVectorSearchTool, vectorQueryRuntimeContext } from './vectorQueryTool';
+export { chunkerTool, chunkerRuntimeContext } from './chunker-tool';
+export { graphRAGUpsertTool, graphRAGTool, graphRAGQueryTool, graphRAGRuntimeContext } from './graphRAG';
 
 /**
  * @category Weather
@@ -156,9 +156,9 @@ export { stochasticAlgorithmTool } from './stochastic-native-tools';
  * @category Miscellaneous
  * @description Exports for Nango, Mem0, Rerank and other support tools.
  */
-export * from './nango';
-export * from './mem0-tool';
-export * from './rerank-tool';
+export { getNango, validateNangoConnectionOAuthScopes } from './nango';
+export { mem0RememberTool, mem0MemorizeTool, mem0RuntimeContext } from './mem0-tool';
+export { rerankTool, rerankRuntimeContext } from './rerank-tool';
 
 /**
  * @category Runtime Context Types
@@ -289,9 +289,16 @@ const toolsRegistry: Record<string, unknown> = {
   listBookmakersTool: Sports.listBookmakersTool,
   historicalOddsTool: Sports.historicalOddsTool,
   // Vector & RAG
-  ...Vector,
-  ...Chunker,
-  ...GraphRAG,
+  vectorQueryTool: Vector.vectorQueryTool,
+  enhancedVectorQueryTool: Vector.enhancedVectorQueryTool,
+  hybridVectorSearchTool: Vector.hybridVectorSearchTool,
+  vectorQueryRuntimeContext: Vector.vectorQueryRuntimeContext,
+  chunkerTool: Chunker.chunkerTool,
+  chunkerRuntimeContext: Chunker.chunkerRuntimeContext,
+  graphRAGUpsertTool: GraphRAG.graphRAGUpsertTool,
+  graphRAGTool: GraphRAG.graphRAGTool,
+  graphRAGQueryTool: GraphRAG.graphRAGQueryTool,
+  graphRAGRuntimeContext: GraphRAG.graphRAGRuntimeContext,
   // Weather
   weatherTool: Weather.weatherTool,
   weatherAlertsTool: Weather.weatherAlertsTool,
@@ -309,9 +316,13 @@ const toolsRegistry: Record<string, unknown> = {
   visualReasoningTool: ClearThought.visualReasoningTool,
   stochasticAlgorithmTool: Stochastic.stochasticAlgorithmTool,
   // Miscellaneous
-  ...Nango,
-  ...Mem0,
-  ...Rerank
+  getNango: Nango.getNango,
+  validateNangoConnectionOAuthScopes: Nango.validateNangoConnectionOAuthScopes,
+  mem0RememberTool: Mem0.mem0RememberTool,
+  mem0MemorizeTool: Mem0.mem0MemorizeTool,
+  mem0RuntimeContext: Mem0.mem0RuntimeContext,
+  rerankTool: Rerank.rerankTool,
+  rerankRuntimeContext: Rerank.rerankRuntimeContext
 };
 
 export default toolsRegistry;

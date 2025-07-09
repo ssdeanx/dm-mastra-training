@@ -9,6 +9,7 @@ import { UIMessage, EmbeddingModel } from 'ai';
 import { fastembed } from '@mastra/fastembed';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
 import { createGeminiEmbeddingModel } from './config/googleProvider';
+//import { ca } from 'zod/v4/locales';
 
 /**
  * Extends MemoryProcessorOpts to include workflow-specific options.
@@ -311,6 +312,203 @@ export class VectorStoreFactory {
     return this.instances.get(profileName)!;
   }
 }
+
+/**
+ * Bias Mitigation Processor (2025)
+ *
+ * Implements strategies to identify and mitigate biases in messages,
+ * ensuring a more neutral and objective context for agents.
+ *
+ * @mastra Memory Processor implementation for Upstash Memory
+ * @class BiasMitigationProcessor
+ * @version 1.0.0
+ * @author SSD
+ * @date 2025-07-09
+ *
+ * @remarks
+ * Features:
+ * - Detects common cognitive biases (e.g., confirmation, recency, framing)
+ * - Applies mitigation strategies (e.g., re-weighting, rephrasing, adding counter-arguments)
+ * - Enhances objectivity and fairness of agent context
+ *
+ * @example
+ * ```typescript
+ * const memory = new Memory({
+ *   processors: [
+ *     new BiasMitigationProcessor({
+ *       detectionStrategies: ['confirmation', 'recency'],
+ *       mitigationStrategies: ['re-weight', 'add-counter-arguments'],
+ *       biasThreshold: 0.6
+ *     }),
+ *   ]
+ * });
+ * ```
+ */
+export class BiasMitigationProcessor extends MemoryProcessor {
+  private readonly detectionStrategies: Array<'confirmation' | 'recency' | 'framing' | 'anchoring' | 'availability' | 'overconfidence' | 'bandwagon' | 'status-quo' | 'survivorship-bias' | 'outgroup-bias' | 'in-group-bias' | 'negativity-bias' | 'optimism-bias' | 'self-serving-bias' | 'hindsight-bias' | 'fundamental-attribution-error' | 'halo-effect' | 'horns-effect' | 'confirmation-bias'>;
+  private readonly mitigationStrategies: Array<'re-weight' | 'rephrase' | 'add-counter-arguments' | 'remove' | 'flag' | 'ignore' | 'contextualize' | 'reframe' | 'balance' | 'rephrase' | 're-weight' | 'add-counter-arguments' | 'remove'>;
+  biasThreshold: number;
+
+  constructor(options: {
+    detectionStrategies?: Array<'confirmation' | 'recency' | 'framing' | 'anchoring' | 'availability' | 'overconfidence' | 'bandwagon' | 'status-quo' | 'survivorship-bias' | 'outgroup-bias' | 'in-group-bias' | 'negativity-bias' | 'optimism-bias' | 'self-serving-bias' | 'hindsight-bias' | 'fundamental-attribution-error' | 'halo-effect' | 'horns-effect' | 'confirmation-bias'>;
+    mitigationStrategies?: Array<'re-weight' | 'rephrase' | 'add-counter-arguments' | 'remove' | 'flag' | 'ignore' | 'contextualize' | 'reframe' | 'balance' | 'rephrase' | 're-weight' | 'add-counter-arguments' | 'remove'>;
+    biasThreshold?: number;
+  } = {}) {
+    super({ name: 'BiasMitigationProcessor' });
+    this.detectionStrategies = options.detectionStrategies ?? ['confirmation', 'recency', 'framing', 'anchoring', 'availability', 'overconfidence', 'bandwagon', 'status-quo', 'survivorship-bias', 'outgroup-bias', 'in-group-bias', 'negativity-bias', 'optimism-bias', 'self-serving-bias', 'hindsight-bias', 'fundamental-attribution-error', 'halo-effect', 'horns-effect', 'confirmation-bias'];
+    this.mitigationStrategies = options.mitigationStrategies ?? ['re-weight', 'rephrase', 'add-counter-arguments', 'remove', 'flag', 'ignore', 'contextualize', 'reframe', 'balance', 'rephrase', 're-weight', 'add-counter-arguments', 'remove'];
+    this.biasThreshold = options.biasThreshold ?? 0.5;
+
+    logger.info('BiasMitigationProcessor initialized', {
+      detectionStrategies: this.detectionStrategies,
+      mitigationStrategies: this.mitigationStrategies,
+      biasThreshold: this.biasThreshold
+    });
+  }
+
+  process(messages: CoreMessage[], opts: MemoryProcessorOpts = {}): CoreMessage[] {
+    const startTime = Date.now();
+    let processedMessages = [...messages];
+
+    try {
+      for (const strategy of this.detectionStrategies) {
+        switch (strategy) {
+          case 'confirmation':
+            processedMessages = this.detectAndMitigateConfirmationBias(processedMessages);
+            break;
+          case 'recency':
+            processedMessages = this.detectAndMitigateRecencyBias(processedMessages);
+            break;
+          case 'framing':
+            processedMessages = this.detectAndMitigateFramingBias(processedMessages);
+            break;
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      logger.info('BiasMitigationProcessor completed', {
+        originalCount: messages.length,
+        finalCount: processedMessages.length,
+        processingDuration: duration,
+        optsReceived: Object.keys(opts).length > 0
+      });
+      return processedMessages;
+    } catch (error: unknown) {
+      logger.error('BiasMitigationProcessor failed', {
+        error: (error as Error).message,
+        messageCount: messages.length,
+        optsReceived: Object.keys(opts).length > 0
+      });
+      return messages; // Return original messages on error
+    }
+  }
+
+  private detectAndMitigateConfirmationBias(messages: CoreMessage[]): CoreMessage[] {
+    // Simplified: Look for messages that strongly agree with a preceding message
+    // and re-weight them if they lack new information.
+    const mitigatedMessages: CoreMessage[] = [];
+    for (let i = 0; i < messages.length; i++) {
+      const current = messages[i];
+      if (i > 0) {
+        const previous = messages[i - 1];
+        const currentContent = current.content?.toString().toLowerCase() || '';
+        const previousContent = previous.content?.toString().toLowerCase() || '';
+
+        // Very basic check for confirmation bias: if current message strongly affirms previous
+        if (currentContent.includes('yes') || currentContent.includes('confirm') || currentContent.includes('agree')) {
+          const similarity = this._calculateWordOverlap(currentContent, previousContent);
+          if (similarity > this.biasThreshold) {
+            // Apply mitigation: rephrase or re-weight
+            if (this.mitigationStrategies.includes('re-weight')) {
+              logger.debug(`Mitigating confirmation bias for message: ${current.content?.toString().substring(0, 30)}...`);
+              // Add metadata to indicate re-weighting or adjust score if score property existed
+              current.metadata = { ...current.metadata, biasMitigated: true, biasType: 'confirmation', originalScore: (current.metadata?.score as number | undefined) ?? 1.0 };
+              // In a real scenario, you might adjust a score property if messages had one
+            }
+            if (this.mitigationStrategies.includes('rephrase')) {
+              // This would require an LLM call to rephrase, which is out of scope for a synchronous processor
+              logger.warn('Rephrasing for bias mitigation is not supported in synchronous processor.');
+            }
+          }
+        }
+      }
+      mitigatedMessages.push(current);
+    }
+    return mitigatedMessages;
+  }
+
+  private detectAndMitigateRecencyBias(messages: CoreMessage[]): CoreMessage[] {
+    // Simplified: Reduce the implicit weight of very recent messages if they are overly emphasized
+    // compared to older, potentially more important messages.
+    const mitigatedMessages = [...messages];
+    const totalMessages = mitigatedMessages.length;
+    if (totalMessages > 1) {
+      const recentMessage = mitigatedMessages[totalMessages - 1];
+      const olderMessage = mitigatedMessages[0]; // Compare with the oldest for simplicity
+
+      // If the recent message is very short and just a confirmation, and older message is substantial
+      if (recentMessage.content?.toString().length < 50 && olderMessage.content?.toString().length > 200) {
+        if (this.mitigationStrategies.includes('re-weight')) {
+          logger.debug(`Mitigating recency bias for message: ${recentMessage.content?.toString().substring(0, 30)}...`);
+          recentMessage.metadata = { ...recentMessage.metadata, biasMitigated: true, biasType: 'recency', originalScore: (recentMessage.metadata?.score as number | undefined) ?? 1.0 };
+          // In a real scenario, you might adjust a score property if messages had one
+        }
+      }
+    }
+    return mitigatedMessages;
+  }
+
+  private detectAndMitigateFramingBias(messages: CoreMessage[]): CoreMessage[] {
+    const mitigatedMessages = [...messages];
+    for (let i = 0; i < messages.length; i++) {
+      const current = messages[i];
+      const content = current.content?.toString().toLowerCase() || '';
+
+      // Very basic check for framing bias: presence of strong positive/negative words without balance
+      const positiveWords = ['great', 'excellent', 'success', 'advantage', 'benefit'];
+      const negativeWords = ['bad', 'failure', 'disadvantage', 'problem', 'risk'];
+
+      const hasPositive = positiveWords.some(word => content.includes(word));
+      const hasNegative = negativeWords.some(word => content.includes(word));
+
+      if (hasPositive && !hasNegative && this.mitigationStrategies.includes('add-counter-arguments')) {
+        const counterArgument = "Consider alternative perspectives and potential downsides.";
+        mitigatedMessages.splice(i + 1, 0, {
+          role: 'system',
+          content: counterArgument,
+          metadata: {
+            biasMitigated: true,
+            biasType: 'framing',
+            originalMessageId: current.metadata?.id as string | undefined
+          }
+        });
+        i++;
+      } else if (hasNegative && !hasPositive && this.mitigationStrategies.includes('add-counter-arguments')) {
+        const counterArgument = "Consider alternative perspectives and potential upsides.";
+        mitigatedMessages.splice(i + 1, 0, {
+          role: 'system',
+          content: counterArgument,
+          metadata: {
+            biasMitigated: true,
+            biasType: 'framing',
+            originalMessageId: current.metadata?.id as string | undefined
+          }
+        });
+        i++;
+      }
+    }
+    return mitigatedMessages;
+  }
+
+  private _calculateWordOverlap(text1: string, text2: string): number {
+    const words1 = new Set(text1.split(/\s+/).filter(w => w.length > 2));
+    const words2 = new Set(text2.split(/\s+/).filter(w => w.length > 2));
+    const intersection = new Set([...words1].filter(w => words2.has(w)));
+    const union = new Set([...words1, ...words2]);
+    return union.size > 0 ? intersection.size / union.size : 0;
+  }
+}
+
 /**
  * Advanced Attention-Guided Memory Processor (2025)
  *
@@ -369,8 +567,12 @@ export class AttentionGuidedMemoryProcessor extends MemoryProcessor {
     this.maxMessages = options.maxMessages ?? 50;
     this.similarityThreshold = options.similarityThreshold ?? 0.85;
     this.importanceKeywords = options.importanceKeywords ?? [
-      'error', 'critical', 'urgent', 'important', 'warning', 'issue',
-      'problem', 'fix', 'solution', 'bug', 'security', 'performance', 'update', 'correct'
+      'urgent', 'important', 'critical', 'error', 'bug', 'issue', 'problem',
+      'task', 'goal', 'decision', 'risk', 'security', 'performance', 'update',
+      'fix', 'solution', 'insight', 'analysis', 'data', 'workflow', 'status',
+      'progress', 'blocker', 'verify', 'validate', 'report', 'action', 'feedback',
+      'optimize', 'efficiency', 'integrity', 'coordination', 'strategy', 'outcome',
+      'context', 'relevance', 'priority', 'failure', 'success', 'alert', 'warning'
     ];
     this.verboseMessageThreshold = options.verboseMessageThreshold ?? 500;
     this.contextPreservationRatio = options.contextPreservationRatio ?? 0.3;
@@ -428,10 +630,41 @@ export class AttentionGuidedMemoryProcessor extends MemoryProcessor {
   /**
    * Score messages based on importance factors
    */
-  private scoreMessageImportance(messages: CoreMessage[]): Array<{ message: CoreMessage; score: number; index: number }> {
+  private _cosineSimilarity(vec1: number[], vec2: number[]): number {
+    if (vec1.length !== vec2.length) {
+      logger.warn('Vectors of different lengths for cosine similarity. Returning 0.');
+      return 0;
+    }
+
+    let dotProduct = 0;
+    let magnitude1 = 0;
+    let magnitude2 = 0;
+
+    for (let i = 0; i < vec1.length; i++) {
+      dotProduct += vec1[i] * vec2[i];
+      magnitude1 += vec1[i] * vec1[i];
+      magnitude2 += vec2[i] * vec2[i];
+    }
+
+    magnitude1 = Math.sqrt(magnitude1);
+    magnitude2 = Math.sqrt(magnitude2);
+
+    if (magnitude1 === 0 || magnitude2 === 0) {
+      return 0; // Avoid division by zero
+    }
+
+    return dotProduct / (magnitude1 * magnitude2);
+  }
+
+  /**
+   * Score messages based on importance factors and retrieve embeddings from metadata
+   */
+  private scoreMessageImportance(messages: CoreMessage[]): Array<{ message: CoreMessage; score: number; index: number; embedding?: number[] }> {
     return messages.map((message, index) => {
       let score = 0;
       const content = message.content?.toString().toLowerCase() || '';
+      const embedding = message.metadata?.embedding as number[] | undefined; // Retrieve embedding from metadata
+
       // Base score for message type
       if (message.role === 'user') score += 1.0;
       else if (message.role === 'assistant') score += 0.8;
@@ -454,26 +687,38 @@ export class AttentionGuidedMemoryProcessor extends MemoryProcessor {
       if (content.includes('?') || content.includes('how') || content.includes('what') || content.includes('why')) {
         score += 0.3;
       }
-      return { message, score, index };
+      return { message, score, index, embedding }; // Include embedding in the returned object
     });
   }
 
   /**
-   * Remove semantically similar/redundant messages
+   * Remove semantically similar/redundant messages using embeddings if available, otherwise word overlap
    */
   private removeRedundantMessages(
-    scoredMessages: Array<{ message: CoreMessage; score: number; index: number }>
-  ): Array<{ message: CoreMessage; score: number; index: number }> {
-    const filtered: Array<{ message: CoreMessage; score: number; index: number }> = [];
+    scoredMessages: Array<{ message: CoreMessage; score: number; index: number; embedding?: number[] }>
+  ): Array<{ message: CoreMessage; score: number; index: number; embedding?: number[] }> {
+    const filtered: Array<{ message: CoreMessage; score: number; index: number; embedding?: number[] }> = [];
+
     for (const current of scoredMessages) {
       const currentContent = current.message.content?.toString().toLowerCase() || '';
-      // Skip if very similar to an existing message with higher score
+      const currentEmbedding = current.embedding;
+
       const isDuplicate = filtered.some(existing => {
         const existingContent = existing.message.content?.toString().toLowerCase() || '';
-        // Simple similarity check using word overlap
-        const similarity = this.calculateTextSimilarity(currentContent, existingContent);
+        const existingEmbedding = existing.embedding;
+
+        let similarity = 0;
+        if (currentEmbedding && existingEmbedding && currentEmbedding.length > 0 && existingEmbedding.length > 0) {
+          similarity = this._cosineSimilarity(currentEmbedding, existingEmbedding);
+          logger.debug(`Semantic similarity calculated: ${similarity.toFixed(2)}`);
+        } else {
+          // Fallback to word overlap if embeddings are not available or empty
+          similarity = this.calculateTextSimilarity(currentContent, existingContent);
+          logger.debug(`Word overlap similarity calculated: ${similarity.toFixed(2)}`);
+        }
         return similarity > this.similarityThreshold && existing.score >= current.score;
       });
+
       if (!isDuplicate) {
         filtered.push(current);
       }
@@ -975,6 +1220,28 @@ export const upstashMemory = new Memory({
     new TokenLimiter(1000000), // 1M token limit for context
     new ToolCallFilter({
       exclude: [], // Include all tool calls for better context
+    }),
+    new WorkflowAwareMemoryProcessor({
+      workflowStages: ['data_collection', 'analysis', 'reporting'],
+      defaultRetentionStrategy: 'prune_irrelevant',
+      stageRelevanceStrategy: 'semantic',
+      workflowStageDefinitions: {
+        data_collection: 'Collecting data from various sources',
+        analysis: 'Analyzing collected data for insights',
+        reporting: 'Generating reports based on analysis'
+      },
+      semanticRelevanceThreshold: 0.7,
+      attentionGuidedProcessor: new AttentionGuidedMemoryProcessor({
+        maxMessages: 50,
+        similarityThreshold: 0.85,
+        importanceKeywords: ['urgent', 'important', 'critical', 'error', 'bug', 'issue', 'task', 'goal', 'high-priority', 'actionable', 'decision', 'risk', 'security', 'performance', 'update', 'fix', 'solution', 'insight', 'analysis', 'data', 'workflow', 'status', 'progress', 'blocker', 'verify', 'validate', 'report', 'action', 'feedback', 'optimize', 'efficiency', 'integrity', 'coordination', 'strategy', 'outcome'],
+        verboseMessageThreshold: 500,
+        contextPreservationRatio: 0.3,
+      }),
+    }),
+    new BiasMitigationProcessor({
+      detectionStrategies: ['confirmation', 'recency', 'anchoring', 'availability', 'framing', 'bandwagon', 'overconfidence', ], 
+      mitigationStrategies: ['re-weight', 'add-counter-arguments', 'remove', 'flag', 'ignore', 'contextualize', 'reframe', 'balance'],
     }),
     // Add custom processors as needed
   ],
@@ -2153,3 +2420,5 @@ export const UPSTASH_TYPE_SAFETY_STATUS = {
   typeSafety: 'Compile-time checking disabled for filters',
   futureImprovement: 'Implement proper type imports when available'
 } as const;
+
+
