@@ -20,6 +20,7 @@ import { langGraphAgent } from './langgraph-agent';
 import { chanceAgent } from './chance-agent';
 import { mappingAgent } from './mapping-agent';
 import { synthesisAgent } from '../workflows/vnext-workflow';
+import { generationAgent } from './generation-agent'; // Import the new agent
 
 // Export all agents for external use
 export { masterAgent } from './master-agent';
@@ -32,6 +33,7 @@ export { langGraphAgent } from './langgraph-agent';
 export { chanceAgent } from './chance-agent';
 export { mappingAgent } from './mapping-agent';
 export { synthesisAgent } from '../workflows/vnext-workflow';
+export { generationAgent } from './generation-agent'; // Export the new agent
 
 // Runtime Context Types - Export all agent-specific runtime contexts
 export type { MasterAgentRuntimeContext } from './master-agent';
@@ -43,6 +45,7 @@ export type { AnalyzerAgentRuntimeContext } from './analyzer-agent';
 export type { LangGraphAgentRuntimeContext } from './langgraph-agent';
 export type { ChanceAgentRuntimeContext } from './chance-agent';
 export type { MappingAgentRuntimeContext } from './mapping-agent';
+export type { GenerationAgentRuntimeContext } from './generation-agent'; // Export the new runtime context
 
 /**
  * Agent registry object for easy access and management
@@ -62,6 +65,7 @@ export const agentRegistry = {
   langgraph: langGraphAgent,
   chance: chanceAgent,
   mapping: mappingAgent,
+  generation: generationAgent, // Add the new agent to the registry
 
   // Workflow agents
   synthesize: synthesisAgent,
@@ -73,13 +77,13 @@ export const agentRegistry = {
  */
 
 export const agentCategories = {
-  core: ['master', 'supervisor', 'analyzer', 'langgraph', 'research', 'data', 'chance', 'mapping'] as const,
+  core: ['master', 'supervisor', 'analyzer', 'langgraph', 'research', 'data', 'chance', 'mapping', 'generation'] as const, // Add 'generation' to core
   development: ['master'] as const,
-  data: ['data', 'research', 'weather'] as const,
+  data: ['data', 'research', 'weather', 'generation'] as const, // Add 'generation' to data
   management: ['supervisor'] as const,
   operations: ['master'] as const,
-  creative: ['synthesize'] as const,
-  specialized: ['master'] as const,
+  creative: ['synthesize', 'generation'] as const, // Add 'generation' to creative
+  specialized: ['master', 'generation'] as const, // Add 'generation' to specialized
 } as const;
 
 /**
@@ -160,5 +164,9 @@ export const agentMetadata = {
   mapping: {
     description: 'Agent for data transformation and schema mapping',
     tags: ['core', 'data', 'transformation', 'mapping']
+  },
+  generation: { // Add metadata for the new agent
+    description: 'Agent for diverse content generation (text, code, prompts, reports, summaries)',
+    tags: ['core', 'content', 'generation', 'creative']
   },
 } as const;
