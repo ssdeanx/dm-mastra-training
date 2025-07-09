@@ -77,7 +77,7 @@ export const agentRegistry = {
  */
 
 export const agentCategories = {
-  core: ['master', 'supervisor', 'analyzer', 'langgraph', 'research', 'data', 'chance', 'mapping', 'generation'] as const, // Add 'generation' to core
+  core: ['master', 'supervisor', 'analyzer', 'weather', 'langgraph', 'research', 'data', 'chance', 'mapping', 'generation'] as const, // Add 'generation' to core
   development: ['master'] as const,
   data: ['data', 'research', 'weather', 'generation'] as const, // Add 'generation' to data
   management: ['supervisor'] as const,

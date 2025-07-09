@@ -17,6 +17,7 @@
     "node": ">=20.9.0"
   },
   "dependencies": {
+    "@ag-ui/mastra": "^0.0.2",
     "@agentic/brave-search": "^7.6.9",
     "@agentic/core": "^8.4.3",
     "@agentic/mastra": "^8.4.3",
@@ -26,6 +27,7 @@
     "@agentic/tavily": "^7.6.9",
     "@ai-sdk/google": "^1.2.22",
     "@ai-sdk/openai": "^1.3.23",
+    "@copilotkit/runtime": "^1.9.1",
     "@google/generative-ai": "^0.24.1",
     "@langchain/google-genai": "^0.2.14",
     "@langchain/langgraph": "^0.3.7",
