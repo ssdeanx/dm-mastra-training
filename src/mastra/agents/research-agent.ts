@@ -69,15 +69,15 @@ const researchAgentConfigSchema = z.object({
   runtimeContext: z.object({
     'user-id': z.string().describe('User identifier'),
     'session-id': z.string().describe('Session identifier'),
-    'research-depth': z.enum(["surface", "detailed", "comprehensive"]).describe('Research depth level'),
-    'source-types': z.array(z.string()).describe('Source types to include'),
-    'max-sources': z.number().positive().describe('Maximum sources to gather'),
-    'include-academic': z.boolean().describe('Include academic sources'),
-    'language-filter': z.array(z.string()).describe('Language preferences for sources'),
-    'focus-area': z.string().describe('Research focus area'),
-    'input-confidence': z.number().min(0).max(1).describe('Confidence score of the input data'),
-    'bias-mitigation-enabled': z.boolean().describe('Enable or disable bias mitigation strategies'),
-    'low-confidence-strategy': z.enum(["flag", "verify", "discard"]).describe('Strategy for handling low-confidence data')
+    'research-depth': z.enum(["surface", "detailed", "comprehensive"]).optional().describe('Research depth level'),
+    'source-types': z.array(z.string()).optional().describe('Source types to include'),
+    'max-sources': z.number().positive().optional().describe('Maximum sources to gather'),
+    'include-academic': z.boolean().optional().describe('Include academic sources'),
+    'language-filter': z.array(z.string()).optional().describe('Language preferences for sources'),
+    'focus-area': z.string().optional().describe('Research focus area'),
+    'input-confidence': z.number().min(0).max(1).optional().describe('Confidence score of the input data'),
+    'bias-mitigation-enabled': z.boolean().optional().describe('Enable or disable bias mitigation strategies'),
+    'low-confidence-strategy': z.enum(["flag", "verify", "discard"]).optional().describe('Strategy for handling low-confidence data')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   evals: z.record(z.any()).describe('Evaluation metrics for the agent'),
@@ -98,10 +98,13 @@ export const researchAgent = new Agent({
   instructions: async ({ runtimeContext }) => {
     const userId = runtimeContext?.get("user-id") || "anonymous";
     const sessionId = runtimeContext?.get("session-id") || "default";
-    const researchDepth = runtimeContext?.get("research-depth") || "detailed";    const sourceTypes = (runtimeContext?.get("source-types") as string[]) || ["web", "academic"];
+    const researchDepth = runtimeContext?.get("research-depth") || "detailed";
+    const rawSourceTypes = runtimeContext?.get("source-types");
+    const sourceTypes = Array.isArray(rawSourceTypes) ? rawSourceTypes : ["web", "academic"];
     const maxSources = runtimeContext?.get("max-sources") || 10;
     const includeAcademic = runtimeContext?.get("include-academic") || false;
-    const languageFilter = (runtimeContext?.get("language-filter") as string[]) || ["en"];
+    const rawLanguageFilter = runtimeContext?.get("language-filter");
+    const languageFilter = Array.isArray(rawLanguageFilter) ? rawLanguageFilter : ["en"];
     const focusArea = runtimeContext?.get("focus-area") || "general";
     const inputConfidence = runtimeContext?.get("input-confidence") || 1.0;
     const biasMitigationEnabled = runtimeContext?.get("bias-mitigation-enabled") || false;
@@ -173,10 +176,10 @@ GUIDELINES FOR EXECUTION:
 ${UPSTASH_PROMPT}
 `;
   },
-  model: createGemini25Provider('gemini-2.5-flash',  {
+  model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17',  {
     responseModalities: ["TEXT"],
     thinkingConfig: {
-      thinkingBudget: 0, // -1 means dynamic thinking budget
+      thinkingBudget: 512, // -1 means dynamic thinking budget
       includeThoughts: false, // Include thoughts for debugging and monitoring purposes
     },
   }),
@@ -196,7 +199,7 @@ ${UPSTASH_PROMPT}
     webScraperTool,
     gitOperationsTool,
   },
-  memory: upstashMemory,
+  memory: upstashMemory
 });
 
 /**

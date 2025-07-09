@@ -173,7 +173,7 @@ ${UPSTASH_PROMPT}
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
   },
-  memory: upstashMemory,
+  memory: upstashMemory
 });
 
 /**

@@ -110,5 +110,5 @@ GUIDELINES FOR EXECUTION:
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
   },
-  memory: upstashMemory,
+  memory: upstashMemory
 });

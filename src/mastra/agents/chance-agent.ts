@@ -38,7 +38,17 @@ import {
   mem0RememberTool,
   mem0MemorizeTool,
   stockPriceTool,
-  weatherTool
+  weatherTool,
+  stochasticAlgorithmTool,
+  structuredArgumentationTool,
+  sequentialThinkingTool,
+  mentalModelTool,
+  debuggingApproachTool,
+  collaborativeReasoningTool,
+  decisionFrameworkTool,
+  metacognitiveMonitoringTool,
+  visualReasoningTool,
+  scientificMethodTool
 } from "../tools";
 
 const logger = new PinoLogger({ name: 'ChanceAgent', level: 'info' });
@@ -115,13 +125,13 @@ const chanceAgentConfigSchema = z.object({
   runtimeContext: z.object({
     'user-id': z.string().describe('User identifier'),
     'session-id': z.string().describe('Session identifier'),
-    'decision-type': z.enum(["strategic", "tactical", "operational", "exploratory"]).describe('Type of decision'),
-    'risk-tolerance': z.enum(["low", "medium", "high", "adaptive"]).describe('Tolerance for risk'),
-    'exploration-exploitation-balance': z.enum(["explore-heavy", "balanced", "exploit-heavy"]).describe('Balance between exploration and exploitation'),
-    'outcome-feedback-mechanism': z.enum(["reinforcement", "bayesian-update", "statistical-adjustment", "none"]).describe('Mechanism for incorporating feedback'),
-    'confidence-threshold': z.number().min(0).max(1).describe('Confidence threshold for decision'),
-    'bias-awareness-enabled': z.boolean().describe('Flag to enable or disable bias awareness'),
-    'domain-context': z.string().describe('Domain context for decision-making'),
+    'decision-type': z.enum(["strategic", "tactical", "operational", "exploratory"]).optional().describe('Type of decision'),
+    'risk-tolerance': z.enum(["low", "medium", "high", "adaptive"]).optional().describe('Tolerance for risk'),
+    'exploration-exploitation-balance': z.enum(["explore-heavy", "balanced", "exploit-heavy"]).optional().describe('Balance between exploration and exploitation'),
+    'outcome-feedback-mechanism': z.enum(["reinforcement", "bayesian-update", "statistical-adjustment", "none"]).optional().describe('Mechanism for incorporating feedback'),
+    'confidence-threshold': z.number().min(0).max(1).optional().describe('Confidence threshold for decision'),
+    'bias-awareness-enabled': z.boolean().optional().describe('Flag to enable or disable bias awareness'),
+    'domain-context': z.string().optional().describe('Domain context for decision-making'),
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   tools: z.record(z.any()).describe('Available tools for the agent'),
@@ -217,6 +227,16 @@ ${UPSTASH_PROMPT}
     mem0MemorizeTool,
     stockPriceTool,
     weatherTool,
+    stochasticAlgorithmTool,
+    structuredArgumentationTool,
+    sequentialThinkingTool,
+    mentalModelTool,
+    debuggingApproachTool,
+    collaborativeReasoningTool,
+    decisionFrameworkTool,
+    metacognitiveMonitoringTool,
+    scientificMethodTool,
+    visualReasoningTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
     webScraperTool,
@@ -241,7 +261,7 @@ ${UPSTASH_PROMPT}
     hackerNewsGetNewStories,
     hackerNewsGetBestStories
   },
-  memory: upstashMemory,
+  memory: upstashMemory
 });
 
 /**

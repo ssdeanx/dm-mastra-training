@@ -74,12 +74,12 @@ const masterAgentConfigSchema = z.object({
   runtimeContext: z.object({
     'user-id': z.string().describe('User identifier'),
     'session-id': z.string().describe('Session identifier'),
-    'project-context': z.string().describe('Project context'),
-    'plan-mode': z.boolean().describe('Plan mode flag'),
-    'tasks': z.string().describe('Tasks for the agent'),
-    'actions': z.string().describe('Actions for the agent'),
-    'tool-selection': z.string().describe('Tool selection'),
-    'debug-mode': z.boolean().describe('Debug mode flag')
+    'project-context': z.string().optional().describe('Project context'),
+    'plan-mode': z.boolean().optional().describe('Plan mode flag'),
+    'tasks': z.string().optional().describe('Tasks for the agent'),
+    'actions': z.string().optional().describe('Actions for the agent'),
+    'tool-selection': z.string().optional().describe('Tool selection'),
+    'debug-mode': z.boolean().optional().describe('Debug mode flag')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   evals: z.record(z.any()).describe('Evaluation metrics for the agent'),
@@ -208,7 +208,7 @@ SUCCESS CRITERIA:
 ${UPSTASH_PROMPT}
 `;
   },
-  model: createGemini25Provider('gemini-2.5-flash', {
+  model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17', {
     // Response modalities - what types of content the model can generate
     responseModalities: ["TEXT"], // Can also include "IMAGE" for image generation
     // Thinking configuration for enhanced reasoning

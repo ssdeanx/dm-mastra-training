@@ -43,6 +43,7 @@ export const synthesisAgent = new Agent({
     // Structured outputs for better tool integration
     structuredOutputs: true,
   }),
+  memory: upstashMemory,
 });
 
 // Agent collection

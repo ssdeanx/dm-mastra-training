@@ -122,13 +122,13 @@ const mappingAgentConfigSchema = z.object({
   runtimeContext: z.object({
     'user-id': z.string().describe('User identifier'),
     'session-id': z.string().describe('Session identifier'),
-    'source-data-format': z.enum(["json", "csv", "xml", "yaml", "plaintext", "auto"]).describe('Format of the source data'),
-    'target-data-format': z.enum(["json", "csv", "xml", "yaml", "plaintext"]).describe('Format of the target data'),
-    'mapping-strategy': z.enum(["direct", "transform", "aggregate", "normalize", "enrich"]).describe('Strategy for applying mapping transformations'),
-    'validation-level': z.enum(["none", "schema", "strict"]).describe('Level of validation to apply'),
-    'error-handling-strategy': z.enum(["skip", "flag", "halt", "retry"]).describe('Strategy for handling errors'),
-    'visualization-enabled': z.boolean().describe('Flag to enable or disable visualization of data mappings'),
-    'domain-context': z.string().describe('Domain context for data mapping'),
+    'source-data-format': z.enum(["json", "csv", "xml", "yaml", "plaintext", "auto"]).optional().describe('Format of the source data'),
+    'target-data-format': z.enum(["json", "csv", "xml", "yaml", "plaintext"]).optional().describe('Format of the target data'),
+    'mapping-strategy': z.enum(["direct", "transform", "aggregate", "normalize", "enrich"]).optional().describe('Strategy for applying mapping transformations'),
+    'validation-level': z.enum(["none", "schema", "strict"]).optional().describe('Level of validation to apply'),
+    'error-handling-strategy': z.enum(["skip", "flag", "halt", "retry"]).optional().describe('Strategy for handling errors'),
+    'visualization-enabled': z.boolean().optional().describe('Flag to enable or disable visualization of data mappings'),
+    'domain-context': z.string().optional().describe('Domain context for data mapping'),
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   tools: z.record(z.any()).describe('Available tools for the agent'),
@@ -205,7 +205,7 @@ ${UPSTASH_PROMPT}
   model: createGemini25Provider('gemini-2.5-flash-lite-preview-06-17', {
     responseModalities: ["TEXT"],
     thinkingConfig: {
-      thinkingBudget: -1, // Dynamic thinking budget
+      thinkingBudget: 512, // Dynamic thinking budget
       includeThoughts: true, // Include thoughts for debugging and monitoring purposes
     },
     useSearchGrounding: true, // Enable Google Search integration for current events
@@ -249,7 +249,7 @@ ${UPSTASH_PROMPT}
     hackerNewsGetNewStories,
     hackerNewsGetBestStories
   },
-  memory: upstashMemory,
+  memory: upstashMemory
 });
 
 /**

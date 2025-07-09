@@ -64,11 +64,11 @@ const supervisorAgentConfigSchema = z.object({
   runtimeContext: z.object({
   "user-id": z.string(),
   "session-id": z.string(),
-  "agent-count": z.number().int().positive().default(1),
-  "coordination-strategy": z.enum(["centralized", "distributed", "hierarchical", "collaborative"]).default("centralized"),
-  "qa-level": z.enum(["basic", "standard", "rigorous", "comprehensive"]).default("standard"),
-  "delegation-level": z.enum(["limited", "moderate", "extensive", "full"]).default("moderate"),
-  "escalation-threshold": z.enum(["low", "medium", "high", "critical-only"]).default("medium"),
+  "agent-count": z.number().int().positive().optional().default(1),
+  "coordination-strategy": z.enum(["centralized", "distributed", "hierarchical", "collaborative"]).optional().default("centralized"),
+  "qa-level": z.enum(["basic", "standard", "rigorous", "comprehensive"]).optional().default("standard"),
+  "delegation-level": z.enum(["limited", "moderate", "extensive", "full"]).optional().default("moderate"),
+  "escalation-threshold": z.enum(["low", "medium", "high", "critical-only"]).optional().default("medium"),
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   evals: z.record(z.any()).describe('Evaluation metrics for the agent'),
@@ -167,7 +167,7 @@ ${UPSTASH_PROMPT}
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
   },
-  memory: upstashMemory,
+  memory: upstashMemory
 });
 
 /**

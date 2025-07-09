@@ -6,7 +6,7 @@ import { chunkerTool } from "../tools/chunker-tool";
 import { z } from "zod";
 import { UPSTASH_PROMPT } from "@mastra/upstash";
 import { PinoLogger } from "@mastra/loggers";
-import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool, diffbotAnalyzeUrlTool, diffbotExtractArticleFromUrlTool, diffbotEnhanceKnowledgeGraphTool, diffbotSearchKnowledgeGraphTool, diffbotEnhanceEntityTool, arxivSearch, redditGetSubredditPosts, hackerNewsGetBestStories, hackerNewsGetSearchUser, hackerNewsSearchItems, hackerNewsGetSearchTopStories, hackerNewsGetSearchItem, hackerNewsGetItem, hackerNewsGetTopStories, hackerNewsGetNewStories, graphRAGTool, graphRAGQueryTool, graphRAGUpsertTool, rerankTool, listDataDirTool, readDataFileTool, writeDataFileTool, deleteDataFileTool } from "../tools";
+import { createBraveSearchTool, createTavilySearchTool, webScraperTool, gitOperationsTool, diffbotAnalyzeUrlTool, diffbotExtractArticleFromUrlTool, diffbotEnhanceKnowledgeGraphTool, diffbotSearchKnowledgeGraphTool, diffbotEnhanceEntityTool, arxivSearch, redditGetSubredditPosts, hackerNewsGetBestStories, hackerNewsGetSearchUser, hackerNewsSearchItems, hackerNewsGetSearchTopStories, hackerNewsGetSearchItem, hackerNewsGetItem, hackerNewsGetTopStories, hackerNewsGetNewStories, graphRAGTool, graphRAGQueryTool, graphRAGUpsertTool, rerankTool, listDataDirTool, readDataFileTool, writeDataFileTool, deleteDataFileTool, collaborativeReasoningTool, decisionFrameworkTool, metacognitiveMonitoringTool, scientificMethodTool } from "../tools";
 const logger = new PinoLogger({ name: 'AnalyzerAgent', level: 'info' });
 logger.info('Initializing AnalyzerAgent');
 
@@ -90,15 +90,15 @@ const analyzerAgentConfigSchema = z.object({
   runtimeContext: z.object({
     'user-id': z.string().describe('User identifier'),
     'session-id': z.string().describe('Session identifier'),
-    'analysis-type': z.enum(["statistical", "trend", "comparative", "predictive", "diagnostic", "exploratory"]).describe('Analysis type focus'),
-    'data-source': z.enum(["internal", "external", "hybrid"]).describe('Data source preference'),
-    'data-depth': z.enum(["surface", "detailed", "comprehensive", "exhaustive"]).describe('Data depth preference'),
-    'visualization': z.enum(["charts", "graphs", "tables", "dashboards", "reports", "interactive"]).describe('Visualization preference'),
-    'speed-accuracy': z.enum(["fast", "balanced", "thorough", "comprehensive"]).describe('Analysis speed vs accuracy'),
-    'domain-context': z.string().describe('Domain context for analysis'),
-    'input-confidence': z.number().min(0).max(1).describe('Confidence score of the input data'),
-    'bias-mitigation-enabled': z.boolean().describe('Flag to enable or disable bias mitigation strategies'),
-    'low-confidence-strategy': z.enum(["flag", "verify", "ignore", "escalate", "reassess", "accept", "reject", "adjust", "accept-with-caution"]).describe('Strategy for handling low-confidence data'),
+    'analysis-type': z.enum(["statistical", "trend", "comparative", "predictive", "diagnostic", "exploratory"]).optional().describe('Analysis type focus'),
+    'data-source': z.enum(["internal", "external", "hybrid"]).optional().describe('Data source preference'),
+    'data-depth': z.enum(["surface", "detailed", "comprehensive", "exhaustive"]).optional().describe('Data depth preference'),
+    'visualization': z.enum(["charts", "graphs", "tables", "dashboards", "reports", "interactive"]).optional().describe('Visualization preference'),
+    'speed-accuracy': z.enum(["fast", "balanced", "thorough", "comprehensive"]).optional().describe('Analysis speed vs accuracy'),
+    'domain-context': z.string().optional().describe('Domain context for analysis'),
+    'input-confidence': z.number().min(0).max(1).optional().describe('Confidence score of the input data'),
+    'bias-mitigation-enabled': z.boolean().optional().describe('Flag to enable or disable bias mitigation strategies'),
+    'low-confidence-strategy': z.enum(["flag", "verify", "ignore", "escalate", "reassess", "accept", "reject", "adjust", "accept-with-caution"]).optional().describe('Strategy for handling low-confidence data'),
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
   tools: z.record(z.any()).describe('Available tools for the agent'),
@@ -176,6 +176,23 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'hackerNewsGetTopStories': For accessing the top stories on Hacker News, useful for understanding current trends in technology and startups.
 - 'hackerNewsGetNewStories': For retrieving the latest stories on Hacker News, keeping the analysis up-to-date with the newest developments.
 - 'hackerNewsGetBestStories': For accessing the best stories on Hacker News, providing insights into high-quality discussions and articles.
+- 'graphRAGTool': For advanced graph-based retrieval-augmented generation, enabling complex queries and insights from graph databases.
+- 'graphRAGQueryTool': For querying graph databases with RAG capabilities, allowing for
+- 'graphRAGUpsertTool': For updating or inserting new data into graph databases, ensuring the knowledge graph remains current and relevant.
+- 'collaborativeReasoningTool': For engaging in collaborative reasoning processes, allowing for multi-agent interactions and shared insights.
+- 'decisionFrameworkTool': For applying structured decision-making frameworks, ensuring that all analyses are grounded in sound reasoning and logical consistency.
+- 'metacognitiveMonitoringTool': For tracking and reflecting on one's own thinking processes, promoting awareness of cognitive biases and improving decision-making strategies.
+- 'scientificMethodTool': For applying the scientific method to analyses, ensuring that all conclusions are based on empirical evidence and rigorous testing.
+- 'listDataDirTool': For listing files and directories in the data storage, facilitating data management and retrieval.
+- 'readDataFileTool': For reading and processing data files, enabling direct access to structured data for analysis.
+- 'writeDataFileTool': For writing processed data or analysis results back to files, ensuring that insights are stored and can be reused.
+- 'deleteDataFileTool': For deleting unnecessary or outdated data files, maintaining a clean and efficient data storage environment.
+-'rerankTool': For re-ranking search results or data based on relevance, ensuring that the most pertinent information is prioritized in analyses.
+- 'structuredArgumentationTool': For constructing and evaluating structured arguments, ensuring that all analyses are logically sound and well-supported by evidence.
+- 'sequentialThinkingTool': For applying sequential thinking processes, breaking down complex problems into manageable steps and ensuring logical progression in analyses.
+- 'mentalModelTool': For employing mental models to enhance understanding and analysis of complex systems, ensuring that insights are grounded in robust cognitive frameworks.
+- 'debuggingApproachTool': For systematically identifying and resolving issues in data or analysis processes, ensuring that all outputs are accurate and reliable.
+- 'visualReasoningTool': For applying visual reasoning techniques, enhancing the clarity and effectiveness of data visualizations and ensuring that insights are communicated effectively.
 
 GUIDELINES FOR ATOMICALLY FLAWLESS EXECUTION:
 - **Absolute Data Integrity**: Always, without exception, rigorously validate the quality, consistency, and integrity of all data before commencing any analysis.
@@ -216,6 +233,10 @@ ${UPSTASH_PROMPT}
     graphRAGTool,
     graphRAG: graphRAGQueryTool,
     graphRAGUpsertTool,
+    collaborativeReasoningTool,
+    decisionFrameworkTool,
+    metacognitiveMonitoringTool,
+    scientificMethodTool,
     braveSearchTool: createBraveSearchTool(),
     tavilySearchTool: createTavilySearchTool(),
     webScraperTool,
@@ -240,7 +261,7 @@ ${UPSTASH_PROMPT}
     hackerNewsGetNewStories,
     hackerNewsGetBestStories
   },
-  memory: upstashMemory,
+  memory: upstashMemory
 });
 
 /**
