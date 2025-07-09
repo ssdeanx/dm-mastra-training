@@ -269,17 +269,38 @@ const conductResearchStep = createStep({
             Focus Areas: ${focusAreas?.join(', ') || 'all aspects'}
             Sources to investigate: ${inputData.discoveredSources.join(', ')}
 
-            Use the available MCP tools for comprehensive research:
-            1. Use 'fetch' and 'puppeteer' servers for web browsing and data collection
-            2. Use 'duckduckgo' server for web search across multiple sources
-            3. Use 'github' server if relevant repositories exist
-            4. Use 'neo4j' and 'memoryGraph' for knowledge graph analysis
-            5. Use vector search tools for related content discovery
-            6. Use 'diffbot' for structured data extraction from web pages
-            7. Use 'arxiv' for academic papers and research articles
-            8. Use 'reddit' for community discussions and insights
-            9. Use 'hackernews' for technology and startup news
-            10. Use 'brave' and 'tavily' for additional search capabilities
+            Use the available tools for comprehensive research:
+            - Brave Search
+            - Tavily Search
+            - Web Scraper
+            - Git Operations
+            - Diffbot Analyze URL
+            - Diffbot Extract Article from URL
+            - Diffbot Enhance Knowledge Graph
+            - Diffbot Search Knowledge Graph
+            - Diffbot Enhance Entity
+            - Arxiv Search
+            - Reddit Get Subreddit Posts
+            - Hacker News Get Search Item
+            - Hacker News Get Search User
+            - Hacker News Get Best Stories
+            - Hacker News Get Search Top Stories
+            - Hacker News Get Item
+            - Hacker News Get Top Stories
+            - Hacker News Get New Stories
+            - Graph RAG Query
+            - Graph RAG Upsert
+            - Vector Query
+            - Rerank Tool
+            - Chunker Tool
+            - Hybrid Vector Search Tool
+            - List Data Directory
+            - Read Data File
+            - Write Data File
+            - Delete Data File
+            - Analyze Data File
+            - Extract Article from Data File
+            - Ensure all tools are used effectively to gather comprehensive data.
 
             Ensure the research is comprehensive, structured, and evidence-based.
             Provide a detailed summary of findings, including:
