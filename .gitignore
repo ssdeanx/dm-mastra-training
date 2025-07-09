@@ -6,3 +6,33 @@ dist
 .env 
 *.db 
 *.db-* 
+.specstory/*
+.specstory/ai_rules_backups
+.specstory/ai_rules_backups/*
+.specstory/ai_rules_backups/.gitkeep
+.specstory/ai_rules_backups/.gitignore
+.specstory/ai_rules_backups/README.md
+.specstory/ai_rules_backups/README.md.backup
+.specstory/ai_rules_backups/README.md.backup.*
+.specstory/ai_rules_backups/README.md.backup.1
+.specstory/ai_rules_backups/README.md.backup.2
+.vscode
+.idea
+*.sublime-workspace
+*.sublime-project
+*.sublime-workspace.*
+
+
+# Ignore all files in the .specstory directory except for the ai_rules_backups directory
+.specstory/*
+!.specstory/ai_rules_backups
+# Ignore all files in the .specstory/ai_rules_backups directory except for the .gitkeep file
+.specstory/ai_rules_backups/*
+!.specstory/ai_rules_backups/.gitkeep
+# Ignore all files in the .specstory/ai_rules_backups directory except for the README
+.specstory/ai_rules_backups/*
+!.specstory/ai_rules_backups/README.md
+# Ignore all files in the .specstory/ai_rules_backups directory except for the README backup files
+.specstory/ai_rules_backups/*
+!.specstory/ai_rules_backups/README.md.backup
+!.specstory/ai_rules_backups/README.md.backup.*

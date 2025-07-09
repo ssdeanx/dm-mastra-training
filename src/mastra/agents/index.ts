@@ -18,6 +18,7 @@ import { researchAgent } from './research-agent';
 import { dataAgent } from './data-agent';
 import { langGraphAgent } from './langgraph-agent';
 import { chanceAgent } from './chance-agent';
+import { mappingAgent } from './mapping-agent';
 import { synthesisAgent } from '../workflows/vnext-workflow';
 
 // Export all agents for external use
@@ -29,6 +30,7 @@ export { researchAgent } from './research-agent';
 export { dataAgent } from './data-agent';
 export { langGraphAgent } from './langgraph-agent';
 export { chanceAgent } from './chance-agent';
+export { mappingAgent } from './mapping-agent';
 export { synthesisAgent } from '../workflows/vnext-workflow';
 
 // Runtime Context Types - Export all agent-specific runtime contexts
@@ -40,6 +42,7 @@ export type { SupervisorAgentRuntimeContext } from './supervisor-agent';
 export type { AnalyzerAgentRuntimeContext } from './analyzer-agent';
 export type { LangGraphAgentRuntimeContext } from './langgraph-agent';
 export type { ChanceAgentRuntimeContext } from './chance-agent';
+export type { MappingAgentRuntimeContext } from './mapping-agent';
 
 /**
  * Agent registry object for easy access and management
@@ -58,6 +61,7 @@ export const agentRegistry = {
   data: dataAgent,
   langgraph: langGraphAgent,
   chance: chanceAgent,
+  mapping: mappingAgent,
 
   // Workflow agents
   synthesize: synthesisAgent,
@@ -69,7 +73,7 @@ export const agentRegistry = {
  */
 
 export const agentCategories = {
-  core: ['master', 'supervisor', 'analyzer', 'langgraph', 'research', 'data', 'chance'] as const,
+  core: ['master', 'supervisor', 'analyzer', 'langgraph', 'research', 'data', 'chance', 'mapping'] as const,
   development: ['master'] as const,
   data: ['data', 'research', 'weather'] as const,
   management: ['supervisor'] as const,
@@ -152,5 +156,9 @@ export const agentMetadata = {
   chance: {
     description: 'Agent for decision-making under uncertainty, balancing exploration and exploitation',
     tags: ['core', 'decision-making', 'uncertainty', 'stochastic']
+  },
+  mapping: {
+    description: 'Agent for data transformation and schema mapping',
+    tags: ['core', 'data', 'transformation', 'mapping']
   },
 } as const;

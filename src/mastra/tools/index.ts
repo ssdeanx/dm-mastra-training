@@ -35,6 +35,8 @@ export * from './rerank-tool';
 export * from './stock-tools';
 export * from './vectorQueryTool';
 export * from './weather-tool';
+export * from './clear-thought-native-tools';
+export * from './stochastic-native-tools';
 // Export all tool types for the Mastra system
 
 // Export all tool runtime context types
