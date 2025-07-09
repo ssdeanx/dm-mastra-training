@@ -3,6 +3,7 @@ import defaultKy, { type KyInstance } from 'ky';
 import { z } from 'zod';
 import { createTool } from "@mastra/core/tools";
 import { PinoLogger } from '@mastra/loggers';
+import { RuntimeContext } from '@mastra/core/di';
 
 const logger = new PinoLogger({ name: 'hacker-news', level: 'info' });
 
@@ -157,6 +158,20 @@ export const GetUserOptionsSchema = z.object({
   username: z.union([z.string(), z.number()]).describe('The username of the HN user.'),
 });
 
+export type GetItemOptionsSchema = z.infer<typeof GetItemOptionsSchema>;
+export type GetUserOptionsSchema = z.infer<typeof GetUserOptionsSchema>;
+
+/**
+ * Configuration options for the HackerNewsClient constructor
+ */
+export interface HackerNewsClientOptions {
+  apiBaseUrl?: string;
+  apiSearchBaseUrl?: string;
+  apiUserAgent?: string;
+  ky?: KyInstance;
+  timeoutMs?: number;
+}
+
 /**
  * Basic client for the official Hacker News API.
  *
@@ -182,13 +197,7 @@ export class HackerNewsClient {
     apiUserAgent = getEnv('HACKER_NEWS_API_USER_AGENT') ?? HACKER_NEWS_API_USER_AGENT,
     ky = defaultKy,
     timeoutMs = 60_000
-  }: {
-    apiBaseUrl?: string;
-    apiSearchBaseUrl?: string;
-    apiUserAgent?: string;
-    ky?: KyInstance;
-    timeoutMs?: number;
-  } = {}) {
+  }: HackerNewsClientOptions = {}) {
     assert(apiBaseUrl, 'HackerNewsClient missing required "apiBaseUrl"');
     assert(apiSearchBaseUrl, 'HackerNewsClient missing required "apiSearchBaseUrl"');
 
@@ -213,7 +222,7 @@ export class HackerNewsClient {
     });
   }
 
-  async getSearchItem(itemIdOrOpts: string | number | { itemId: string }) {
+  async getSearchItem(itemIdOrOpts: string | number | { itemId: string | number }): Promise<SearchItem> {
     const { itemId } =
       typeof itemIdOrOpts === 'string' || typeof itemIdOrOpts === 'number'
         ? { itemId: itemIdOrOpts }
@@ -224,7 +233,7 @@ export class HackerNewsClient {
       .json<SearchItem>();
   }
 
-  async getSearchUser(usernameOrOpts: string | number | { username: string }) {
+  async getSearchUser(usernameOrOpts: string | number | { username: string | number }): Promise<SearchUser> {
     const { username } =
       typeof usernameOrOpts === 'string' || typeof usernameOrOpts === 'number'
         ? { username: usernameOrOpts }
@@ -235,7 +244,7 @@ export class HackerNewsClient {
       .json<SearchUser>();
   }
 
-  async searchItems(queryOrOpts: string | SearchOptions) {
+  async searchItems(queryOrOpts: string | SearchOptions): Promise<SearchResponse> {
     const {
       query,
       numericFilters,
@@ -268,7 +277,7 @@ export class HackerNewsClient {
       .json<SearchResponse>();
   }
 
-  async getSearchTopStories(queryOrOpts: string | SearchOptions) {
+  async getSearchTopStories(queryOrOpts: string | SearchOptions): Promise<SearchResponse> {
     const opts =
       typeof queryOrOpts === 'string' ? { query: queryOrOpts } : queryOrOpts;
 
@@ -278,31 +287,57 @@ export class HackerNewsClient {
     });
   }
 
-  async getItem(id: string | number) {
+  async getItem(id: string | number): Promise<Item> {
     return this.apiKy.get(`v0/item/${id}.json`).json<Item>();
   }
 
-  async getTopStories() {
+  async getTopStories(): Promise<number[]> {
     return this.apiKy.get('v0/topstories.json').json<number[]>();
   }
 
-  async getNewStories() {
+  async getNewStories(): Promise<number[]> {
     return this.apiKy.get('v0/newstories.json').json<number[]>();
   }
 
-  async getBestStories() {
+  async getBestStories(): Promise<number[]> {
     return this.apiKy.get('v0/beststories.json').json<number[]>();
   }
 }
 
-export function createHackerNewsClient(options?: {
+export type HackerNewsRuntimeContext = {
+  'debug'?: boolean;
+};
+
+/**
+ * Configuration options for creating a HackerNews client
+ */
+export interface CreateHackerNewsClientOptions {
   apiBaseUrl?: string;
   apiSearchBaseUrl?: string;
   apiUserAgent?: string;
   ky?: KyInstance;
   timeoutMs?: number;
-}) {
-  const hackerNewsClient = new HackerNewsClient(options);
+}
+
+/**
+ * Return type for createHackerNewsClient function
+ */
+export interface HackerNewsClientTools {
+  hackerNewsGetSearchItem: ReturnType<typeof createTool>;
+  hackerNewsGetSearchUser: ReturnType<typeof createTool>;
+  hackerNewsSearchItems: ReturnType<typeof createTool>;
+  hackerNewsGetSearchTopStories: ReturnType<typeof createTool>;
+  hackerNewsGetItem: ReturnType<typeof createTool>;
+  hackerNewsGetTopStories: ReturnType<typeof createTool>;
+  hackerNewsGetNewStories: ReturnType<typeof createTool>;
+  hackerNewsGetBestStories: ReturnType<typeof createTool>;
+}
+
+export function createHackerNewsClient(options?: CreateHackerNewsClientOptions): HackerNewsClientTools {
+  const hackerNewsClient: HackerNewsClient = new HackerNewsClient(options);
+
+  const hackerNewsRuntimeContext: RuntimeContext<HackerNewsRuntimeContext> = new RuntimeContext<HackerNewsRuntimeContext>();
+  hackerNewsRuntimeContext.set('debug', false);
 
   return {
     hackerNewsGetSearchItem: createTool({
@@ -310,11 +345,16 @@ export function createHackerNewsClient(options?: {
       description: "Fetches a HN story or comment by its ID from the Algolia search API.",
       inputSchema: GetItemOptionsSchema,
       outputSchema: SearchItemSchema,
-      execute: async ({ context }) => {
-        logger.info('Fetching HN search item', { itemId: context.itemId });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Fetching HN search item', { itemId: context.itemId });
+        }
         try {
           const response = await hackerNewsClient.getSearchItem(context.itemId);
-          logger.info('HN search item fetched successfully', { itemId: context.itemId });
+          if (debug) {
+            logger.info('HN search item fetched successfully', { itemId: context.itemId });
+          }
           return response;
         } catch (error) {
           logger.error('Failed to fetch HN search item', { itemId: context.itemId, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -327,11 +367,16 @@ export function createHackerNewsClient(options?: {
       description: "Fetches a HN user by username from the Algolia search API.",
       inputSchema: GetUserOptionsSchema,
       outputSchema: SearchUserSchema,
-      execute: async ({ context }) => {
-        logger.info('Fetching HN search user', { username: context.username });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Fetching HN search user', { username: context.username });
+        }
         try {
           const response = await hackerNewsClient.getSearchUser(context.username);
-          logger.info('HN search user fetched successfully', { username: context.username });
+          if (debug) {
+            logger.info('HN search user fetched successfully', { username: context.username });
+          }
           return response;
         } catch (error) {
           logger.error('Failed to fetch HN search user', { username: context.username, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -344,11 +389,16 @@ export function createHackerNewsClient(options?: {
       description: "Searches HN for stories and comments matching the given query using the Algolia search API.",
       inputSchema: SearchOptionsSchema,
       outputSchema: SearchResponseSchema,
-      execute: async ({ context }) => {
-        logger.info('Searching HN items', { query: context.query });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Searching HN items', { query: context.query });
+        }
         try {
           const response = await hackerNewsClient.searchItems(context);
-          logger.info('HN items search completed successfully', { query: context.query });
+          if (debug) {
+            logger.info('HN items search completed successfully', { query: context.query });
+          }
           return response;
         } catch (error) {
           logger.error('Failed to search HN items', { query: context.query, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -361,11 +411,16 @@ export function createHackerNewsClient(options?: {
       description: "Fetches/searches the top stories currently on the front page of HN using the Algolia search API.",
       inputSchema: SearchOptionsSchema,
       outputSchema: SearchResponseSchema,
-      execute: async ({ context }) => {
-        logger.info('Fetching HN top stories', { query: context.query });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Fetching HN top stories', { query: context.query });
+        }
         try {
           const response = await hackerNewsClient.getSearchTopStories(context);
-          logger.info('HN top stories fetched successfully', { query: context.query });
+          if (debug) {
+            logger.info('HN top stories fetched successfully', { query: context.query });
+          }
           return response;
         } catch (error) {
           logger.error('Failed to fetch HN top stories', { query: context.query, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -378,11 +433,16 @@ export function createHackerNewsClient(options?: {
       description: "Fetches a HN story or comment by its ID from the official Firebase API.",
       inputSchema: GetItemOptionsSchema,
       outputSchema: ItemSchema,
-      execute: async ({ context }) => {
-        logger.info('Fetching HN item', { id: context.itemId });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Fetching HN item', { id: context.itemId });
+        }
         try {
           const response = await hackerNewsClient.getItem(context.itemId);
-          logger.info('HN item fetched successfully', { id: context.itemId });
+          if (debug) {
+            logger.info('HN item fetched successfully', { id: context.itemId });
+          }
           return response;
         } catch (error) {
           logger.error('Failed to fetch HN item', { id: context.itemId, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -395,11 +455,16 @@ export function createHackerNewsClient(options?: {
       description: "Fetches the IDs of the top stories from the official Firebase API.",
       inputSchema: z.object({}),
       outputSchema: z.array(z.number()),
-      execute: async () => {
-        logger.info('Fetching HN top stories IDs');
+      execute: async ({ runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Fetching HN top stories IDs');
+        }
         try {
           const response = await hackerNewsClient.getTopStories();
-          logger.info('HN top stories IDs fetched successfully');
+          if (debug) {
+            logger.info('HN top stories IDs fetched successfully');
+          }
           return response;
         } catch (error) {
           logger.error('Failed to fetch HN top stories IDs', { error: error instanceof Error ? error.message : 'Unknown error' });
@@ -412,11 +477,16 @@ export function createHackerNewsClient(options?: {
       description: "Fetches the IDs of the new stories from the official Firebase API.",
       inputSchema: z.object({}),
       outputSchema: z.array(z.number()),
-      execute: async () => {
-        logger.info('Fetching HN new stories IDs');
+      execute: async ({ runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Fetching HN new stories IDs');
+        }
         try {
           const response = await hackerNewsClient.getNewStories();
-          logger.info('HN new stories IDs fetched successfully');
+          if (debug) {
+            logger.info('HN new stories IDs fetched successfully');
+          }
           return response;
         } catch (error) {
           logger.error('Failed to fetch HN new stories IDs', { error: error instanceof Error ? error.message : 'Unknown error' });
@@ -429,11 +499,16 @@ export function createHackerNewsClient(options?: {
       description: "Fetches the IDs of the best stories from the official Firebase API.",
       inputSchema: z.object({}),
       outputSchema: z.array(z.number()),
-      execute: async () => {
-        logger.info('Fetching HN best stories IDs');
+      execute: async ({ runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Fetching HN best stories IDs');
+        }
         try {
           const response = await hackerNewsClient.getBestStories();
-          logger.info('HN best stories IDs fetched successfully');
+          if (debug) {
+            logger.info('HN best stories IDs fetched successfully');
+          }
           return response;
         } catch (error) {
           logger.error('Failed to fetch HN best stories IDs', { error: error instanceof Error ? error.message : 'Unknown error' });
@@ -454,3 +529,5 @@ export const {
   hackerNewsGetNewStories,
   hackerNewsGetBestStories,
 } = createHackerNewsClient();
+export const hackerNewsRuntimeContext: RuntimeContext<HackerNewsRuntimeContext> = new RuntimeContext<HackerNewsRuntimeContext>();
+hackerNewsRuntimeContext.set('debug', false);

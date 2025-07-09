@@ -3,6 +3,7 @@ import defaultKy, { type KyInstance } from 'ky';
 import { z } from 'zod';
 import { createTool } from "@mastra/core/tools";
 import { PinoLogger } from '@mastra/loggers';
+import { RuntimeContext } from '@mastra/core/di';
 
 const logger = new PinoLogger({ name: 'reddit', level: 'info' });
 

@@ -4,6 +4,7 @@ import pThrottle from 'p-throttle'
 import { z } from 'zod'
 import { createTool } from "@mastra/core/tools";
 import { PinoLogger } from '@mastra/loggers';
+import { RuntimeContext } from '@mastra/core/di';
 
 const logger = new PinoLogger({ name: 'diffbot', level: 'info' });
 
@@ -1015,11 +1016,16 @@ export function createDiffbotClient(options?: {
       description: "Scrapes and extracts structured data from a web page using Diffbot.",
       inputSchema: z.object({ url: z.string().url().describe('The URL to process.') }),
       outputSchema: ExtractAnalyzeResponseSchema,
-      execute: async ({ context }) => {
-        logger.info('Analyzing URL with Diffbot', { url: context.url });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Analyzing URL with Diffbot', { url: context.url });
+        }
         try {
           const response = await diffbot.analyzeUrl(context);
-          logger.info('Diffbot analyze URL completed successfully', { url: context.url });
+          if (debug) {
+            logger.info('Diffbot analyze URL completed successfully', { url: context.url });
+          }
           return response;
         } catch (error) {
           logger.error('Diffbot analyze URL failed', { url: context.url, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -1032,11 +1038,16 @@ export function createDiffbotClient(options?: {
       description: "Scrapes and extracts clean article text from web pages using Diffbot.",
       inputSchema: z.object({ url: z.string().url().describe('The URL to process.') }),
       outputSchema: ExtractArticleResponseSchema,
-      execute: async ({ context }) => {
-        logger.info('Extracting article with Diffbot', { url: context.url });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Extracting article with Diffbot', { url: context.url });
+        }
         try {
           const response = await diffbot.extractArticleFromUrl(context);
-          logger.info('Diffbot extract article completed successfully', { url: context.url });
+          if (debug) {
+            logger.info('Diffbot extract article completed successfully', { url: context.url });
+          }
           return response;
         } catch (error) {
           logger.error('Diffbot extract article failed', { url: context.url, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -1049,11 +1060,16 @@ export function createDiffbotClient(options?: {
       description: "Resolves and enriches a partial person or organization entity using Diffbot Knowledge Graph.",
       inputSchema: EnhanceEntityOptionsSchema.omit({ refresh: true, search: true, customId: true, threshold: true }),
       outputSchema: EnhanceEntityResponseSchema,
-      execute: async ({ context }) => {
-        logger.info('Enhancing entity with Diffbot', { context });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Enhancing entity with Diffbot', { context });
+        }
         try {
           const response = await diffbot.enhanceEntity(context);
-          logger.info('Diffbot enhance entity completed successfully', { context });
+          if (debug) {
+            logger.info('Diffbot enhance entity completed successfully', { context });
+          }
           return response;
         } catch (error) {
           logger.error('Diffbot enhance entity failed', { context, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -1066,11 +1082,16 @@ export function createDiffbotClient(options?: {
       description: "Performs searches against the Diffbot Knowledge Graph.",
       inputSchema: KnowledgeGraphSearchOptionsSchema,
       outputSchema: KnowledgeGraphResponseSchema,
-      execute: async ({ context }) => {
-        logger.info('Searching Knowledge Graph with Diffbot', { query: context.query });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Searching Knowledge Graph with Diffbot', { query: context.query });
+        }
         try {
           const response = await diffbot.searchKnowledgeGraph(context);
-          logger.info('Diffbot Knowledge Graph search completed successfully', { query: context.query });
+          if (debug) {
+            logger.info('Diffbot Knowledge Graph search completed successfully', { query: context.query });
+          }
           return response;
         } catch (error) {
           logger.error('Diffbot Knowledge Graph search failed', { query: context.query, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -1083,11 +1104,16 @@ export function createDiffbotClient(options?: {
       description: "Enhances entities in the Diffbot Knowledge Graph.",
       inputSchema: KnowledgeGraphEnhanceOptionsSchema,
       outputSchema: KnowledgeGraphResponseSchema,
-      execute: async ({ context }) => {
-        logger.info('Enhancing Knowledge Graph with Diffbot', { context });
+      execute: async ({ context, runtimeContext }) => {
+        const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+        if (debug) {
+          logger.info('Enhancing Knowledge Graph with Diffbot', { context });
+        }
         try {
           const response = await diffbot.enhanceKnowledgeGraph(context);
-          logger.info('Diffbot Knowledge Graph enhance completed successfully', { context });
+          if (debug) {
+            logger.info('Diffbot Knowledge Graph enhance completed successfully', { context });
+          }
           return response;
         } catch (error) {
           logger.error('Diffbot Knowledge Graph enhance failed', { context, error: error instanceof Error ? error.message : 'Unknown error' });
@@ -1097,6 +1123,13 @@ export function createDiffbotClient(options?: {
     }),
   };
 }
+
+export type DiffbotRuntimeContext = {
+  'debug'?: boolean;
+};
+
+export const diffbotRuntimeContext = new RuntimeContext<DiffbotRuntimeContext>();
+diffbotRuntimeContext.set('debug', false);
 
 
 // Export each Diffbot tool individually for granular usage

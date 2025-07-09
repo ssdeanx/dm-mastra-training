@@ -27,7 +27,7 @@ export {
 
 export * from './chunker-tool';
 
-
+export * from './nango'
 export * from './graphRAG';
 
 export * from './mem0-tool';

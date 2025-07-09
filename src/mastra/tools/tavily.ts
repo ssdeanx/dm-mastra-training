@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { TavilyClient } from "@agentic/tavily";
 import { env } from "process";
 import { PinoLogger } from '@mastra/loggers';
+import { RuntimeContext } from '@mastra/core/di';
 
 const logger = new PinoLogger({ name: 'tavily', level: 'info' });
 

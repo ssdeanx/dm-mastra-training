@@ -4,6 +4,7 @@ import defaultKy, { type KyInstance } from 'ky';
 import { z } from 'zod';
 import { createTool } from "@mastra/core/tools";
 import { PinoLogger } from '@mastra/loggers';
+import { RuntimeContext } from '@mastra/core/di';
 
 const logger = new PinoLogger({ name: 'arxiv', level: 'info' });
 
@@ -309,11 +310,6 @@ export function createArxivClient(options?: {
 }
 
 export const { arxivSearch } = createArxivClient();
-
-/**
- * Runtime context instance for Arxiv tools with defaults
- */
-import { RuntimeContext } from '@mastra/core/di';
 export const arxivRuntimeContext = new RuntimeContext<ArxivRuntimeContext>();
 arxivRuntimeContext.set('user-id', 'anonymous');
 arxivRuntimeContext.set('session-id', 'default');

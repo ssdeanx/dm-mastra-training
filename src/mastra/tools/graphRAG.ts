@@ -7,8 +7,9 @@
  * @version 2.0.1 - Complete rewrite using correct Mastra patterns
  */
 
-import { createTool, ToolExecutionContext } from '@mastra/core/tools';
-import { createGraphRAGTool, MDocument } from '@mastra/rag';
+import { createTool, /*, ToolExecutionContext */ 
+ToolExecutionContext} from '@mastra/core/tools';
+import { createGraphRAGTool } from '@mastra/rag';
 import { z } from 'zod';
 import { generateId } from 'ai';
 import { PinoLogger } from '@mastra/loggers';
@@ -20,10 +21,8 @@ import {
   VECTOR_PROFILES,
   VECTOR_CONFIG,
   VectorStoreError,
-  VectorStoreFactory,
-  MetadataFilter,
-  VectorQueryResult,
-  ExtractParams // Import ExtractParams
+  ExtractParams,
+  VectorStoreFactory
 } from '../upstashMemory';
 import { embedMany } from 'ai';
 import { fastembed } from '@mastra/fastembed';
@@ -140,7 +139,7 @@ export const graphRAGUpsertTool = createTool({
       const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
 
       // Get the vector store and embedder from the factory
-      const { vectorStore: upstashVectorClient, embedder } = VectorStoreFactory.get(vectorProfileName);
+      const { embedder } = VectorStoreFactory.get(vectorProfileName);
 
       if (debug) {
         logger.info('Starting document upsert', {
@@ -205,22 +204,20 @@ export const graphRAGUpsertTool = createTool({
         embeddings = embedResult.embeddings;
       }
 
-      // Create index if needed (Upstash Vector auto-creates indexes)
+      // Create index if needed
       if (validatedInput.createIndex) {
-        try {
-          await upstashVectorClient.createIndex({
+        const idxResult = await createVectorIndex(
+          validatedInput.indexName,
+          VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION,
+          VECTOR_PROFILES[vectorProfileName].DISTANCE_METRIC
+        );
+        if (!idxResult.success) {
+          logger.warn('Index validation warning (may already exist)', {
             indexName: validatedInput.indexName,
-            dimension: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION,
-            metric: VECTOR_PROFILES[vectorProfileName].DISTANCE_METRIC
+            error: idxResult.error
           });
-          logger.info('Upstash Vector index validated', { indexName: validatedInput.indexName, vectorProfile: vectorProfileName });
-        } catch (error) {
-          // Index might already exist, continue
-          logger.warn('Index validation warning (might already exist)', {
-            indexName: validatedInput.indexName,
-            vectorProfile: vectorProfileName,
-            error: error instanceof Error ? error.message : String(error)
-          });
+        } else {
+          logger.info('Upstash vector index validated', { indexName: validatedInput.indexName });
         }
       }
 
@@ -245,12 +242,19 @@ export const graphRAGUpsertTool = createTool({
       });
 
       // Upsert vectors to Upstash Vector with sparse cosine similarity
-      await upstashVectorClient.upsert({
-        indexName: validatedInput.indexName,
-        vectors: embeddings,
-        metadata: metadataArray,
-        ids: chunkIds
-      });
+      const upsertRes = await upsertVectors(
+        validatedInput.indexName,
+        embeddings,
+        metadataArray,
+        chunkIds
+      );
+      if (!upsertRes.success) {
+        throw new VectorStoreError(
+          `GraphRAG upsert failed: ${upsertRes.error}`,
+          'operation_failed',
+          { indexName: validatedInput.indexName }
+        );
+      }
 
       const processingTime = Date.now() - startTime;
       
@@ -307,7 +311,7 @@ export const graphRAGQueryTool = createTool({
   description: 'Query the GraphRAG system for complex document relationships and patterns using graph-based retrieval',
   inputSchema: queryInputSchema,
   outputSchema: queryOutputSchema,
-  execute: async ({ input, runtimeContext }: ToolExecutionContext<typeof queryInputSchema> & { 
+  execute: async ({ input, runtimeContext }: ToolExecutionContext<typeof queryInputSchema> & {
     input: z.infer<typeof queryInputSchema>;
     runtimeContext?: RuntimeContext<GraphRAGRuntimeContext>;
   }): Promise<z.infer<typeof queryOutputSchema>> => {
@@ -441,4 +445,5 @@ graphRAGRuntimeContext.set("threshold", 0.7);
 graphRAGRuntimeContext.set("minScore", 0.0);
 graphRAGRuntimeContext.set("dimension", VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].EMBEDDING_DIMENSION);
 graphRAGRuntimeContext.set("category", "document");
+graphRAGRuntimeContext.set("debug", false);
 graphRAGRuntimeContext.set("debug", false);

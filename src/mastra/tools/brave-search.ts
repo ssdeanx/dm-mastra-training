@@ -1,4 +1,5 @@
 import { createTool } from "@mastra/core/tools";
+import { RuntimeContext } from '@mastra/core/di';
 import { z } from "zod";
 import { BraveSearchClient } from "@agentic/brave-search";
 import { env } from "process";
@@ -25,10 +26,17 @@ interface BraveSearchConfig {
  * @param config - Configuration options for the Brave search
  * @returns A Mastra tool that should be wrapped with createMastraTools
  */
+export type BraveSearchRuntimeContext = {
+  'debug'?: boolean;
+};
+
 export function createBraveSearchTool(config: BraveSearchConfig = {}) {
   const braveSearch = new BraveSearchClient({
     apiKey: config.apiKey ?? env.BRAVE_API_KEY,
   });
+
+  const braveSearchRuntimeContext = new RuntimeContext<BraveSearchRuntimeContext>();
+  braveSearchRuntimeContext.set('debug', false);
 
   return createTool({
     id: "brave-search",
@@ -51,11 +59,15 @@ export function createBraveSearchTool(config: BraveSearchConfig = {}) {
         })
       ),
     }),
-    execute: async ({ context }) => {
-      logger.info('Starting Brave search', {
-        query: context.query,
-        maxResults: context.maxResults
-      });
+    execute: async ({ context, runtimeContext }) => {
+      const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
+
+      if (debug) {
+        logger.info('Starting Brave search', {
+          query: context.query,
+          maxResults: context.maxResults
+        });
+      }
 
       try {
         logger.debug('Calling Brave Search API', { query: context.query });

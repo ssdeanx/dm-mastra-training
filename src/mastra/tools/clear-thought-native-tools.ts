@@ -300,7 +300,7 @@ export const debuggingApproachOutputSchema = z.object({
  * const result = await debuggingApproachTool.execute({
  *   context: {
  *     approachName: "binary_search",
-  execute: async ({ modelName, problem, steps, reasoning, conclusion }) => {
+  execute: async ({ context }) => {
  *   }
  * });
  * ```
