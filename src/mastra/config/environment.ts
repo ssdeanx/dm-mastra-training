@@ -21,8 +21,21 @@ const envSchema = z.object({
   // Upstash Vector 2 configuration (for 1536-dimension embeddings)
   UPSTASH_VECTOR_REST_URL2: z.string().url().optional(),
   UPSTASH_VECTOR_REST_TOKEN2: z.string().optional(),
+  // The Odds API configuration
+  THE_ODDS_API_KEY: z.string().optional(),
+  ALPHA_VANTAGE_API_KEY: z.string().optional(),
   // Diffbot configuration for web scraping
-  // Freestyle configuration for code execution and Git management
+  DIFFBOT_API_KEY: z.string().optional(),
+  // Nango secret key for managing OAuth connections
+  NANGO_SECRET_KEY: z.string().optional(),
+  // Nango URL for OAuth callback
+  NANGO_URL: z.string().url().default("https://api.nango.dev/oauth/callback"),
+  // Needle API key
+  NEEDLE_API_KEY: z.string().optional(),
+  // Needle URL
+  NEEDLE_URL: z.string().url().default("https://api.needle.com/v1"),
+  // Needle project ID
+  NEEDLE_PROJECT_ID: z.string().optional(),
 });
 // Validate environment variables
 const validateEnv = () => {

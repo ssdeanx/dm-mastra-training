@@ -32,9 +32,10 @@ export * from './graphRAG';
 
 export * from './mem0-tool';
 export * from './rerank-tool';
-export * from './stock-tools';
+export { stockPriceTool, historicalStockPriceTool, stockNewsTool, earningsCalendarTool } from './stock-tools';
+export { sportsOddsTool, listSportsTool, listBookmakersTool, historicalOddsTool } from './sports-odds-tool';
 export * from './vectorQueryTool';
-export * from './weather-tool';
+export { weatherTool, weatherAlertsTool, hourlyWeatherForecastTool, weatherHistoryTool } from './weather-tool';
 export {
 structuredArgumentationTool,
 sequentialThinkingTool,
@@ -56,5 +57,8 @@ export type { GraphRAGRuntimeContext } from './graphRAG';
 export type { Mem0RuntimeContext } from './mem0-tool';
 export type { RerankRuntimeContext } from './rerank-tool';
 export type { StockRuntimeContext } from './stock-tools';
+export type { SportsOddsRuntimeContext } from './sports-odds-tool';
 export type { VectorQueryRuntimeContext } from './vectorQueryTool';
 export type { WeatherRuntimeContext } from './weather-tool';
+export { cryptoPriceTool, historicalCryptoPriceTool, cryptoMarketDataTool, listCryptoCoinsTool } from './crypto-tool';
+export { cryptoRuntimeContext } from './crypto-tool';
