@@ -62,7 +62,7 @@ export const memory = new Memory({
   vector: new LibSQLVector({
     connectionUrl: process.env.VNEXT_URL || "file:./data/vector.db", // Or your vector database URL
   }),
-  embedder: createGeminiEmbeddingModel(), // Use Gemini for embeddings
+  embedder: createGeminiEmbeddingModel('models/text-embedding-004'), // Use Gemini for embeddings
   options: {
     lastMessages: 500,
     semanticRecall: {
