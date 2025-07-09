@@ -92,8 +92,6 @@
     "typescript-eslint": "^8.36.0"
   },
   "overrides": {
-    "mastra": "^0.10.11",
-    "@mastra/core": "^0.10.11",
     "@opentelemetry/core": "^2.0.1",
     "@opentelemetry/auto-instrumentations-node": "^0.61.0",
     "@qdrant/js-client-rest": "^1.14.1",
