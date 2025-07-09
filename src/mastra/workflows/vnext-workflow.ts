@@ -1,12 +1,13 @@
 // vNext Agent Network Workflow - Powered by Mastra
 import { NewAgentNetwork } from '@mastra/core/network/vNext';
 import { Agent } from '@mastra/core/agent';
-import { createGemini25Provider } from '../config/googleProvider';
+import { createGemini25Provider, createGeminiEmbeddingModel } from '../config/googleProvider';
 import { RuntimeContext } from '@mastra/core/runtime-context';
 import { PinoLogger } from "@mastra/loggers";
 import { generateId } from 'ai';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore, LibSQLVector } from '@mastra/libsql';
+import { AttentionGuidedMemoryProcessor, ContextualRelevanceProcessor, WorkflowAwareMemoryProcessor, BiasMitigationProcessor } from '../upstashMemory';
 // Agent imports
 import { masterAgent } from '../agents/master-agent';
 import { supervisorAgent } from '../agents/supervisor-agent';
@@ -16,16 +17,54 @@ import { weatherWorkflow } from './weather-workflow';
 import { chunkerTool, createBraveSearchTool, createTavilySearchTool, graphRAGTool, graphRAGUpsertTool, hybridVectorSearchTool, mem0MemorizeTool, mem0RememberTool, stockPriceTool, vectorQueryTool, weatherTool } from '../tools';
 // Tool imports
 
-const memory = new Memory({
+/**
+* This file defines the vNext Agent Network Workflow for Mastra, integrating various agents and workflows
+* to handle complex tasks with enhanced memory management using LibSQL.
+* It includes detailed logging for better traceability and debugging.
+* @module vNextWorkflow
+* @license MIT
+* @version 0.11.0
+* @author Dean Machines
+* @description This module sets up the vNext Agent Network with specialized agents and workflows,
+*              utilizing LibSQL for memory management and providing tools for various tasks.
+* @requires @mastra/core
+* @requires @mastra/memory
+* @requires @mastra/libsql
+* @requires @mastra/loggers
+* @requires @mastra/tools
+* @requires @mastra/core/runtime-context
+* @requires @mastra/core/network/vNext
+* @requires @mastra/core/agent
+* @example
+* import { vNextWorkflow } from './vnext-workflow';
+* const result = await vNextWorkflow('Your task here', {
+*  isComplex: true,
+* maxIterations: 5,
+* context: {
+*   resourceId: 'user-123',
+*  threadId: 'thread-456',
+*  additionalContext: { key: 'value' }
+* }
+* });
+* console.log(result);
+* @see {@link https://mastra.ai/docs/vnext-workflow} for more details
+* @see {@link https://mastra.ai/docs/agents} for agent documentation
+* @see {@link https://mastra.ai/docs/tools} for tool documentation
+* @see {@link https://mastra.ai/docs/memory} for memory management documentation
+* @see {@link https://mastra.ai/docs/libsql} for LibSQL integration documentation
+* @see {@link https://mastra.ai/docs/logging} for logging documentation
+*/
+export const memory = new Memory({
   storage: new LibSQLStore({
-    url: 'file:./data/mastra.db', // Or your database URL
+    url: process.env.VNEXT_URL || 'file:./data/mastra.db', // Or your database URL
+    authToken: process.env.VNEXT_TOKEN || '', // Optional authentication token
   }),
   vector: new LibSQLVector({
-    connectionUrl: "file:./data/vector.db", // Or your vector database URL
+    connectionUrl: process.env.VNEXT_URL || "file:./data/vector.db", // Or your vector database URL
   }),
-  // Moved memory-specific settings here
+  embedder: createGeminiEmbeddingModel(), // Use Gemini for embeddings
   options: {
-    lastMessages: 20,
+    lastMessages: 500,
     semanticRecall: {
       topK: 3,
       messageRange: {
@@ -79,6 +118,41 @@ const memory = new Memory({
       generateTitle: true,
     },
   },
+  processors: [
+    new AttentionGuidedMemoryProcessor({
+      maxMessages: 50,
+      similarityThreshold: 0.85,
+      importanceKeywords: ['urgent', 'important', 'critical', 'error', 'bug', 'issue', 'task', 'goal'],
+      verboseMessageThreshold: 500,
+      contextPreservationRatio: 0.3,
+    }),
+    new ContextualRelevanceProcessor({
+        topicContinuityThreshold: 0.7,
+        maxTopicShifts: 4,
+    }),
+    new WorkflowAwareMemoryProcessor({
+      workflowStages: ['data_collection', 'analysis', 'reporting'],
+      defaultRetentionStrategy: 'prune_irrelevant',
+      stageRelevanceStrategy: 'semantic',
+      workflowStageDefinitions: {
+        data_collection: 'Collecting data from various sources',
+        analysis: 'Analyzing collected data for insights',
+        reporting: 'Generating reports based on analysis'
+      },
+      semanticRelevanceThreshold: 0.7,
+      attentionGuidedProcessor: new AttentionGuidedMemoryProcessor({
+        maxMessages: 50,
+        similarityThreshold: 0.85,
+        importanceKeywords: ['urgent', 'important', 'critical', 'error', 'bug', 'issue', 'task', 'goal', 'high-priority', 'actionable', 'decision', 'risk', 'security', 'performance', 'update', 'fix', 'solution', 'insight', 'analysis', 'data', 'workflow', 'status', 'progress', 'blocker', 'verify', 'validate', 'report', 'action', 'feedback', 'optimize', 'efficiency', 'integrity', 'coordination', 'strategy', 'outcome'],
+        verboseMessageThreshold: 500,
+        contextPreservationRatio: 0.3,
+      }),
+    }),
+    new BiasMitigationProcessor({
+      detectionStrategies: ['confirmation', 'recency', 'anchoring', 'availability', 'framing', 'bandwagon', 'overconfidence', ],
+      mitigationStrategies: ['re-weight', 'add-counter-arguments', 'remove', 'flag', 'ignore', 'contextualize', 'reframe', 'balance'],
+    }),
+  ],
 });
 
 
