@@ -14,7 +14,7 @@ import { env } from './config/environment';
 //import { inngest } from './inngest';
 //import { serve as inngestServe } from "@mastra/inngest";
 import { NetlifyDeployer } from "@mastra/deployer-netlify";
-
+import { registerApiRoute } from "@mastra/core/server";
 export const mastra = new Mastra({
   workflows: { weatherWorkflow, researchAnalysisWorkflow, documentAnalysisWorkflow, researchReportWorkflow, agentPerformanceWorkflow},
   vnext_networks: { 'dean-machines-vnext': vNextNetwork },
@@ -38,7 +38,19 @@ export const mastra = new Mastra({
                 baseUrl: process.env.LANGFUSE_HOST,
         })},
         },
-  deployer: new NetlifyDeployer()
+  deployer: new NetlifyDeployer(),
+  server: {
+    apiRoutes: [
+      registerApiRoute("/dm-agents", {
+        method: "GET",
+        handler: async (c) => {
+          // Return the list of registered agent IDs
+          const agents = Object.keys(agentRegistry);
+          return c.json({ agents });
+        },
+      }),
+    ],
+  },
 //  server: {
     // The server configuration is required to allow local docker container can connect to the mastra server
     //host: "0.0.0.0",
