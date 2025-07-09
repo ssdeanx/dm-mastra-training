@@ -36,3 +36,6 @@ dist
 .specstory/ai_rules_backups/*
 !.specstory/ai_rules_backups/README.md.backup
 !.specstory/ai_rules_backups/README.md.backup.*
+
+#Ignore insiders AI rules
+.github\copilot-instructions.md
