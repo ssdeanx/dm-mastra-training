@@ -37,6 +37,7 @@
     "@mastra/fastembed": "^0.10.1",
     "@mastra/firecrawl": "^1.2.6",
     "@mastra/inngest": "^0.11.3",
+    "@mastra/libsql": "^0.11.0",
     "@mastra/loggers": "^0.10.3",
     "@mastra/mcp": "^0.10.6",
     "@mastra/mcp-docs-server": "^0.13.5",

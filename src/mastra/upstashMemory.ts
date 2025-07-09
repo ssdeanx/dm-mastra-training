@@ -1261,6 +1261,7 @@ export async function createUpstashThread(
   metadata?: Record<string, unknown>,
   threadId?: string
 ) {
+  logger.info(`[upstashMemory] createUpstashThread received. resourceId: ${resourceId}, threadId: ${threadId}`);
   const params = createThreadSchema.parse({ resourceId, threadId, title, metadata });
   try {
     return await upstashMemory.createThread(params);
