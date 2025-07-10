@@ -9,19 +9,20 @@ import { z } from "zod";
 // Define environment schema
 const envSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
-  PORT: z.coerce.number().default(3141),
+  PORT: z.coerce.number().default(4111),
   LANGFUSE_TRACING: z.string().default("true").transform((val) => val === "true"),
-  FACTORY: z.string().default("true").transform((val) => val === "true"),
+  // Factory type for the application, defaulting to 'gemini'
+  FACTORY: z.enum(["gemini", "default"]).default("gemini"),
   // OpenAI API Key (required for OpenAI models)
   OPENAI_API_KEY: z.string().optional(),
   // Google API Key for Generative AI (required for Google models)
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
-  // Upstash Redis configuration (optional for logging)
-  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+  // Upstash Redis configuration
+  UPSTASH_REDIS_REST_URL: z.string().url(),
+  UPSTASH_REDIS_REST_TOKEN: z.string(),
   // Upstash Vector configuration
-  UPSTASH_VECTOR_REST_URL: z.string().url().optional(),
-  UPSTASH_VECTOR_REST_TOKEN: z.string().optional(),
+  UPSTASH_VECTOR_REST_URL: z.string().url(),
+  UPSTASH_VECTOR_REST_TOKEN: z.string(),
   // Upstash Vector 2 configuration (for 1536-dimension embeddings)
   UPSTASH_VECTOR_REST_URL2: z.string().url().optional(),
   UPSTASH_VECTOR_REST_TOKEN2: z.string().optional(),
@@ -41,7 +42,25 @@ const envSchema = z.object({
   // Needle project ID
   NEEDLE_PROJECT_ID: z.string().optional(),
 
+}).superRefine((env, ctx) => {
+  if (env.FACTORY === 'gemini') {
+    if (!env.UPSTASH_VECTOR_REST_URL2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'UPSTASH_VECTOR_REST_URL2 is required when FACTORY is "gemini"',
+        path: ['UPSTASH_VECTOR_REST_URL2'],
+      });
+    }
+    if (!env.UPSTASH_VECTOR_REST_TOKEN2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'UPSTASH_VECTOR_REST_TOKEN2 is required when FACTORY is "gemini"',
+        path: ['UPSTASH_VECTOR_REST_TOKEN2'],
+      });
+    }
+  }
 });
+
 // Validate environment variables
 const validateEnv = () => {
   try {

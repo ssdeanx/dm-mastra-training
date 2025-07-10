@@ -6,9 +6,9 @@ import type { CoreMessage as OriginalCoreMessage } from '@mastra/core';
 import { maskStreamTags } from '@mastra/core';
 import { MemoryProcessor, MemoryProcessorOpts } from '@mastra/core/memory';
 import { UIMessage, EmbeddingModel } from 'ai';
-import { fastembed } from '@mastra/fastembed';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
 import { createGeminiEmbeddingModel } from './config/googleProvider';
+import { env } from './config/environment';
 //import { ca } from 'zod/v4/locales';
 
 /**
@@ -47,30 +47,6 @@ export class VectorStoreError extends Error {
 
 const logger = new PinoLogger({ name: 'upstashMemory', level: 'info' });
 
-/**
- * Environment variable validation for Upstash services
- * Ensures all required credentials are present before initialization
- */
-function validateUpstashEnvironment(): void {
-  const required = [
-    'UPSTASH_REDIS_REST_URL',
-    'UPSTASH_REDIS_REST_TOKEN',
-    'UPSTASH_VECTOR_REST_URL',
-    'UPSTASH_VECTOR_REST_TOKEN',
-    'UPSTASH_VECTOR_REST_URL2',
-    'UPSTASH_VECTOR_REST_TOKEN2'
-  ];
-
-  const missing = required.filter(key => !process.env[key]);
-  if (missing.length > 0) {
-    throw new Error(`Missing required Upstash environment variables for FACTORY=${process.env.FACTORY || 'default'}: ${missing.join(', ')}`);
-  }
-
-  logger.info('Upstash environment variables validated successfully');
-}
-
-// Validate environment on module load
-validateUpstashEnvironment();
 
 // Validation schemas
 const createThreadSchema = z.object({
@@ -227,8 +203,8 @@ export interface MetadataFilter {
  * Create shared Upstash storage instance
  */
 export const upstashStorage = new UpstashStore({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+  url: env.UPSTASH_REDIS_REST_URL || '',
+  token: env.UPSTASH_REDIS_REST_TOKEN || ''
 });
 
 /**
@@ -241,8 +217,8 @@ export const upstashStorage = new UpstashStore({
  * - Supports metadata filtering and hybrid search
  */
 export const upstashVector = new UpstashVector({
-  url: process.env.UPSTASH_VECTOR_REST_URL || '',
-  token: process.env.UPSTASH_VECTOR_REST_TOKEN || ''
+  url: env.UPSTASH_VECTOR_REST_URL2 || '',
+  token: env.UPSTASH_VECTOR_REST_TOKEN2 || ''
 });
 
 /**
@@ -277,22 +253,11 @@ export class VectorStoreFactory {
   static get(profileName: keyof typeof VECTOR_PROFILES = VECTOR_CONFIG.DEFAULT_PROFILE) {
     if (!this.instances.has(profileName)) {
       const profile = VECTOR_PROFILES[profileName];
-      let embedder: EmbeddingModel<string>;
-      let vectorStore: UpstashVector;
-
-      if (profile.MODEL_PROVIDER === 'google') {
-        embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: profile.EMBEDDING_DIMENSION });
-        vectorStore = new UpstashVector({
-          url: process.env.UPSTASH_VECTOR_REST_URL2 || '',
-          token: process.env.UPSTASH_VECTOR_REST_TOKEN2 || ''
-        });
-      } else {
-        embedder = fastembed;
-        vectorStore = new UpstashVector({
-          url: process.env.UPSTASH_VECTOR_REST_URL || '',
-          token: process.env.UPSTASH_VECTOR_REST_TOKEN || ''
-        });
-      }
+      const embedder: EmbeddingModel<string> = createGeminiEmbeddingModel(undefined, { outputDimensionality: profile.EMBEDDING_DIMENSION });
+      const vectorStore: UpstashVector = new UpstashVector({
+        url: env.UPSTASH_VECTOR_REST_URL2 || '',
+        token: env.UPSTASH_VECTOR_REST_TOKEN2 || ''
+      });
 
       this.instances.set(profileName, {
         vectorStore,
@@ -1170,7 +1135,7 @@ export class WorkflowAwareMemoryProcessor extends MemoryProcessor {
 export const upstashMemory = new Memory({
   storage: upstashStorage,
   vector: upstashVector,
-  embedder: fastembed,
+  embedder: VectorStoreFactory.get('gemini').embedder,
   options: {
     lastMessages: 500, // Enhanced for better context retention
     semanticRecall: {
