@@ -18,6 +18,7 @@ import { NetlifyDeployer } from "@mastra/deployer-netlify";
 import { registerApiRoute } from "@mastra/core/server";
 //import { CopilotRuntime, copilotRuntimeNodeHttpEndpoint, ExperimentalEmptyAdapter } from "@copilotkit/runtime"; // Uncomment if you need to use CopilotKit runtime
 import { registerCopilotKit } from "@ag-ui/mastra";
+import type { LogLevel } from '@mastra/loggers';
 
 // Import all agent-specific runtime contexts
 import type {
@@ -39,7 +40,7 @@ export const mastra = new Mastra({
   networks: { baseNetwork },
   agents: agentRegistry,
   logger: new PinoLogger({
-    level: env.LOG_LEVEL,
+    level: env.LOG_LEVEL as LogLevel,
   }),
   telemetry: {
         serviceName: "ai",

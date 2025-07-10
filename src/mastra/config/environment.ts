@@ -5,11 +5,15 @@
 
 import { z } from "zod";
 
+
 // Define environment schema
 const envSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   PORT: z.coerce.number().default(3141),
   LANGFUSE_TRACING: z.string().default("true").transform((val) => val === "true"),
+  FACTORY: z.string().default("true").transform((val) => val === "true"),
+  // OpenAI API Key (required for OpenAI models)
+  OPENAI_API_KEY: z.string().optional(),
   // Google API Key for Generative AI (required for Google models)
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   // Upstash Redis configuration (optional for logging)
@@ -36,6 +40,7 @@ const envSchema = z.object({
   NEEDLE_URL: z.string().url().default("https://api.needle.com/v1"),
   // Needle project ID
   NEEDLE_PROJECT_ID: z.string().optional(),
+
 });
 // Validate environment variables
 const validateEnv = () => {
