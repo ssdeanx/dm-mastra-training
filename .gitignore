@@ -40,3 +40,6 @@ dist
 #Ignore insiders AI rules
 .github\copilot-instructions.md
 .codacy/cli.sh
+Docs/*.md
+docs/AGENTS_README.md
+docs/BEST_PRACTICES.md

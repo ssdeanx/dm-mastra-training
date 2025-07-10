@@ -11,7 +11,9 @@ src/mastra/
 ├── agents/
 ├── config/
 ├── index.ts
+├── inngest/
 ├── networks/
+├── processor-extra.ts
 ├── tools/
 ├── upstashMemory.ts
 └── workflows/
@@ -45,7 +47,7 @@ The `agents/` subdirectory contains the definitions and implementations of all s
 
 The `workflows/` subdirectory defines multi-step processes that orchestrate interactions between various agents and tools to achieve complex, high-level objectives.
 
-- **Examples**: Includes `weatherWorkflow`, `researchAnalysisWorkflow`, and `vNextWorkflow`.
+- **Examples**: Includes `weatherWorkflow`, `researchAnalysisWorkflow`, `researchReportWorkflow`, `documentAnalysisWorkflow`, `agentPerformanceWorkflow`, `inngestMultiAgentWorkflow`, and `vNextWorkflow`.
 - **Documentation**: Detailed documentation for each workflow can be found in [`docs/WORKFLOWS_README.md`](docs/WORKFLOWS_README.md).
 
 ### 4. Tools (`tools/`)
@@ -53,7 +55,7 @@ The `workflows/` subdirectory defines multi-step processes that orchestrate inte
 The `tools/` subdirectory contains implementations of various tools that extend the capabilities of Mastra agents. These tools allow agents to interact with external services, manage data, and perform specialized operations.
 
 - **Central Export**: The [`src/mastra/tools/index.ts`](src/mastra/tools/index.ts) file exports all available tools.
-- **Examples**: Includes tools for web search, data management, Git operations, weather information, and more.
+- **Examples**: Includes tools for web search, data management, Git operations, weather information, financial data, and more.
 - **Documentation**: Detailed documentation for each tool can be found in [`docs/TOOLS_README.md`](docs/TOOLS_README.md).
 
 ### 5. Networks (`networks/`)
@@ -63,16 +65,36 @@ The `networks/` subdirectory defines agent networks, which are responsible for c
 - **Base Network**: The [`src/mastra/networks/base-network.ts`](src/mastra/networks/base-network.ts) file defines the `baseNetwork`, a comprehensive agent network that uses LLM-based dynamic routing to coordinate specialized agents.
 - **Documentation**: Detailed documentation for networks can be found in [`docs/NETWORKS_README.md`](docs/NETWORKS_README.md).
 
-### 6. Upstash Memory (`upstashMemory.ts`)
+### 6. Inngest (`inngest/`)
+
+The `inngest/` subdirectory contains the Inngest client setup and functions for building robust, distributed, and fault-tolerant workflows, enabling event-driven orchestration.
+
+- **Key Features**:
+  - **`inngest` instance**: Initialized in [`src/mastra/inngest/index.ts`](src/mastra/inngest/index.ts) for event-driven functions.
+  - **Middleware**: Includes `realtimeMiddleware` for real-time updates.
+  - **Local Functions**: Configured for local development.
+- **Documentation**: More details can be found in the Inngest setup section of the main `README.md` and related workflow files.
+
+### 7. Processor Extra (`processor-extra.ts`)
+
+The [`src/mastra/processor-extra.ts`](src/mastra/processor-extra.ts) file extends core memory processing capabilities, allowing for custom message processing and metadata handling within the memory system.
+
+- **Key Features**:
+  - `ExtendedMemoryProcessor`: Demonstrates how to extend the base `MemoryProcessor` to add custom logic, such as logging message metadata during processing.
+  - Integrates with `PinoLogger` for detailed logging of processing steps.
+- **Purpose**: Provides a flexible mechanism for adding custom, application-specific processing logic to memory operations without modifying core framework code.
+
+### 8. Upstash Memory (`upstashMemory.ts`)
 
 The [`src/mastra/upstashMemory.ts`](src/mastra/upstashMemory.ts) file provides the core memory management system for Mastra agents, leveraging Upstash Redis and Upstash Vector for distributed storage and semantic search.
 
 - **Key Features**:
   - **UpstashStore**: Used for distributed Redis storage.
   - **UpstashVector**: Used for semantic search with cloud-based vectors.
-  - **Memory Processors**: Includes `AttentionGuidedMemoryProcessor` and `ContextualRelevanceProcessor` for optimizing memory usage and context retention.
+  - **Memory Processors**: Includes `AttentionGuidedMemoryProcessor`, `ContextualRelevanceProcessor`, `WorkflowAwareMemoryProcessor`, and `BiasMitigationProcessor` for optimizing memory usage and context retention, and mitigating biases.
   - **Vector Operations**: Provides functions for creating, upserting, querying, updating, and deleting vector indexes and data.
   - **Environment Validation**: Ensures necessary Upstash environment variables are configured.
+  - **LibSQL Integration**: The `vNextWorkflow` uses `LibSQLStore` and `LibSQLVector` for its memory, demonstrating an alternative persistent memory solution tailored for embedded databases.
 
 ## Overall Architecture
 

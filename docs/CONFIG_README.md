@@ -39,6 +39,7 @@ src/mastra/config/
   - `createGeminiEmbeddingModel` ([`src/mastra/config/googleProvider.ts`](src/mastra/config/googleProvider.ts:319-335)): For creating embedding models with flexible dimensions and task types.
   - `createMastraGoogleProvider` ([`src/mastra/config/googleProvider.ts`](src/mastra/config/googleProvider.ts:367-384)): The primary export for creating Mastra-compatible Google providers.
   - Includes utilities for explicit caching (`createCacheManager`, `createCachedContent`, `createCachedGoogleModel`) and search grounding metadata extraction.
+  - **Dependencies**: `@ai-sdk/google`, `@google/generative-ai/server`, `PinoLogger`.
 - **Location**: [`src/mastra/config/googleProvider.ts`](src/mastra/config/googleProvider.ts:1-707)
 
 ### 3. LangChain Adapter (`langchainAdapter.ts`)
@@ -51,6 +52,7 @@ src/mastra/config/
   - `createLangGraphModel` ([`src/mastra/config/langchainAdapter.ts`](src/mastra/config/langchainAdapter.ts:248-274)): Creates a LangGraph-compatible model for Mastra agents.
   - `createMastraLangGraphWorkflow` ([`src/mastra/config/langchainAdapter.ts`](src/mastra/config/langchainAdapter.ts:298-474)): Creates a LangGraph `StateGraph` for advanced agent workflows with state management and conditional execution.
   - `createMastraLangGraphChat` ([`src/mastra/config/langchainAdapter.ts`](src/mastra/config/langchainAdapter.ts:485-522)): Creates a simpler LangGraph chat workflow for conversational interactions.
+  - **Dependencies**: `@ai-sdk/google`, `@langchain/google-genai`, `@langchain/core/runnables`, `@langchain/core/messages`, `@langchain/core/chat_history`, `@langchain/core/output_parsers`, `@langchain/core/prompts`, `@langchain/core/tools`, `@langchain/langgraph`, `@langchain/langgraph/prebuilt`, `zod`, `PinoLogger`.
 - **Location**: [`src/mastra/config/langchainAdapter.ts`](src/mastra/config/langchainAdapter.ts:1-576)
 
 ### 4. Langfuse Configuration (`langfuseConfig.ts`)
@@ -64,6 +66,7 @@ src/mastra/config/
   - `traceToolUsage` ([`src/mastra/config/langfuseConfig.ts`](src/mastra/config/langfuseConfig.ts:267-297)): Traces individual tool usages within an agent operation.
   - `traceWorkflow` ([`src/mastra/config/langfuseConfig.ts`](src/mastra/config/langfuseConfig.ts:306-348)): Traces workflow execution.
   - Includes helper functions for creating agent, model, and workflow metadata, and for tracing prompt usage.
+  - **Dependencies**: `langfuse`, `langfuse-vercel`, `zod`, `PinoLogger`.
 - **Location**: [`src/mastra/config/langfuseConfig.ts`](src/mastra/config/langfuseConfig.ts:1-752)
 
 ### 5. OpenTelemetry Configuration (`oTelConfig.ts`)
@@ -82,6 +85,7 @@ src/mastra/config/
   - `createPerformanceUpstashLogger` ([`src/mastra/config/upstashLogger.ts`](src/mastra/config/upstashLogger.ts:355-400)): Utility for logging performance metrics.
   - `testUpstashConnection` ([`src/mastra/config/upstashLogger.ts`](src/mastra/config/upstashLogger.ts:405-432)): Function to test connectivity to Upstash Redis.
   - `createAgentDualLogger` ([`src/mastra/config/upstashLogger.ts`](src/mastra/config/upstashLogger.ts:465-526)): Creates a logger that sends logs to both PinoLogger (console) and Upstash (distributed).
+  - **Dependencies**: `ioredis`, `zod`, `pino`, `pino-abstract-transport`, `PinoLogger`.
 - **Location**: [`src/mastra/config/upstashLogger.ts`](src/mastra/config/upstashLogger.ts:1-526)
 
 ### 7. Index (`index.ts`)
@@ -95,6 +99,7 @@ src/mastra/config/
   - Exports `EnhancedAISDKExporter` for custom AI SDK telemetry.
   - Provides `createTracedGoogleModel` for creating Google models with LangSmith tracing.
   - Exports `ObservabilityUtils` with methods like `getAISDKSettings` and `instrumentAgent`/`instrumentNetwork` for comprehensive instrumentation.
+  - **Dependencies**: `./googleProvider`, `./langfuseConfig`, `./upstashLogger`, `@langsmith/traceable`, `@langsmith/wrappers/vercel`, `@mastra/core/observability`, `@mastra/core/telemetry`.
 - **Location**: [`src/mastra/config/index.ts`](src/mastra/config/index.ts:1-534)
 
 ## Overall Role of the Configuration Directory
