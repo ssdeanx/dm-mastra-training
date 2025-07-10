@@ -7,7 +7,7 @@
  * @version 2.0.1 - Complete rewrite using correct Mastra patterns
  */
 
-import { createTool, /*, ToolExecutionContext */ 
+import { createTool, /*, ToolExecutionContext */
 ToolExecutionContext} from '@mastra/core/tools';
 import { createGraphRAGTool } from '@mastra/rag';
 import { z } from 'zod';
@@ -25,7 +25,7 @@ import {
   VectorStoreFactory
 } from '../upstashMemory';
 import { embedMany } from 'ai';
-import { fastembed } from '@mastra/fastembed';
+
 import { chunkerTool } from './chunker-tool';
 
 const logger = new PinoLogger({ name: 'GraphRAGTool' });
@@ -57,7 +57,7 @@ const upsertInputSchema = z.object({
   }).optional() as z.ZodType<ExtractParams | undefined>, // Cast to ExtractParams
   indexName: z.string().default('context').describe('Name of the index to upsert to'),
   createIndex: z.boolean().default(true).describe('Whether to create the index if it does not exist'),
-  vectorProfile: z.enum(['default', 'gemini']).default('default').describe('Vector profile to use for embeddings and upserting'),
+  vectorProfile: z.enum(['gemini']).default('gemini').describe('Vector profile to use for embeddings and upserting'),
 }).strict();
 
 const upsertOutputSchema = z.object({
@@ -75,7 +75,7 @@ const queryInputSchema = z.object({
   threshold: z.number().min(0).max(1).default(0.7).describe('Similarity threshold for graph connections'),
   includeVector: z.boolean().default(false).describe('Whether to include vector data in results'),
   minScore: z.number().min(0).max(1).default(0).describe('Minimum similarity score threshold'),
-  vectorProfile: z.enum(['default', 'gemini']).default('default').describe('Vector profile to use for embeddings and querying'),
+  vectorProfile: z.enum(['gemini']).default('gemini').describe('Vector profile to use for embeddings and querying'),
   filter: z.record(z.any()).optional().describe('Optional metadata filter using Upstash-compatible MongoDB/Sift query syntax'), // Add filter field
 }).strict();
 
@@ -112,7 +112,7 @@ export type GraphRAGRuntimeContext = {
   sessionId?: string;
   category?: string;
   debug?: boolean;
-  vectorProfile?: 'default' | 'gemini';
+  vectorProfile?: 'gemini';
 };
 
 /**
@@ -295,10 +295,10 @@ export const graphRAGUpsertTool = createTool({
  */
 export const graphRAGTool = createGraphRAGTool({
   vectorStoreName: 'upstashVector',
-  indexName: VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME,
-  model: fastembed, // This will be replaced by the dynamic embedder from VectorStoreFactory
+  indexName: VECTOR_PROFILES.gemini.INDEX_NAME,
+  model: VectorStoreFactory.get('gemini').embedder,
   graphOptions: {
-    dimension: VECTOR_PROFILES.default.EMBEDDING_DIMENSION, // 384 dimensions for fastembed
+    dimension: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION,
     threshold: 0.7
   }
 });
@@ -439,11 +439,11 @@ export const graphRAGQueryTool = createTool({
 export const graphRAGRuntimeContext = new RuntimeContext<GraphRAGRuntimeContext>();
 
 // Set default runtime context values for Upstash Vector with sparse cosine similarity
-graphRAGRuntimeContext.set("indexName", VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME);
+graphRAGRuntimeContext.set("indexName", VECTOR_PROFILES.gemini.INDEX_NAME);
 graphRAGRuntimeContext.set("topK", VECTOR_CONFIG.DEFAULT_TOP_K);
 graphRAGRuntimeContext.set("threshold", 0.7);
 graphRAGRuntimeContext.set("minScore", 0.0);
-graphRAGRuntimeContext.set("dimension", VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].EMBEDDING_DIMENSION);
+graphRAGRuntimeContext.set("dimension", VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION);
 graphRAGRuntimeContext.set("category", "document");
 graphRAGRuntimeContext.set("debug", false);
 graphRAGRuntimeContext.set("debug", false);

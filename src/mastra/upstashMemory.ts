@@ -56,13 +56,10 @@ function validateUpstashEnvironment(): void {
     'UPSTASH_REDIS_REST_URL',
     'UPSTASH_REDIS_REST_TOKEN',
     'UPSTASH_VECTOR_REST_URL',
-    'UPSTASH_VECTOR_REST_TOKEN'
+    'UPSTASH_VECTOR_REST_TOKEN',
+    'UPSTASH_VECTOR_REST_URL2',
+    'UPSTASH_VECTOR_REST_TOKEN2'
   ];
-
-  if (process.env.FACTORY === 'gemini') {
-    required.push('UPSTASH_VECTOR_REST_URL2');
-    required.push('UPSTASH_VECTOR_REST_TOKEN2');
-  }
 
   const missing = required.filter(key => !process.env[key]);
   if (missing.length > 0) {
@@ -252,22 +249,16 @@ export const upstashVector = new UpstashVector({
  * Vector configuration constants
  */
 export const VECTOR_PROFILES = {
-  'default': {
-    INDEX_NAME: 'mastra-memory-vectors',
-    EMBEDDING_DIMENSION: 384, // fastembed text-embedding dimension
-    DISTANCE_METRIC: 'cosine' as const,
-    MODEL_PROVIDER: 'fastembed',
-  },
   'gemini': { // Renamed from 'gemini-1536'
     INDEX_NAME: 'mastra-gemini-vectors', // Renamed for clarity
     EMBEDDING_DIMENSION: 1536, // Gemini-embedding-exp-03-07 dimension
     DISTANCE_METRIC: 'cosine' as const,
-    MODEL_PROVIDER: 'google',
+    MODEL_PROVIDER: 'google'
   }
 } as const;
 
 export const VECTOR_CONFIG = {
-  DEFAULT_PROFILE: (process.env.FACTORY === 'gemini' ? 'gemini' : 'default') as keyof typeof VECTOR_PROFILES,
+  DEFAULT_PROFILE: 'gemini' as const,
   DEFAULT_TOP_K: 5,
   MAX_BATCH_SIZE: 100
 } as const;

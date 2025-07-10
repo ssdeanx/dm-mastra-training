@@ -35,7 +35,6 @@ import {
 import type { UIMessage, CoreMessage } from 'ai';
 import { PinoLogger } from '@mastra/loggers';
 import { embedMany } from 'ai';
-import { fastembed } from '@mastra/fastembed';
 
 // Define runtime context type for vector query tools
 export type VectorQueryRuntimeContext = {
@@ -47,7 +46,7 @@ export type VectorQueryRuntimeContext = {
   'debug'?: boolean;
   'max-results'?: number;
   'include-metadata'?: boolean;
-  'vectorProfile'?: 'default' | 'gemini';
+  'vectorProfile'?: 'gemini';
 };
 
 const logger = new PinoLogger({ name: 'VectorQueryTool', level: 'info' });
@@ -81,8 +80,8 @@ const vectorQueryOutputSchema = z.object({
 // Basic vector query tool using Mastra's createVectorQueryTool for compatibility with Upstash
 export const vectorQueryTool = createVectorQueryTool({
   vectorStoreName: "upstashVector",
-  indexName: VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME,
-  model: fastembed,
+  indexName: VECTOR_PROFILES.gemini.INDEX_NAME,
+  model: VectorStoreFactory.get('gemini').embedder,
   enableFilter: true,
   description: "Search for semantically similar content in the Upstash vector store using embeddings with sparse cosine similarity. Supports filtering, ranking, and context retrieval."
 });
@@ -178,7 +177,7 @@ export const enhancedVectorQueryTool = createTool({
 
         // Create query embedding using Google's embedding model (384 dimensions for fastembed compatibility)
         const { embeddings } = await embedMany({
-          model: fastembed,
+          model: VectorStoreFactory.get('gemini').embedder,
           values: [validatedInput.query]
         });
 

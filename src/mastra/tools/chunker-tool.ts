@@ -13,7 +13,6 @@ import {
   type ExtractParams
 } from '../upstashMemory';
 import { embedMany } from 'ai';
-// import { fastembed } from '@mastra/fastembed'; // No longer directly imported
 
 const logger = new PinoLogger({ name: 'ChunkerTool', level: 'info' });
 
@@ -52,9 +51,9 @@ const chunkerInputSchema = z.object({
   vectorOptions: z.object({
     createEmbeddings: z.boolean().default(false).describe('Whether to create embeddings for chunks'),
     upsertToVector: z.boolean().default(false).describe('Whether to upsert chunks to Upstash vector store'),
-    indexName: z.string().default(VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME).describe('Vector index name for upserting'),
+    indexName: z.string().default(VECTOR_PROFILES.gemini.INDEX_NAME).describe('Vector index name for upserting'),
     createIndex: z.boolean().default(true).describe('Whether to create the vector index if it does not exist'),
-    vectorProfile: z.enum(['default', 'gemini']).default('default').describe('Vector profile to use for embeddings and upserting'),
+    vectorProfile: z.enum(['gemini']).default('gemini').describe('Vector profile to use for embeddings and upserting'),
   }).optional().describe('Vector store integration options'),
   extractParams: z.object({
     title: z.union([z.boolean(), z.object({
