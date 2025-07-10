@@ -3,9 +3,9 @@
 **Empowering the next generation of AI applications with modularity, scalability, and precision.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub last commit](https://img.shields.io/github/last-commit/ssdeanx/mastra)](https://github.com/ssdeanx/dm-mastra-training)
-[![GitHub stars](https://img.shields.io/github/stars/ssdeanx/mastra?style=social)](https://github.com/ssdeanx/dm-mastra-training/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/ssdeanx/mastra)](https://github.com/ssdeanx/dm-mastra-training/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/ssdeanx/dm-mastra-training)](https://github.com/ssdeanx/dm-mastra-training)
+[![GitHub stars](https://img.shields.io/github/stars/ssdeanx/dm-mastra-training?style=social)](https://github.com/ssdeanx/dm-mastra-training/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/ssdeanx/dm-mastra-training)](https://github.com/ssdeanx/dm-mastra-training/issues)
 
 ## Core Technologies
 
