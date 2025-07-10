@@ -19,7 +19,7 @@ import { dataAgent } from './data-agent';
 import { langGraphAgent } from './langgraph-agent';
 import { chanceAgent } from './chance-agent';
 import { mappingAgent } from './mapping-agent';
-import { synthesisAgent } from '../workflows/vnext-workflow';
+
 import { generationAgent } from './generation-agent'; // Import the new agent
 
 // Export all agents for external use
@@ -68,7 +68,6 @@ export const agentRegistry = {
   generation: generationAgent, // Add the new agent to the registry
 
   // Workflow agents
-  synthesize: synthesisAgent,
 } as const;
 
 /**
@@ -82,7 +81,7 @@ export const agentCategories = {
   data: ['data', 'research', 'weather', 'generation'] as const, // Add 'generation' to data
   management: ['supervisor'] as const,
   operations: ['master'] as const,
-  creative: ['synthesize', 'generation'] as const, // Add 'generation' to creative
+  creative: ['generation'] as const, // Add 'generation' to creative
   specialized: ['master', 'generation'] as const, // Add 'generation' to specialized
 } as const;
 

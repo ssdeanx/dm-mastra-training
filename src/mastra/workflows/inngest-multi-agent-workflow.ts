@@ -1,9 +1,8 @@
-import { createWorkflow, createStep } from '@mastra/core/workflows';
 import { z } from 'zod';
 import { init } from '@mastra/inngest';
 import { inngest } from '../inngest';
-import { researchAgent, analyzerAgent, dataAgent, supervisorAgent } from '../agents';
-import { synthesisAgent } from '../workflows/vnext-workflow';
+import { researchAgent, analyzerAgent, dataAgent, supervisorAgent, generationAgent } from '../agents';
+
 import { RuntimeContext } from '@mastra/core/runtime-context';
 
 // Initialize Inngest with Mastra workflow helpers
@@ -280,7 +279,7 @@ const synthesizeReportStep = createInngestStep({
   }),
   execute: async ({ inputData }) => {
     const { originalQuery, analysisReport, insights, includeVisualizations, qualityScore } = inputData;
-    const { text: finalSynthesis } = await synthesisAgent.generate(
+    const { text: finalSynthesis } = await generationAgent.generate(
       `Synthesize the following analysis report (Quality Score: ${qualityScore}) and insights into a comprehensive final report for the query "${originalQuery}". ${includeVisualizations ? "Also, suggest potential visualizations." : ""}\n\nAnalysis Report:\n${analysisReport}\n\nKey Insights:\n${insights.join('\n')}`,
     );
     return { finalSynthesis, visualizationsGenerated: includeVisualizations };
