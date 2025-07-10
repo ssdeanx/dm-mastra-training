@@ -90,10 +90,21 @@ Ensure your development environment is primed with the following essential tools
 * **Node.js**: Version 20.9.0 or higher (LTS is highly recommended for optimal stability and performance).
 * **npm** or **yarn**: A robust and efficient package manager for Node.js.
 * **Git**: The indispensable version control system for seamless repository management.
+* **Docker**: Required for running the Inngest development server, enabling event-driven workflows.
+* **ts-node**: A TypeScript execution engine for running TypeScript files directly, facilitating rapid development and testing.
+* **TypeScript**: Version 5.8.3 or higher, ensuring compatibility with the latest language features and enhancements.
 
-### Installation: Rapid Deployment
+## 👑 Setup Inngest for Event-Driven Workflows
 
-Follow these steps for a swift and efficient setup:
+We recommend using Inngest for managing event-driven workflows in Mastra. Inngest provides a powerful platform for defining, executing, and monitoring complex workflows with ease.
+
+ Start the Inngest development server:
+
+```bash
+docker run --rm -p 8288:8288 inngest/inngest inngest dev -u http://host.docker.internal:4111/api/inngest
+```
+
+## 🛠️ Installation: Setting Up Your Mastra Environment
 
 1. **Clone the Mastra Repository**:
 
