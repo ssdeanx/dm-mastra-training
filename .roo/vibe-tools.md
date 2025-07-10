@@ -1,6 +1,8 @@
-vibe-tools is a CLI tool that allows you to interact with AI models and other tools.
-vibe-tools is installed on this machine and it is available to you to execute. You're encouraged to use it.
-
+---
+glob: [".ts", ".js", ".jsx", ".ts", ".tsx", ".md", ".json"]
+title: Vibe Tools Integration
+description: Use Vibe Tools to interact with AI models, plan implementations, analyze repositories, and generate documentation.
+---
 <vibe-tools Integration>
 # Instructions
 Use the following commands to get AI assistance:
@@ -9,34 +11,71 @@ Use the following commands to get AI assistance:
 `vibe-tools ask "<your question>" --provider <provider> --model <model>` - Ask any model from any provider a direct question (e.g., `vibe-tools ask "What is the capital of France?" --provider openai --model o3-mini`). Note that this command is generally less useful than other commands like `repo` or `plan` because it does not include any context from your codebase or repository. In general you should not use the ask command because it does not include any context. The other commands like `web`, `doc`, `repo`, or `plan` are usually better. If you are using it, make sure to include in your question all the information and context that the model might need to answer usefully.
 
 **Ask Command Options:**
---provider=<provider>: AI provider to use (openai, anthropic, perplexity, gemini, modelbox, openrouter, or xai)
---model=<model>: Model to use (required for the ask command)
---reasoning-effort=<low|medium|high>: Control the depth of reasoning for supported models (OpenAI o1/o3 models and Claude 4 Sonnet). Higher values produce more thorough responses for complex questions.
---with-doc=<doc_url>: Fetch content from one or more document URLs and include it as context. Can be specified multiple times (e.g., `--with-doc=<url1> --with-doc=<url2>`).
+`--provider=<provider>`: AI provider to use (openai, anthropic, perplexity, gemini, modelbox, openrouter, or xai)
+`--model=<model>`: Model to use (required for the ask command)
+`--reasoning-effort=<low|medium|high>`: Control the depth of reasoning for supported models (OpenAI o1/o3 models and Claude 4 Sonnet). Higher values produce more thorough responses for complex questions.
+`--with-doc=<doc_url>`: Fetch content from one or more document URLs and include it as context. Can be specified multiple times (e.g., `--with-doc=<url1> --with-doc=<url2>`).
 
 **Implementation Planning:**
 `vibe-tools plan "<query>"` - Generate a focused implementation plan using AI (e.g., `vibe-tools plan "Add user authentication to the login page"`)
 The plan command uses multiple AI models to:
+
 1. Identify relevant files in your codebase (using Gemini by default)
 2. Extract content from those files
 3. Generate a detailed implementation plan (using OpenAI o3 by default)
 
 **Plan Command Options:**
---fileProvider=<provider>: Provider for file identification (gemini, openai, anthropic, perplexity, modelbox, openrouter, or xai)
---thinkingProvider=<provider>: Provider for plan generation (gemini, openai, anthropic, perplexity, modelbox, openrouter, or xai)
---fileModel=<model>: Model to use for file identification
---thinkingModel=<model>: Model to use for plan generation
---with-doc=<doc_url>: Fetch content from one or more document URLs and include it as context for both file identification and planning. Can be specified multiple times (e.g., `--with-doc=<url1> --with-doc=<url2>`).
+`vibe-tools plan` can be used with various options to customize the planning process:
+
+- `--provider=<provider>`: AI provider to use for file identification and planning (gemini, openai, anthropic, perplexity, modelbox, openrouter, or xai)
+- `--model=<model>`: Model to use for file identification and planning (e.g., gemini-2.5-pro, o3-mini, claude-2, etc.)
+- `--max-tokens=<number>`: Maximum tokens for response (default is 64000)
+- `--fileModel=<model>`: Specify a different model for file identification (default is gemini-2.5-pro)
+- `--fileProvider=<provider>`: Provider for file identification (gemini, openai, anthropic, perplexity, modelbox, openrouter, or xai)
+- `--thinkingProvider=<provider>`: Provider for plan generation (gemini, openai, anthropic, perplexity, modelbox, openrouter, or xai)
+- `--fileModel=<model>`: Model to use for file identification
+- `--thinkingModel=<model>`: Model to use for plan generation
+- `--with-doc=<doc_url>`: Fetch content from one or more document URLs and include it as context for both file identification and planning. Can be specified multiple times (e.g., `--with-doc=<url1> --with-doc=<url2>`).
+`vibe-tools plan "<query>" [options]`
 
 **Web Search:**
 `vibe-tools web "<your question>"` - Get answers from the web using a provider that supports web search (e.g., Perplexity models and Gemini Models either directly or from OpenRouter or ModelBox) (e.g., `vibe-tools web "latest shadcn/ui installation instructions"`)
 Note: web is a smart autonomous agent with access to the internet and an extensive up to date knowledge base. Web is NOT a web search engine. Always ask the agent for what you want using a proper sentence, do not just send it a list of keywords. In your question to web include the context and the goal that you're trying to acheive so that it can help you most effectively.
-when using web for complex queries suggest writing the output to a file somewhere like local-research/<query summary>.md.
+when using web for complex queries suggest writing the output to a file somewhere like `data/<query summary>.md`.
 
 **IMPORTANT: Do NOT use the `web` command for specific URLs.** If a user provides a specific URL (documentation link, GitHub repo, article, etc.), you should always use commands that support the `--with-doc` parameter instead, such as `repo`, `plan`, `doc`, or `ask`. Using `--with-doc` ensures the exact content of the URL is processed correctly and completely.
 
 **Web Command Options:**
---provider=<provider>: AI provider to use (perplexity, gemini, modelbox, or openrouter)
+
+`vibe-tools web "<your question>" [options]`
+
+- `--reasoning-effort=<low|medium|high>`: Control the depth of reasoning for supported models (OpenAI o1/o3 models and Claude 4 Sonnet). Higher values produce more thorough responses for complex questions.
+- `--save-to=<file path>`: Save the web search results to a file (e.g., `vibe-tools web "latest shadcn/ui installation instructions" --save-to data/shadcn-ui.md`)
+- `--no-save`: Do not save the web search results to a file
+- `--no-web`: Disable web search capabilities (useful for testing or when web search is not needed)
+- `--no-cache`: Disable caching of web search results (useful for testing or when you want to ensure fresh results)
+- `--no-results`: Disable displaying web search results in the terminal (useful when you only want to save the results to a file)
+- `--no-verbose`: Disable verbose output (useful for cleaner output)
+- `--no-headers`: Disable displaying headers in the output (useful for cleaner output)
+- `--no-titles`: Disable displaying titles in the output (useful for cleaner output)
+- `--no-summaries`: Disable displaying summaries in the output (useful for cleaner output)
+- `--no-links`: Disable displaying links in the output (useful for cleaner output)
+- `--no-images`: Disable displaying images in the output (useful for cleaner output)
+- `--no-videos`: Disable displaying videos in the output (useful for cleaner output)
+- `--no-audio`: Disable displaying audio in the output (useful for cleaner output)
+- `--no-ads`: Disable displaying ads in the output (useful for cleaner output)
+- `--no-related`: Disable displaying related searches in the output (useful for cleaner output)
+- `--no-suggestions`: Disable displaying search suggestions in the output (useful for cleaner output)
+- `--no-answers`: Disable displaying direct answers in the output (useful for cleaner output)
+- `--no-people-also-ask`: Disable displaying "People also ask" section in the output (useful for cleaner output)
+- `--no-faqs`: Disable displaying FAQs in the output (useful for cleaner output)
+- `--no-knowledge-graph`: Disable displaying knowledge graph information in the output (useful for cleaner output)
+- `--provider=<provider>`: AI provider to use (perplexity, gemini, modelbox, or openrouter). If not specified, the default provider for web search will be used.
+- `--model=<model>`: Specify an alternative AI model to use for web search (e.g., `vibe-tools web "latest shadcn/ui installation instructions" --model gemini-2.5-flash-lite-pr`)
+- `--max-tokens=<number>`: Control response length (default is 64000)
+- `--web`: Enable web search capabilities for supported models
+- `--with-doc=<doc_url>`: Fetch content from one or more document URLs and include it as context. Can be specified multiple times (e.g., `--with-doc=<url1> --with-doc=<url2>`).
+`vibe-tools web "<your question>" [options]`
 
 **Repository Context:**
 `vibe-tools repo "<your question>" [--subdir=<path>] [--from-github=<username/repo>] [--with-doc=<doc_url>...]` - Get context-aware answers about this repository using Google Gemini (e.g., `vibe-tools repo "explain authentication flow"`)
@@ -67,6 +106,7 @@ Use the following commands to interact with MCP servers and their specialized to
 The `search` command helps you discover servers in the MCP Marketplace and on GitHub based on their capabilities and your requirements. The `run` command automatically selects and executes appropriate tools from these servers based on your natural language queries. If you want to use a specific server include the server name in your query. E.g. `vibe-tools mcp run "using the mcp-server-sqlite list files in directory --provider=openrouter"`
 
 **Notes on MCP Commands:**
+
 - MCP commands require `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY` to be set in your environment
 - By default the `mcp` command uses Anthropic, but takes a --provider argument that can be set to 'anthropic' or 'openrouter'
 - Results are streamed in real-time for immediate feedback
@@ -81,8 +121,9 @@ The `search` command helps you discover servers in the MCP Marketplace and on Gi
 `vibe-tools browser mac-chrome [options]` - Start a Chrome instance with remote debugging (macOS only) (e.g., `vibe-tools browser mac-chrome --debug`, `vibe-tools browser mac-chrome --lite`)
 
 **Notes on Browser Commands:**
+
 - All browser commands are stateless unless --connect-to is used to connect to a long-lived interactive session. In disconnected mode each command starts with a fresh browser instance and closes it when done.
-- If you want to start a new long-lived session 
+- If you want to start a new long-lived session
 - When using `--connect-to`, special URL values are supported:
   - `current`: Use the existing page without reloading
   - `reload-current`: Use the existing page and refresh it (useful in development)
@@ -92,6 +133,7 @@ The `search` command helps you discover servers in the MCP Marketplace and on Gi
 - DO NOT ask browser act to "wait" for anything, the wait command is currently disabled in Stagehand.
 
 **Tool Recommendations:**
+
 - `vibe-tools web` is best for general web information not specific to the repository. Generally call this without additional arguments.
 - `vibe-tools repo` is ideal for repository-specific questions, planning, code review and debugging. E.g. `vibe-tools repo "Review recent changes to command error handling looking for mistakes, omissions and improvements"`. Generally call this without additional arguments.
 - `vibe-tools plan` is ideal for planning tasks. E.g. `vibe-tools plan "Adding authentication with social login using Google and Github"`. Generally call this without additional arguments.
@@ -104,51 +146,53 @@ The `search` command helps you discover servers in the MCP Marketplace and on Gi
 - When a user provides a specific URL for documentation or reference material, always use the `--with-doc=<url>` flag with that URL rather than attempting to search for or summarize the content independently. This ensures the exact document is used as context.
 
 **Running Commands:**
+
 1. Use `vibe-tools <command>` to execute commands (make sure vibe-tools is installed globally using npm install -g vibe-tools so that it is in your PATH)
 
 **General Command Options (Supported by all commands):**
---provider=<provider>: AI provider to use (openai, anthropic, perplexity, gemini, openrouter, modelbox, or xai). If provider is not specified, the default provider for that task will be used.
---model=<model name>: Specify an alternative AI model to use. If model is not specified, the provider's default model for that task will be used.
---max-tokens=<number>: Control response length
---save-to=<file path>: Save command output to a file (in *addition* to displaying it)
---debug: Show detailed logs and error information
---web: Enable web search capabilities for supported models (currently Gemini models) across all commands
+
+`--provider=<provider>`: AI provider to use (openai, anthropic, perplexity, gemini, openrouter, modelbox, or xai). If provider is not specified, the default provider for that task will be used.
+`--model=<model name>`: Specify an alternative AI model to use. If model is not specified, the provider's default model for that task will be used.
+`--max-tokens=<number>`: Control response length
+`--save-to=<file path>`: Save command output to a file (in *addition* to displaying it)
+`--debug`: Show detailed logs and error information
+`--web`: Enable web search capabilities for supported models (currently Gemini models) across all commands
 
 **Repository Command Options:**
---provider=<provider>: AI provider to use (gemini, openai, openrouter, perplexity, modelbox, anthropic, or xai)
---model=<model>: Model to use for repository analysis
---max-tokens=<number>: Maximum tokens for response
---from-github=<GitHub username>/<repository name>[@<branch>]: Analyze a remote GitHub repository without cloning it locally
---subdir=<path>: Analyze a specific subdirectory instead of the entire repository
---with-doc=<doc_url>: Fetch content from one or more document URLs and include it as context. Can be specified multiple times.
+`--provider=<provider>`: AI provider to use (gemini, openai, openrouter, perplexity, modelbox, anthropic, or xai)
+`--model=<model>`: Model to use for repository analysis
+`--max-tokens=<number>`: Maximum tokens for response
+`--from-github=<GitHub username>/<repository name>[@<branch>]`: Analyze a remote GitHub repository without cloning it locally
+`--subdir=<path>`: Analyze a specific subdirectory instead of the entire repository
+`--with-doc=<doc_url>`: Fetch content from one or more document URLs and include it as context. Can be specified multiple times.
 
 **Documentation Command Options:**
---from-github=<GitHub username>/<repository name>[@<branch>]: Generate documentation for a remote GitHub repository
---provider=<provider>: AI provider to use (gemini, openai, openrouter, perplexity, modelbox, anthropic, or xai)
---model=<model>: Model to use for documentation generation
---max-tokens=<number>: Maximum tokens for response
---with-doc=<doc_url>: Fetch content from one or more document URLs and include it as context. Can be specified multiple times.
+`--from-github=<GitHub username>/<repository name>[@<branch>]`: Generate documentation for a remote GitHub repository
+`--provider=<provider>`: AI provider to use (gemini, openai, openrouter, perplexity, modelbox, anthropic, or xai)
+`--model=<model>`: Model to use for documentation generation
+`--max-tokens=<number>`: Maximum tokens for response
+`--with-doc=<doc_url>`: Fetch content from one or more document URLs and include it as context. Can be specified multiple times.
 
 **YouTube Command Options:**
---type=<summary|transcript|plan|review|custom>: Type of analysis to perform (default: summary)
+`--type=<summary|transcript|plan|review|custom>`: Type of analysis to perform (default: summary)
 
 **GitHub Command Options:**
---from-github=<GitHub username>/<repository name>[@<branch>]: Access PRs/issues from a specific GitHub repository
+`--from-github=<GitHub username>/<repository name>[@<branch>]`: Access PRs/issues from a specific GitHub repository
 
 **Browser Command Options (for 'open', 'act', 'observe', 'extract'):**
---console: Capture browser console logs (enabled by default, use --no-console to disable)
---html: Capture page HTML content (disabled by default)
---network: Capture network activity (enabled by default, use --no-network to disable)
---screenshot=<file path>: Save a screenshot of the page
---timeout=<milliseconds>: Set navigation timeout (default: 120000ms for Stagehand operations, 30000ms for navigation)
---viewport=<width>x<height>: Set viewport size (e.g., 1280x720). When using --connect-to, viewport is only changed if this option is explicitly provided
---headless: Run browser in headless mode (default: true)
---no-headless: Show browser UI (non-headless mode) for debugging
---connect-to=<port>: Connect to existing Chrome instance. Special values: 'current' (use existing page), 'reload-current' (refresh existing page)
---wait=<time:duration or selector:css-selector>: Wait after page load (e.g., 'time:5s', 'selector:#element-id')
---video=<directory>: Save a video recording (1280x720 resolution, timestamped subdirectory). Not available when using --connect-to
---url=<url>: Required for `act`, `observe`, and `extract` commands. Url to navigate to before the main command or one of the special values 'current' (to stay on the current page without navigating or reloading) or 'reload-current' (to reload the current page)
---evaluate=<string>: JavaScript code to execute in the browser before the main command
+`--console`: Capture browser console logs (enabled by default, use `--no-console` to disable)
+`--html`: Capture page HTML content (disabled by default)
+`--network`: Capture network activity (enabled by default, use `--no-network` to disable)
+`--screenshot=<file path>`: Save a screenshot of the page
+`--timeout=<milliseconds>`: Set navigation timeout (default: 120000ms for Stagehand operations, 30000ms for navigation)
+`--viewport=<width>x<height>`: Set viewport size (e.g., 1280x720). When using --connect-to, viewport is only changed if this option is explicitly provided
+`--headless`: Run browser in headless mode (default: true)
+`--no-headless`: Show browser UI (non-headless mode) for debugging
+`--connect-to=<port>`: Connect to existing Chrome instance. Special values: 'current' (use existing page), 'reload-current' (refresh existing page)
+`--wait=<time:duration or selector:css-selector>`: Wait after page load (e.g., 'time:5s', 'selector:#element-id')
+`--video=<directory>`: Save a video recording (1280x720 resolution, timestamped subdirectory). Not available when using --connect-to
+`--url=<url>`: Required for `act`, `observe`, and `extract` commands. Url to navigate to before the main command or one of the special values 'current' (to stay on the current page without navigating or reloading) or 'reload-current' (to reload the current page)
+`--evaluate=<string>`: JavaScript code to execute in the browser before the main command
 
 **Nicknames**
 Users can ask for these tools using nicknames
@@ -160,16 +204,17 @@ If people say "ask Gemini" or "ask Perplexity" or "ask Stagehand" they mean to u
 **Xcode Commands:**
 `vibe-tools xcode build [buildPath=<path>] [destination=<destination>]` - Build Xcode project and report errors.
 **Build Command Options:**
---buildPath=<path>: (Optional) Specifies a custom directory for derived build data. Defaults to ./.build/DerivedData.
---destination=<destination>: (Optional) Specifies the destination for building the app (e.g., 'platform=iOS Simulator,name=iPhone 16 Pro'). Defaults to 'platform=iOS Simulator,name=iPhone 16 Pro'.
+`--buildPath=<path>`: (Optional) Specifies a custom directory for derived build data. Defaults to ./.build/DerivedData.
+`--destination=<destination>`: (Optional) Specifies the destination for building the app (e.g., 'platform=iOS Simulator,name=iPhone 16 Pro'). Defaults to 'platform=iOS Simulator,name=iPhone 16 Pro'.
 
 `vibe-tools xcode run [destination=<destination>]` - Build and run the Xcode project on a simulator.
 **Run Command Options:**
---destination=<destination>: (Optional) Specifies the destination simulator (e.g., 'platform=iOS Simulator,name=iPhone 16 Pro'). Defaults to 'platform=iOS Simulator,name=iPhone 16 Pro'.
+`--destination=<destination>`: (Optional) Specifies the destination simulator (e.g., 'platform=iOS Simulator,name=iPhone 16 Pro'). Defaults to 'platform=iOS Simulator,name=iPhone 16 Pro'.
 
 `vibe-tools xcode lint` - Run static analysis on the Xcode project to find and fix issues.
 
 **Additional Notes:**
+
 - For detailed information, see `node_modules/vibe-tools/README.md` (if installed locally).
 - Configuration is in `vibe-tools.config.json` (or `~/.vibe-tools/config.json`).
 - API keys are loaded from `.vibe-tools.env` (or `~/.vibe-tools/.env`).

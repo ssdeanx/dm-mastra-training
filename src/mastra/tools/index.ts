@@ -159,6 +159,7 @@ export { stochasticAlgorithmTool } from './stochastic-native-tools';
 export { getNango, validateNangoConnectionOAuthScopes } from './nango';
 export { mem0RememberTool, mem0MemorizeTool, mem0RuntimeContext } from './mem0-tool';
 export { rerankTool, rerankRuntimeContext } from './rerank-tool';
+export { createFreestyleTool } from './freestyle-executor'; // New export for Freestyle tool
 
 /**
  * @category Runtime Context Types
@@ -199,7 +200,7 @@ import * as Stochastic from './stochastic-native-tools';
 import * as Nango from './nango';
 import * as Mem0 from './mem0-tool';
 import * as Rerank from './rerank-tool';
-// Importing all tools under a single namespace for easy access
+import * as FreestyleExecutorModule from './freestyle-executor'; // Corrected import
 
 /**
  * @constant toolsRegistry
@@ -209,12 +210,12 @@ import * as Rerank from './rerank-tool';
  * @category Tools Registry
  * @example
  * // Example usage:
- * const tool = toolsRegistry['readDataFileTool'];
- * if (tool) {
- *   tool.execute({ filePath: '/path/to/data.json' })
- *  .then(result => console.log(result))
- *  .catch(error => console.error('Error executing tool:', error));
- * }
+ * // const tool = toolsRegistry['readDataFileTool'];
+ * // if (tool) {
+ * //   tool.execute({ filePath: '/path/to/data.json' })
+ * //  .then(result => console.log(result))
+ * //  .catch(error => console.error('Error executing tool:', error));
+ * // }
  * @see {@link https://mastra.ai/docs/tools|Mastra Tools Documentation}
  * @see {@link https://mastra.ai/docs/runtime-context|Mastra Runtime Context Documentation}
  * @since 2025-07-09
@@ -322,7 +323,8 @@ const toolsRegistry: Record<string, unknown> = {
   mem0MemorizeTool: Mem0.mem0MemorizeTool,
   mem0RuntimeContext: Mem0.mem0RuntimeContext,
   rerankTool: Rerank.rerankTool,
-  rerankRuntimeContext: Rerank.rerankRuntimeContext
+  rerankRuntimeContext: Rerank.rerankRuntimeContext,
+  freestyleTool: FreestyleExecutorModule.createFreestyleTool, // New tool entry
 };
 
 export default toolsRegistry;

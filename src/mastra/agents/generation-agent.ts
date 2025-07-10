@@ -1,4 +1,5 @@
 import { Agent } from "@mastra/core/agent";
+import type { ToolAction } from "@mastra/core/tools";
 import { upstashMemory } from '../upstashMemory';
 import { createGemini25Provider } from '../config/googleProvider';
 import { chunkerTool } from "../tools/chunker-tool";
@@ -59,8 +60,10 @@ import {
   cryptoPriceTool,
   historicalCryptoPriceTool,
   cryptoMarketDataTool,
-  listCryptoCoinsTool
+  listCryptoCoinsTool,
 } from "../tools";
+import { createFreestyleTool } from '../tools/freestyle-executor';
+
 
 const logger = new PinoLogger({ name: 'GenerationAgent', level: 'info' });
 logger.info('Initializing GenerationAgent');
@@ -201,7 +204,7 @@ AVAILABLE TOOLS & THEIR OPTIMAL USE:
 - 'webScraperTool': For extracting specific content from web pages to use as source material or examples.
 - 'gitOperationsTool': For analyzing codebases or project history when generating code or technical documentation.
 - 'diffbotAnalyzeUrlTool', 'diffbotExtractArticleFromUrlTool', 'diffbotEnhanceKnowledgeGraphTool', 'diffbotSearchKnowledgeGraphTool', 'diffbotEnhanceEntityTool': For structured data extraction and knowledge graph enrichment to provide factual basis for content.
-- 'arxivSearch', 'redditGetSubredditPosts', 'hackerNewsGetBestStories', 'hackerNewsGetSearchUser', 'hackerNewsSearchItems', 'hackerNewsGetSearchTopStories', 'hackerNewsGetSearchItem', 'hackerNewsGetItem', 'hackerNewsGetTopStories', 'hackerNewsGetNewStories': For gathering diverse perspectives, trends, and community sentiment to inform creative or report generation.
+- 'arxivSearch', 'redditGetSubredditPosts', 'hackerNewsGetSearchItem', 'hackerNewsGetSearchUser', 'hackerNewsSearchItems', 'hackerNewsGetSearchTopStories', 'hackerNewsGetItem', 'hackerNewsGetTopStories', 'hackerNewsGetNewStories', 'hackerNewsGetBestStories': For gathering diverse perspectives, trends, and community sentiment to inform creative or report generation.
 - 'graphRAGTool', 'graphRAGQueryTool', 'graphRAGUpsertTool': For interacting with and updating knowledge graphs to build a comprehensive understanding of topics for generation.
 - 'rerankTool': For prioritizing and re-ranking information or options based on relevance for inclusion in generated content.
 - 'listDataDirTool', 'readDataFileTool', 'writeDataFileTool', 'deleteDataFileTool': For managing internal data files that might contain source material, drafts, or generated outputs.
@@ -306,7 +309,11 @@ ${UPSTASH_PROMPT}
     cryptoPriceTool,
     historicalCryptoPriceTool,
     cryptoMarketDataTool,
-    listCryptoCoinsTool
+    listCryptoCoinsTool,
+    // replace unknown-based schema with z.any() to satisfy ZodType constraint
+    freestyleTool: createFreestyleTool(
+      {} as Record<string, string> // Pass empty options for nodeModules and envVars
+    ) as ToolAction
   },
   memory: upstashMemory
 });
