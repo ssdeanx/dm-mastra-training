@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub last commit](https://img.shields.io/github/last-commit/ssdeanx/dm-mastra-training)](https://github.com/ssdeanx/dm-mastra-training)
-[![GitHub stars](https://img.shields.io/github/stars/ssdeanx/dm-mastra-training?style=social)](https://github.com/ssdeanx/dm-mastra-training/stargazers)
+[![GitHub stars](https://img.shields.io/badge/GitHub%20stars-dm--mastra--training-brightgreen?style=social)](https://github.com/ssdeanx/dm-mastra-training/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/ssdeanx/dm-mastra-training)](https://github.com/ssdeanx/dm-mastra-training/issues)
 
 ## Core Technologies
@@ -25,6 +25,7 @@
 ![MCP](https://img.shields.io/badge/MCP-Multi--Agent%20Coordination-blue?logo=data-transfer&logoColor=white)
 ![Inngest](https://img.shields.io/badge/Inngest-Event%20Driven-purple?logo=inngest&logoColor=white)
 ![Upstash](https://img.shields.io/badge/Upstash-Redis%2FVector-red?logo=upstash&logoColor=white)
+![LibSQL](https://img.shields.io/badge/LibSQL-Embedded%20DB-lightgrey?logo=sqlite&logoColor=white)
 ![Mem0](https://img.shields.io/badge/Mem0-Memory%20DB-yellowgreen?logo=memory&logoColor=white)
 ![GraphRAG](https://img.shields.io/badge/GraphRAG-Knowledge%20Graphs-darkgreen?logo=neo4j&logoColor=white)
 ![Brave Search](https://img.shields.io/badge/Brave%20Search-API-orange?logo=brave&logoColor=white)
@@ -68,13 +69,73 @@ Mastra is more than code; it's a philosophy for building the next generation of 
 Mastra delivers a comprehensive suite of cutting-edge features, meticulously engineered to empower the creation of highly sophisticated and performant multi-agent solutions:
 
 * 🧠 **Intelligent Multi-Agent Orchestration**: Go beyond simple coordination. Mastra enables dynamic, sophisticated collaboration among diverse AI agents, allowing them to form synergistic teams that work in concert to achieve complex, emergent objectives.
-* 🛠️ **Hyper-Granular, Extensible Tooling**: Agents are equipped with an unparalleled, categorized arsenal of specialized tools, dramatically expanding their operational capabilities:
-  * **Advanced Data Management**: Robust tools for efficient data file manipulation, ensuring seamless data flow and integrity across the system.
-  * **Dynamic Web Interaction**: Leverage state-of-the-art web scraping, semantic search (powered by Brave and Tavily), and deep integrations with leading online platforms (e.g., Arxiv, Hacker News, Reddit, Wikidata, Diffbot, Firecrawl) for real-time information acquisition.
-  * **Autonomous Code Analysis & Management**: Perform comprehensive code search, in-depth analysis, and direct Git operations for version control, enabling agents to interact with and manage codebases autonomously.
-  * **Intelligent Information Retrieval**: Utilize advanced vector query capabilities, intelligent re-ranking algorithms for optimized search results, and seamless knowledge graph integration (GraphRAG) for unparalleled data access and synthesis.
-  * **Persistent Memory & State Management**: Ensure continuous conversational context and robust agent state persistence across interactions through high-performance integrations with solutions like Upstash and Mem0, facilitating long-running, coherent dialogues.
-  * **Specialized External Clients**: Integrate effortlessly with critical external services such as Google Docs for streamlined document processing, and other domain-specific APIs, extending agent reach into real-world applications.
+* 🛠️ **Hyper-Granular, Extensible Tooling**: Agents are equipped with an unparalleled, categorized arsenal of specialized tools, dramatically expanding their operational capabilities, leveraging `zod` for robust input/output validation:
+  * **Data File Management**: Tools for efficient data file manipulation, ensuring seamless data flow and integrity across the system.
+    * [`readDataFileTool`](src/mastra/tools/data-file-manager.ts)
+    * [`writeDataFileTool`](src/mastra/tools/data-file-manager.ts)
+    * [`deleteDataFileTool`](src/mastra/tools/data-file-manager.ts)
+    * [`listDataDirTool`](src/mastra/tools/data-file-manager.ts)
+  * **Web Search**: Perform web-based searches and content extraction.
+    * [`createBraveSearchTool`](src/mastra/tools/brave-search.ts)
+    * [`createTavilySearchTool`](src/mastra/tools/tavily.ts)
+    * [`wikidataTools`](src/mastra/tools/wikidata-client.ts)
+    * [`firecrawlCrawlTool`](src/mastra/tools/firecrawl-tools.ts)
+    * [`firecrawlExtractTool`](src/mastra/tools/firecrawl-tools.ts)
+    * [`webScraperTool`](src/mastra/tools/web-scraper-tool.ts)
+  * **Social Media & News**: Deep integrations with leading online platforms for real-time information acquisition.
+    * [`redditGetSubredditPosts`](src/mastra/tools/reddit.ts)
+    * [`hackerNewsGetSearchItem`](src/mastra/tools/hacker-news-client.ts)
+    * [`hackerNewsGetTopStories`](src/mastra/tools/hacker-news-client.ts)
+  * **Academic & Research**: Specialized tools for scholarly information retrieval.
+    * [`arxivSearch`](src/mastra/tools/arxiv-client.ts)
+  * **Code Analysis & Management**: Perform comprehensive code search and direct Git operations.
+    * [`codeSearchTool`](src/mastra/tools/code-search-tool.ts)
+    * [`gitOperationsTool`](src/mastra/tools/git-operations-tool.ts)
+  * **Extraction & Enrichment**: Advanced content analysis and knowledge graph integration via Diffbot.
+    * [`diffbotAnalyzeUrlTool`](src/mastra/tools/diffbot-client.ts)
+    * [`diffbotExtractArticleFromUrlTool`](src/mastra/tools/diffbot-client.ts)
+    * [`diffbotEnhanceKnowledgeGraphTool`](src/mastra/tools/diffbot-client.ts)
+  * **Financial Data**: Tools for real-time and historical financial information.
+    * [`cryptoPriceTool`](src/mastra/tools/crypto-tool.ts)
+    * [`historicalCryptoPriceTool`](src/mastra/tools/crypto-tool.ts)
+    * [`stockPriceTool`](src/mastra/tools/stock-tools.ts)
+    * [`earningsCalendarTool`](src/mastra/tools/stock-tools.ts)
+  * **Sports Data**: Access to sports odds and event information.
+    * [`sportsOddsTool`](src/mastra/tools/sports-odds-tool.ts)
+    * [`historicalOddsTool`](src/mastra/tools/sports-odds-tool.ts)
+  * **Vector & RAG**: Advanced vector query capabilities, re-ranking, and knowledge graph integration.
+    * [`vectorQueryTool`](src/mastra/tools/vectorQueryTool.ts)
+    * [`hybridVectorSearchTool`](src/mastra/tools/vectorQueryTool.ts)
+    * [`rerankTool`](src/mastra/tools/rerank-tool.ts)
+    * [`chunkerTool`](src/mastra/tools/chunker-tool.ts)
+    * [`graphRAGTool`](src/mastra/tools/graphRAG.ts)
+    * [`graphRAGUpsertTool`](src/mastra/tools/graphRAG.ts)
+  * **Weather Data**: Retrieve current conditions, forecasts, and alerts.
+    * [`weatherTool`](src/mastra/tools/weather-tool.ts)
+    * [`weatherAlertsTool`](src/mastra/tools/weather-tool.ts)
+  * **Cognitive Frameworks**: Native tools for clear thought processes and stochastic algorithms, enhancing agent reasoning.
+    * [`structuredArgumentationTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`sequentialThinkingTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`mentalModelTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`debuggingApproachTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`collaborativeReasoningTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`decisionFrameworkTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`metacognitiveMonitoringTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`scientificMethodTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`visualReasoningTool`](src/mastra/tools/clear-thought-native-tools.ts)
+    * [`stochasticAlgorithmTool`](src/mastra/tools/stochastic-native-tools.ts)
+  * **Miscellaneous Tools**: General utilities and integrations.
+    * [`mem0RememberTool`](src/mastra/tools/mem0-tool.ts)
+    * [`mem0MemorizeTool`](src/mastra/tools/mem0-tool.ts)
+    * [`createFreestyleTool`](src/mastra/tools/freestyle-executor.ts)
+* 🧠 **Persistent Memory & State Management**: Ensure continuous conversational context and robust agent state persistence across interactions, facilitating long-running, coherent dialogues. This is achieved through high-performance integrations with solutions like Upstash (Redis/Vector), LibSQL (for `vNextNetwork`), and Mem0, enhanced by advanced memory processors:
+  * **Upstash Memory Integration**: Utilizes Upstash for both Redis-based storage and vector search capabilities, enabling semantic recall and efficient message management.
+  * **LibSQL Memory Integration**: Employs LibSQL for embedded, persistent storage in the `vNextNetwork`, offering robust data management for complex, multi-turn interactions.
+  * **Attention-Guided Memory Processor**: Dynamically prunes and prioritizes messages based on importance, relevance, and recency, optimizing context size.
+  * **Contextual Relevance Processor**: Maintains topic continuity by filtering messages based on semantic coherence and identifying topic shifts.
+  * **Workflow-Aware Memory Processor**: Adjusts memory context dynamically based on the current stage of a workflow, ensuring only relevant information is retained.
+  * **Bias Mitigation Processor**: Implements strategies to identify and mitigate cognitive biases in messages, enhancing objectivity and fairness of agent context.
+  * **Mem0 Integration**: Provides long-term, episodic memory capabilities for agents to remember past interactions and learned information.
 * 🔄 **Adaptive Workflow Management**: Define, execute, and dynamically adjust intricate task sequences with unparalleled ease. Mastra ensures logical progression, efficient resource allocation, and precise coordination between agents and their tools, even in highly dynamic environments.
 * ⚙️ **Highly Configurable & Autonomous Agents**: Benefit from extensive, fine-grained options to configure and customize agent behaviors, roles, and tool access, enabling precise adaptation to specific application requirements, fostering truly autonomous and intelligent decision-making.
 * 📊 **Deep Observability & Real-time Logging**: Gain profound insights into every agent interaction and workflow execution through integrated, high-fidelity logging and tracing capabilities (e.g., Langfuse, OpenTelemetry). Monitor performance, debug complex behaviors, and ensure operational transparency.
@@ -98,7 +159,7 @@ Ensure your development environment is primed with the following essential tools
 
 We recommend using Inngest for managing event-driven workflows in Mastra. Inngest provides a powerful platform for defining, executing, and monitoring complex workflows with ease.
 
- Start the Inngest development server:
+Start the Inngest development server:
 
 ```bash
 docker run --rm -p 8288:8288 inngest/inngest inngest dev -u http://host.docker.internal:4111/api/inngest
@@ -113,7 +174,7 @@ docker run --rm -p 8288:8288 inngest/inngest inngest dev -u http://host.docker.i
     cd mastra
     ```
 
-    *(**Note**: Replace `https://github.com/ssdeanx/dm-mastra-training.git` with the actual, up-to-date repository URL for your project.)*
+    *(\*\*Note\*\*: Replace `https://github.com/ssdeanx/dm-mastra-training.git` with the actual, up-to-date repository URL for your project.)*
 
 2. **Install Core Dependencies**:
     Navigate to the project root and unleash the power of your package manager:
@@ -166,22 +227,97 @@ For granular control, you can directly invoke individual workflows or agents usi
 npx ts-node src/mastra/workflows/your-workflow-name.ts
 ```
 
-*(**Pro-Tip**: Dive into the [`src/mastra/workflows/`](src/mastra/workflows/) directory to discover available workflows and their specific execution parameters. Similarly, explore [`src/mastra/agents/`](src/mastra/agents/) for agent-specific execution instructions.)*
+*(\*\*Pro-Tip\*\*: Dive into the \[`src/mastra/workflows/`\](src/mastra/workflows/) directory to discover a rich array of available workflows and their precise execution parameters. Similarly, agents can be invoked by targeting their respective files within \[`src/mastra/agents/`\](src/mastra/agents/).)*
 
 ## 🏗️ Project Architecture: A Modular and Scalable Blueprint
 
 The Mastra framework is meticulously organized into a logical, modular, and highly scalable directory structure, designed for optimal maintainability, extensibility, and clarity:
 
-* [`src/mastra/agents/`](src/mastra/agents/): The heart of intelligence. This directory encapsulates the definitions and sophisticated implementations of various AI agents (e.g., `analyzer-agent.ts`, `research-agent.ts`), each meticulously crafted for distinct roles and specialized tasks within the multi-agent ecosystem.
-* [`src/mastra/tools/`](src/mastra/tools/): The agent's arsenal. A comprehensive and ever-expanding collection of granular tools and powerful integrations (e.g., `arxiv-client.ts`, `brave-search.ts`, `chunker-tool.ts`). These tools empower agents to execute actions, interact seamlessly with external services, and process diverse data types.
-* [`src/mastra/workflows/`](src/mastra/workflows/): The orchestration layer. Defines the intricate sequences and sophisticated orchestration logic for complex, multi-step tasks (e.g., `inngest-multi-agent-workflow.ts`, `research-analysis-workflow.ts`). This layer ensures precise coordination and harmonious interaction between disparate agents and their specialized tools.
-* [`src/mastra/config/`](src/mastra/config/): The control center. Houses critical configuration files, environment settings, and essential utility functions pertinent to project setup, external service integrations (e.g., `environment.ts`, `googleProvider.ts`), and global parameters.
-* [`src/mastra/networks/`](src/mastra/networks/): The communication backbone. Contains the architectural definitions for inter-agent communication networks and advanced interaction patterns, facilitating robust and efficient information exchange.
-* [`src/mastra/`](src/mastra/): The core framework. Encompasses the fundamental application logic, primary entry points, and shared utilities that form the bedrock of the Mastra framework.
+* [`src/mastra/agents/`](src/mastra/agents/): The heart of intelligence. This directory encapsulates the definitions and sophisticated implementations of various AI agents (e.g., [`analyzer-agent.ts`](src/mastra/agents/analyzer-agent.ts), [`research-agent.ts`](src/mastra/agents/research-agent.ts)), each meticulously crafted for distinct roles and specialized tasks within the multi-agent ecosystem.
+* [`src/mastra/tools/`](src/mastra/tools/): The agent's arsenal. A comprehensive and ever-expanding collection of granular tools and powerful integrations (e.g., [`arxiv-client.ts`](src/mastra/tools/arxiv-client.ts), [`brave-search.ts`](src/mastra/tools/brave-search.ts), [`chunker-tool.ts`](src/mastra/tools/chunker-tool.ts)). These tools empower agents to execute actions, interact seamlessly with external services, and process diverse data types.
+* [`src/mastra/workflows/`](src/mastra/workflows/): The orchestration layer. Defines the intricate sequences and sophisticated orchestration logic for complex, multi-step tasks (e.g., [`inngest-multi-agent-workflow.ts`](src/mastra/workflows/inngest-multi-agent-workflow.ts), [`research-analysis-workflow.ts`](src/mastra/workflows/research-analysis-workflow.ts)). This layer ensures precise coordination and harmonious interaction between disparate agents and their specialized tools.
+* [`src/mastra/config/`](src/mastra/config/): The control center. Houses critical configuration files, environment settings, and essential utility functions pertinent to project setup, external service integrations (e.g., [`environment.ts`](src/mastra/config/environment.ts), [`googleProvider.ts`](src/mastra/config/googleProvider.ts)), and global parameters.
+* [`src/mastra/networks/`](src/mastra/networks/): The communication backbone. Contains the architectural definitions for inter-agent communication networks and advanced interaction patterns, facilitating robust and efficient information exchange (e.g., [`base-network.ts`](src/mastra/networks/base-network.ts)).
+* [`src/mastra/processor-extra.ts`](src/mastra/processor-extra.ts): Extends core memory processing capabilities, allowing for custom message processing and metadata handling within the memory system.
+* [`src/mastra/upstashMemory.ts`](src/mastra/upstashMemory.ts): Manages persistent memory and vector search capabilities using Upstash, including advanced memory processors for attention-guided, contextual, workflow-aware, and bias mitigation strategies.
+* [`src/mastra/inngest/`](src/mastra/inngest/): Event-driven orchestration. Contains Inngest client setup and functions for building robust, distributed, and fault-tolerant workflows.
+* [`src/mastra/`](src/mastra/): The core framework. Encompasses the fundamental application logic, primary entry points (e.g., [`index.ts`](src/mastra/index.ts)), and shared utilities that form the bedrock of the Mastra framework.
 * [`docs/`](docs/): Comprehensive documentation. A dedicated repository for supplementary documentation, including in-depth READMEs for specific components like agents, tools, and workflows, providing granular insights into their advanced functionalities.
 * [`data/`](data/): Data repository. Stores example data files or datasets utilized by the project for rigorous testing, compelling demonstrations, or initial agent training.
 * `.env.example`: Environment configuration template. A meticulously crafted template file outlining all necessary environment variables required for comprehensive project configuration.
 * `package.json`: Project manifest. Defines essential project metadata, executable scripts, and manages all project dependencies with precision.
+
+### Mastra Core Architecture
+
+This diagram illustrates the high-level architecture of the Mastra framework, showing how various components interact to enable intelligent multi-agent systems.
+
+```mermaid
+graph TD
+    subgraph User Interaction
+        A[User Interface] --> B(Mastra API Endpoints);
+    end
+
+    subgraph Mastra Core
+        B --> C[Mastra Framework - src/mastra/index.ts];
+        C --> D{Agent Networks};
+        C --> E{Workflows};
+        C --> F{Agents};
+        C --> G{Memory Management};
+        C --> H{Tool Integrations};
+    end
+
+    subgraph Agent Networks
+        D --> D1[Base Network];
+        D --> D2[vNext Network];
+    end
+
+    subgraph Workflows
+        E --> E1[Research Analysis Workflow];
+        E --> E2[Inngest Multi-Agent Workflow];
+        E --> E3[Document Analysis Workflow];
+        E --> E4[Agent Performance Workflow];
+        E --> E5[Research Report Workflow];
+        E --> E6[Weather Workflow];
+    end
+
+    subgraph Agents
+        F --> F1[Master Agent];
+        F --> F2[Research Agent];
+        F --> F3[Analyzer Agent];
+        F --> F4[Supervisor Agent];
+        F --> F5[Data Agent];
+        F --> F6[Generation Agent];
+        F --> F7[LangGraph Agent];
+        F --> F8[Chance Agent];
+        F --> F9[Mapping Agent];
+        F --> F10[Weather Agent];
+    end
+
+    subgraph Memory Management
+        G --> G1[Upstash Memory (Redis/Vector)];
+        G --> G2[LibSQL Memory];
+        G --> G3[Mem0];
+        G --> G4[Memory Processors];
+    end
+
+    subgraph Tool Integrations
+        H --> H1[Web Search & Scraping];
+        H --> H2[Code Analysis & Git];
+        H --> H3[Financial & Sports Data];
+        H --> H4[Vector & RAG];
+        H --> H5[Cognitive Frameworks];
+        H --> H6[Miscellaneous];
+    end
+
+    D -- Orchestrates --> F;
+    E -- Utilizes --> F;
+    E -- Utilizes --> H;
+    F -- Utilizes --> G;
+    F -- Utilizes --> H;
+    G -- Provides Context --> F;
+    H -- Provides Capabilities --> F;
+    H -- Provides Capabilities --> E;
+```
 
 ## 💡 Usage Examples: Unleashing Mastra's Potential
 
@@ -220,7 +356,7 @@ Ensure `ts-node` is globally installed (`npm install -g ts-node`). Then, launch 
 npx ts-node src/mastra/workflows/research-analysis-workflow.ts
 ```
 
-*(**Pro-Tip**: For an in-depth understanding, meticulously explore the [`src/mastra/workflows/`](src/mastra/workflows/) directory to discover a rich array of available workflows and their precise execution parameters. Similarly, agents can be invoked by targeting their respective files within [`src/mastra/agents/`](src/mastra/agents/).)*
+*(\*\*Pro-Tip\*\*: Dive into the \[`src/mastra/workflows/`\](src/mastra/workflows/) directory to discover a rich array of available workflows and their precise execution parameters. Similarly, agents can be invoked by targeting their respective files within \[`src/mastra/agents/`\](src/mastra/agents/).)*
 
 ### Example 2: Harnessing the Chunker Tool for Intelligent Text Processing
 
@@ -255,6 +391,128 @@ Ensure `ts-node` is installed (`npm install -g ts-node`). Then, launch the scrip
 ```bash
 npx ts-node src/mastra/tools/chunker-tool.ts
 ```
+
+### Example 3: Demonstrating Bias Mitigation in Memory Processing
+
+Mastra's advanced memory processors include a `BiasMitigationProcessor` which can identify and flag or re-weight messages that exhibit common cognitive biases, ensuring a more neutral and objective context for agents.
+
+```typescript
+// File: src/mastra/upstashMemory.ts (simplified for demonstration)
+import { BiasMitigationProcessor } from './upstashMemory';
+import { CoreMessage } from '@mastra/core';
+
+async function demonstrateBiasMitigation() {
+    const biasProcessor = new BiasMitigationProcessor({
+        detectionStrategies: ['confirmation', 'recency'],
+        mitigationStrategies: ['flag', 're-weight'],
+        biasThreshold: 0.6
+    });
+
+    const messages: CoreMessage[] = [
+        { role: 'user', content: 'The new feature is amazing, everyone loves it!' },
+        { role: 'assistant', content: 'Yes, it is indeed amazing and highly popular.' },
+        { role: 'user', content: 'Old system was terrible, slow and buggy.' },
+        { role: 'assistant', content: 'Confirming: The old system was notably slow and prone to bugs.' },
+    ];
+
+    console.log("Original Messages:");
+    messages.forEach(msg => console.log(`- [${msg.role}] ${msg.content}`));
+
+    const processedMessages = biasProcessor.process(messages);
+
+    console.log("\nProcessed Messages (with potential bias flags/modifications):");
+    processedMessages.forEach(msg => {
+        const biasInfo = msg.metadata?.biasMitigated ? ` (Bias Mitigated: ${msg.metadata?.biasType})` : '';
+        console.log(`- [${msg.role}] ${msg.content}${biasInfo}`);
+    });
+}
+
+demonstrateBiasMitigation();
+```
+
+**To Execute This Example**:
+You would typically run this as part of a larger application or directly from a test script, ensuring the `upstashMemory.ts` file is correctly imported and configured within your environment.
+
+```bash
+# This example is illustrative and assumes a test setup:
+npx ts-node src/mastra/upstashMemory.ts
+```
+
+## 📈 Multi-Agent Workflow Orchestration Diagram
+
+This Mermaid diagram illustrates the high-level flow of the [`inngest-multi-agent-workflow.ts`](src/mastra/workflows/inngest-multi-agent-workflow.ts), showcasing how different agents collaborate and pass data through various stages to accomplish a complex task.
+
+```mermaid
+graph TD
+    A[User Query] --> B(Inngest Trigger);
+
+    subgraph Inngest Multi-Agent Workflow
+        B --> C{Supervisor: Initial Plan};
+        C --> D(Research Agent: Conduct Research);
+        D --> E(Data Agent: Store Research Data);
+        E --> F{Analyzer Agent: Analyze Research};
+        F --> G{Supervisor: Quality Check Analysis};
+        G --> H(Data Agent: Store Analysis Report);
+        H --> I(Generation Agent: Synthesize Final Report);
+        I --> J(Data Agent: Store Final Report);
+    end
+
+    J --> K[Final Report & Insights];
+```
+
+## ❓ FAQs & Troubleshooting
+
+This section addresses common questions and provides solutions for potential issues encountered while setting up and running Mastra.
+
+### General Issues
+
+* **Q: `npm install` fails with dependency errors.**
+  * **A:** Ensure you are using a compatible Node.js version (20.9.0 or higher). Clear your npm cache (`npm cache clean --force`) and try installing again (`npm install`). If issues persist, try `npm install --force` or `npm install --legacy-peer-deps` (use with caution).
+* **Q: Environment variables (`.env`) are not being loaded.**
+  * **A:** Double-check that your `.env` file is in the project root and correctly named. Ensure there are no syntax errors in the file. Node.js applications typically use `dotenv` to load these, so verify its setup.
+* **Q: Agent responses are generic or not using tools.**
+  * **A:** This might indicate an issue with the model's access to tools or its understanding of the prompt.
+    * Ensure all required API keys in your `.env` file are correct and active.
+    * Check the agent's `instructions` in its respective `src/mastra/agents/*.ts` file; they guide the agent's behavior.
+    * Increase the `thinkingBudget` in `googleProvider.ts` if the agent needs more complex reasoning time.
+    * Verify network connectivity to external APIs.
+
+### Inngest & Docker
+
+* **Q: Inngest development server fails to start or connect.**
+  * **A:**
+    * Ensure Docker is running and properly configured on your system.
+    * Verify that port `8288` is not already in use by another application.
+    * Check the `inngest` client configuration in [`src/mastra/inngest/index.ts`](src/mastra/inngest/index.ts) to ensure `baseUrl` is correct (`http://host.docker.internal:4111/api/inngest` for Windows/Mac, or `http://127.0.0.1:4111/api/inngest` for Linux or if Docker Desktop is not used).
+    * Confirm that the `npm run dev` command is running, as the Inngest server needs the API endpoint to be active.
+
+### Memory & Database (Upstash/LibSQL)
+
+* **Q: Data is not persisting in Upstash or LibSQL.**
+  * **A:**
+    * **Upstash**: Verify `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in your `.env` file are correct. For vector search, also check `UPSTASH_VECTOR_REST_URL2` and `UPSTASH_VECTOR_REST_TOKEN2`. Ensure your Upstash database is active and accessible.
+    * **LibSQL**: Check `VNEXT_URL` and `VNEXT_TOKEN` (if applicable) in `.env`. For local `file:./data/mastra.db` ensure file permissions are correct.
+    * Review the memory configurations in [`src/mastra/upstashMemory.ts`](src/mastra/upstashMemory.ts) and [`src/mastra/workflows/vnext-workflow.ts`](src/mastra/workflows/vnext-workflow.ts) to ensure memory processors and storage types are correctly instantiated.
+* **Q: `BiasMitigationProcessor` or other memory processors are not functioning as expected.**
+  * **A:** Inspect the processor's configuration in [`src/mastra/upstashMemory.ts`](src/mastra/upstashMemory.ts). Adjust `detectionStrategies`, `mitigationStrategies`, or `biasThreshold` as needed. Enable debug logging (`LOG_LEVEL=debug` in `.env`) in the `PinoLogger` instance used by the memory (`upstashMemory.ts`) to see detailed processing steps.
+
+### Agent-Specific Issues
+
+* **Q: `Data Agent` cannot read/write files.**
+  * **A:** Ensure the `data/` directory exists and has appropriate read/write permissions for the user running the application. Check the `fileName` and `dirPath` parameters passed to the data agent tool calls. Remember, the data agent is restricted to the `data/` directory by design for security.
+* **Q: `Research Agent` or `Analyzer Agent` are not finding relevant information.**
+  * **A:**
+    * Verify the API keys for external search tools (Brave, Tavily, Arxiv, Diffbot) are correctly configured in `.env`.
+    * Adjust the `researchDepth` or `data-depth` parameters for these agents in their runtime contexts or workflow inputs.
+    * The quality of the query directly impacts results; try rephrasing or providing more context to the initial prompt.
+
+### How to Get More Help
+
+If you encounter an issue not covered here, please:
+
+1. **Check the logs:** Enable debug logging (`LOG_LEVEL=debug` in `.env`) and review the console output for detailed error messages.
+2. **Consult the documentation:** Refer to the specific `README.md` files in `docs/` for agents, tools, and workflows.
+3. **Open a GitHub Issue:** Provide a detailed description of the problem, steps to reproduce, relevant logs, and your environment setup.
 
 ## 🌌 Future Horizons: Pioneering the Next Generation of AI
 
