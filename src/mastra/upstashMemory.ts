@@ -5,10 +5,10 @@ import { PinoLogger } from '@mastra/loggers';
 import type { CoreMessage as OriginalCoreMessage } from '@mastra/core';
 import { maskStreamTags } from '@mastra/core';
 import { MemoryProcessor, MemoryProcessorOpts } from '@mastra/core/memory';
-import { UIMessage, EmbeddingModel } from 'ai';
+import { UIMessage } from 'ai';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
 import { createGeminiEmbeddingModel } from './config/googleProvider';
-import { env } from './config/environment';
+
 //import { ca } from 'zod/v4/locales';
 
 /**
@@ -203,8 +203,8 @@ export interface MetadataFilter {
  * Create shared Upstash storage instance
  */
 export const upstashStorage = new UpstashStore({
-  url: env.UPSTASH_REDIS_REST_URL || '',
-  token: env.UPSTASH_REDIS_REST_TOKEN || ''
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
 });
 
 /**
@@ -217,8 +217,8 @@ export const upstashStorage = new UpstashStore({
  * - Supports metadata filtering and hybrid search
  */
 export const upstashVector = new UpstashVector({
-  url: env.UPSTASH_VECTOR_REST_URL2 || '',
-  token: env.UPSTASH_VECTOR_REST_TOKEN2 || ''
+  url: process.env.UPSTASH_VECTOR_REST_URL2 || '',
+  token: process.env.UPSTASH_VECTOR_REST_TOKEN2 || ''
 });
 
 /**
@@ -239,35 +239,6 @@ export const VECTOR_CONFIG = {
   MAX_BATCH_SIZE: 100
 } as const;
 
-/**
- * Factory for creating and managing vector store configurations.
- * This allows for seamless switching between different embedding models and vector stores.
- */
-export class VectorStoreFactory {
-  private static instances: Map<string, {
-    vectorStore: UpstashVector;
-    embedder: EmbeddingModel<string>;
-    config: typeof VECTOR_PROFILES[keyof typeof VECTOR_PROFILES];
-  }> = new Map();
-
-  static get(profileName: keyof typeof VECTOR_PROFILES = VECTOR_CONFIG.DEFAULT_PROFILE) {
-    if (!this.instances.has(profileName)) {
-      const profile = VECTOR_PROFILES[profileName];
-      const embedder: EmbeddingModel<string> = createGeminiEmbeddingModel(undefined, { outputDimensionality: profile.EMBEDDING_DIMENSION });
-      const vectorStore: UpstashVector = new UpstashVector({
-        url: env.UPSTASH_VECTOR_REST_URL2 || '',
-        token: env.UPSTASH_VECTOR_REST_TOKEN2 || ''
-      });
-
-      this.instances.set(profileName, {
-        vectorStore,
-        embedder,
-        config: profile
-      });
-    }
-    return this.instances.get(profileName)!;
-  }
-}
 
 /**
  * Bias Mitigation Processor (2025)
@@ -1135,7 +1106,7 @@ export class WorkflowAwareMemoryProcessor extends MemoryProcessor {
 export const upstashMemory = new Memory({
   storage: upstashStorage,
   vector: upstashVector,
-  embedder: VectorStoreFactory.get('gemini').embedder,
+  embedder: createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION }),
   options: {
     lastMessages: 500, // Enhanced for better context retention
     semanticRecall: {
@@ -1196,10 +1167,9 @@ export const upstashMemory = new Memory({
       }),
     }),
     new BiasMitigationProcessor({
-      detectionStrategies: ['confirmation', 'recency', 'anchoring', 'availability', 'framing', 'bandwagon', 'overconfidence', ], 
+      detectionStrategies: ['confirmation', 'recency', 'anchoring', 'availability', 'framing', 'bandwagon', 'overconfidence', ],
       mitigationStrategies: ['re-weight', 'add-counter-arguments', 'remove', 'flag', 'ignore', 'contextualize', 'reframe', 'balance'],
     }),
-    // Add custom processors as needed
   ],
 });
 

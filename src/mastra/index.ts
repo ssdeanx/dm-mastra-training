@@ -59,7 +59,6 @@ export const mastra = new Mastra({
         },
   deployer: new NetlifyDeployer(),
   server: {
-    host: "0.0.0.0",
     cors: {
       origin: "*",
       allowMethods: ["*"],

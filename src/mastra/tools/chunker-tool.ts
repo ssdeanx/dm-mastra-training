@@ -8,10 +8,10 @@ import {
   upsertVectors,
   VECTOR_PROFILES,
   VECTOR_CONFIG,
-  VectorStoreFactory,
   extractChunkMetadata,
   type ExtractParams
 } from '../upstashMemory';
+import { createGeminiEmbeddingModel } from '../config/googleProvider';
 import { embedMany } from 'ai';
 
 const logger = new PinoLogger({ name: 'ChunkerTool', level: 'info' });
@@ -209,8 +209,8 @@ export const chunkerTool = createTool({
       const includeMetadata = (runtimeContext?.get('include-metadata') as boolean | undefined) ?? true;
       const vectorProfileName = validatedInput.vectorOptions?.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
 
-      // Get the vector store and embedder from the factory
-      const { vectorStore: upstashVectorClient, embedder } = VectorStoreFactory.get(vectorProfileName);
+      // Get the embedder
+      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION });
 
       // Create MDocument based on document type
       let doc: MDocument;
@@ -377,25 +377,6 @@ export const chunkerTool = createTool({
         // Upsert to vector store if requested
         if (validatedInput.vectorOptions?.upsertToVector) {
           const indexName = validatedInput.vectorOptions.indexName || VECTOR_PROFILES[vectorProfileName].INDEX_NAME;
-
-          // Validate index configuration using the vector client directly
-          if (validatedInput.vectorOptions.createIndex) {
-            try {
-              // Use upstashVectorClient for direct index validation
-              const indexInfo = await upstashVectorClient.describeIndex({ indexName });
-              logger.info('Vector index validated using upstashVectorClient', {
-                indexName,
-                dimension: indexInfo.dimension,
-                count: indexInfo.count
-              });
-            } catch (error) {
-              logger.warn('Vector index validation via upstashVectorClient failed, proceeding with upsert', {
-                indexName,
-                error: error instanceof Error ? error.message : String(error)
-              });
-            }
-          }
-
           // Prepare metadata for vector store
           const vectorMetadata = chunks.map((chunk, index) => ({
             id: chunk.id,
@@ -407,27 +388,6 @@ export const chunkerTool = createTool({
             strategy: chunkConfig.strategy,
             vectorProfile: vectorProfileName
           }));
-
-          // Use both the direct client and helper function for comprehensive operation
-          try {
-            // First, use upstashVectorClient for direct operation verification
-            const testQuery = await upstashVectorClient.query({
-              indexName,
-              queryVector: embeddings[0], // Use first embedding as test
-              topK: 1,
-              includeVector: false
-            });
-            
-            logger.info('Vector store connection verified via upstashVectorClient', {
-              indexName,
-              testQueryResults: testQuery.length
-            });
-          } catch (error) {
-            logger.warn('Vector store test query failed, but proceeding with upsert', {
-              indexName,
-              error: error instanceof Error ? error.message : String(error)
-            });
-          }
 
           // Upsert vectors using the helper function from upstashMemory.ts
           const upsertResult = await upsertVectors(

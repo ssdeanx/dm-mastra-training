@@ -3,7 +3,7 @@
  * Uses createGraphRAGTool from @mastra/rag with Upstash Vector store integration
  * Supports chunking, embedding, upserting, and graph-based querying
  *
- * @author Dean Machines RSC Project
+ * @author dm-mastra-training
  * @version 2.0.1 - Complete rewrite using correct Mastra patterns
  */
 
@@ -22,8 +22,9 @@ import {
   VECTOR_CONFIG,
   VectorStoreError,
   ExtractParams,
-  VectorStoreFactory
+  upstashVector
 } from '../upstashMemory';
+import { createGeminiEmbeddingModel } from '../config/googleProvider';
 import { embedMany } from 'ai';
 
 import { chunkerTool } from './chunker-tool';
@@ -138,8 +139,8 @@ export const graphRAGUpsertTool = createTool({
       const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
       const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
 
-      // Get the vector store and embedder from the factory
-      const { embedder } = VectorStoreFactory.get(vectorProfileName);
+      // Get the embedder
+      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION });
 
       if (debug) {
         logger.info('Starting document upsert', {
@@ -296,7 +297,7 @@ export const graphRAGUpsertTool = createTool({
 export const graphRAGTool = createGraphRAGTool({
   vectorStoreName: 'upstashVector',
   indexName: VECTOR_PROFILES.gemini.INDEX_NAME,
-  model: VectorStoreFactory.get('gemini').embedder,
+  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION }),
   graphOptions: {
     dimension: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION,
     threshold: 0.7
@@ -329,9 +330,9 @@ export const graphRAGQueryTool = createTool({
       const threshold = (runtimeContext?.get('threshold') as number | undefined) ?? validatedInput.threshold;
       const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
 
-      // Get the vector store and embedder from the factory
-      const { vectorStore: upstashVectorClient, embedder } = VectorStoreFactory.get(vectorProfileName);
-
+      // Get the embedder
+      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION });
+      const upstashVectorClient = upstashVector;
 
       if (debug) {
         logger.info('Starting GraphRAG query', {

@@ -18,14 +18,8 @@ const envSchema = z.object({
   // Google API Key for Generative AI (required for Google models)
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   // Upstash Redis configuration
-  UPSTASH_REDIS_REST_URL: z.string().url(),
-  UPSTASH_REDIS_REST_TOKEN: z.string(),
-  // Upstash Vector configuration
-  UPSTASH_VECTOR_REST_URL: z.string().url(),
-  UPSTASH_VECTOR_REST_TOKEN: z.string(),
   // Upstash Vector 2 configuration (for 1536-dimension embeddings)
-  UPSTASH_VECTOR_REST_URL2: z.string().url().optional(),
-  UPSTASH_VECTOR_REST_TOKEN2: z.string().optional(),
+  
   // The Odds API configuration
   THE_ODDS_API_KEY: z.string().optional(),
   ALPHA_VANTAGE_API_KEY: z.string().optional(),
@@ -42,23 +36,6 @@ const envSchema = z.object({
   // Needle project ID
   NEEDLE_PROJECT_ID: z.string().optional(),
 
-}).superRefine((env, ctx) => {
-  if (env.FACTORY === 'gemini') {
-    if (!env.UPSTASH_VECTOR_REST_URL2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'UPSTASH_VECTOR_REST_URL2 is required when FACTORY is "gemini"',
-        path: ['UPSTASH_VECTOR_REST_URL2'],
-      });
-    }
-    if (!env.UPSTASH_VECTOR_REST_TOKEN2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'UPSTASH_VECTOR_REST_TOKEN2 is required when FACTORY is "gemini"',
-        path: ['UPSTASH_VECTOR_REST_TOKEN2'],
-      });
-    }
-  }
 });
 
 // Validate environment variables

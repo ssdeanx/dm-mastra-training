@@ -29,9 +29,9 @@ import {
   VECTOR_PROFILES,
   VECTOR_CONFIG,
   type VectorQueryResult,
-  type MetadataFilter,
-  VectorStoreFactory
+  type MetadataFilter
 } from '../upstashMemory';
+import { createGeminiEmbeddingModel } from '../config/googleProvider';
 import type { UIMessage, CoreMessage } from 'ai';
 import { PinoLogger } from '@mastra/loggers';
 import { embedMany } from 'ai';
@@ -81,7 +81,7 @@ const vectorQueryOutputSchema = z.object({
 export const vectorQueryTool = createVectorQueryTool({
   vectorStoreName: "upstashVector",
   indexName: VECTOR_PROFILES.gemini.INDEX_NAME,
-  model: VectorStoreFactory.get('gemini').embedder,
+  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION }),
   enableFilter: true,
   description: "Search for semantically similar content in the Upstash vector store using embeddings with sparse cosine similarity. Supports filtering, ranking, and context retrieval."
 });
@@ -175,12 +175,12 @@ export const enhancedVectorQueryTool = createTool({
         // Use direct Upstash vector store search with sparse cosine similarity
         logger.info('Performing direct Upstash vector store search');
 
-        // Create query embedding using Google's embedding model (384 dimensions for fastembed compatibility)
-        const { embeddings } = await embedMany({
-          model: VectorStoreFactory.get('gemini').embedder,
-          values: [validatedInput.query]
-        });
-
+        
+                // Create query embedding using Google's embedding model
+                const { embeddings } = await embedMany({
+                  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION }),
+                  values: [validatedInput.query]
+                });
         const queryEmbedding = embeddings[0];
 
         // Query the Upstash vector store directly with sparse cosine similarity
