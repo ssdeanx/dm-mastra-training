@@ -18,8 +18,6 @@ import { RuntimeContext } from "@mastra/core/runtime-context";
 import {
   upsertVectors,
   createVectorIndex,
-  VECTOR_PROFILES,
-  VECTOR_CONFIG,
   VectorStoreError,
   ExtractParams,
   upstashVector
@@ -137,10 +135,10 @@ export const graphRAGUpsertTool = createTool({
       const userId = (runtimeContext?.get('userId') as string | undefined) ?? 'anonymous';
       const sessionId = (runtimeContext?.get('sessionId') as string | undefined) ?? 'default';
       const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
-      const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
+      const vectorProfileName = validatedInput.vectorProfile || 'gemini';
 
       // Get the embedder
-      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION });
+      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536 });
 
       if (debug) {
         logger.info('Starting document upsert', {
@@ -177,7 +175,6 @@ export const graphRAGUpsertTool = createTool({
             upsertToVector: false, // Chunker will create embeddings, we will upsert here
             indexName: validatedInput.indexName, // Add missing indexName
             createIndex: validatedInput.createIndex, // Add missing createIndex
-            vectorProfile: vectorProfileName,
           },
           extractParams: validatedInput.extractParams, // Pass extractParams directly to chunkerTool context
         },
@@ -209,8 +206,8 @@ export const graphRAGUpsertTool = createTool({
       if (validatedInput.createIndex) {
         const idxResult = await createVectorIndex(
           validatedInput.indexName,
-          VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION,
-          VECTOR_PROFILES[vectorProfileName].DISTANCE_METRIC
+          1536,
+          'cosine'
         );
         if (!idxResult.success) {
           logger.warn('Index validation warning (may already exist)', {
@@ -296,10 +293,10 @@ export const graphRAGUpsertTool = createTool({
  */
 export const graphRAGTool = createGraphRAGTool({
   vectorStoreName: 'upstashVector',
-  indexName: VECTOR_PROFILES.gemini.INDEX_NAME,
-  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION }),
+  indexName: 'gemini',
+  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536, taskType: 'CLUSTERING' }),
   graphOptions: {
-    dimension: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION,
+    dimension: 1536,
     threshold: 0.7
   }
 });
@@ -328,10 +325,10 @@ export const graphRAGQueryTool = createTool({
       const indexName = (runtimeContext?.get('indexName') as string | undefined) ?? validatedInput.indexName;
       const topK = (runtimeContext?.get('topK') as number | undefined) ?? validatedInput.topK;
       const threshold = (runtimeContext?.get('threshold') as number | undefined) ?? validatedInput.threshold;
-      const vectorProfileName = validatedInput.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
+      const vectorProfileName = validatedInput.vectorProfile || 'gemini';
 
       // Get the embedder
-      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION });
+      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536, taskType: 'CLUSTERING' });
       const upstashVectorClient = upstashVector;
 
       if (debug) {
@@ -352,7 +349,7 @@ export const graphRAGQueryTool = createTool({
       graphRAGContext.set('topK', topK);
       graphRAGContext.set('threshold', threshold);
       graphRAGContext.set('minScore', validatedInput.minScore);
-      graphRAGContext.set('dimension', VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION);
+      graphRAGContext.set('dimension', 1536);
 
 
       // Execute the GraphRAG query
@@ -440,11 +437,11 @@ export const graphRAGQueryTool = createTool({
 export const graphRAGRuntimeContext = new RuntimeContext<GraphRAGRuntimeContext>();
 
 // Set default runtime context values for Upstash Vector with sparse cosine similarity
-graphRAGRuntimeContext.set("indexName", VECTOR_PROFILES.gemini.INDEX_NAME);
-graphRAGRuntimeContext.set("topK", VECTOR_CONFIG.DEFAULT_TOP_K);
+graphRAGRuntimeContext.set("indexName", 'gemini');
+graphRAGRuntimeContext.set("topK", 5);
 graphRAGRuntimeContext.set("threshold", 0.7);
 graphRAGRuntimeContext.set("minScore", 0.0);
-graphRAGRuntimeContext.set("dimension", VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION);
+graphRAGRuntimeContext.set("dimension", 1536);
 graphRAGRuntimeContext.set("category", "document");
 graphRAGRuntimeContext.set("debug", false);
 graphRAGRuntimeContext.set("debug", false);

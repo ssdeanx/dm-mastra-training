@@ -6,8 +6,6 @@ import { PinoLogger } from '@mastra/loggers';
 import { RuntimeContext } from '@mastra/core/runtime-context';
 import {
   upsertVectors,
-  VECTOR_PROFILES,
-  VECTOR_CONFIG,
   extractChunkMetadata,
   type ExtractParams
 } from '../upstashMemory';
@@ -51,9 +49,8 @@ const chunkerInputSchema = z.object({
   vectorOptions: z.object({
     createEmbeddings: z.boolean().default(false).describe('Whether to create embeddings for chunks'),
     upsertToVector: z.boolean().default(false).describe('Whether to upsert chunks to Upstash vector store'),
-    indexName: z.string().default(VECTOR_PROFILES.gemini.INDEX_NAME).describe('Vector index name for upserting'),
+    indexName: z.string().default('gemini').describe('Vector index name for upserting'),
     createIndex: z.boolean().default(true).describe('Whether to create the vector index if it does not exist'),
-    vectorProfile: z.enum(['gemini']).default('gemini').describe('Vector profile to use for embeddings and upserting'),
   }).optional().describe('Vector store integration options'),
   extractParams: z.object({
     title: z.union([z.boolean(), z.object({
@@ -207,11 +204,8 @@ export const chunkerTool = createTool({
       const contextStrategy = (runtimeContext?.get('chunk-strategy') as 'recursive' | 'sentence' | 'paragraph' | 'fixed' | 'semantic' | undefined) ?? validatedInput.chunkParams?.strategy ?? 'recursive';
       const preserveStructure = (runtimeContext?.get('preserve-structure') as boolean | undefined) ?? validatedInput.chunkParams?.preserveStructure ?? true;
       const includeMetadata = (runtimeContext?.get('include-metadata') as boolean | undefined) ?? true;
-      const vectorProfileName = validatedInput.vectorOptions?.vectorProfile || VECTOR_CONFIG.DEFAULT_PROFILE;
-
-      // Get the embedder
-      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION });
-
+      // Get the embedder - always use gemini profile as it's the only one
+      const embedder = createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 1536, taskType: 'CLUSTERING' });
       // Create MDocument based on document type
       let doc: MDocument;
       const { content, type, title, source, metadata } = validatedInput.document;
@@ -357,7 +351,6 @@ export const chunkerTool = createTool({
           createEmbeddings: validatedInput.vectorOptions?.createEmbeddings,
           upsertToVector: validatedInput.vectorOptions?.upsertToVector,
           indexName: validatedInput.vectorOptions?.indexName,
-          vectorProfile: vectorProfileName
         });
 
         // Create embeddings for chunks using the selected embedder
@@ -376,7 +369,11 @@ export const chunkerTool = createTool({
 
         // Upsert to vector store if requested
         if (validatedInput.vectorOptions?.upsertToVector) {
-          const indexName = validatedInput.vectorOptions.indexName || VECTOR_PROFILES[vectorProfileName].INDEX_NAME;
+          const indexName = validatedInput.vectorOptions.indexName || 'gemini';
+          logger.info('Upserting to vector store using gemini profile', {
+            indexName: indexName,
+            profileIndexName: indexName
+          });
           // Prepare metadata for vector store
           const vectorMetadata = chunks.map((chunk, index) => ({
             id: chunk.id,
@@ -386,7 +383,6 @@ export const chunkerTool = createTool({
             totalChunks: chunks.length,
             documentType: type,
             strategy: chunkConfig.strategy,
-            vectorProfile: vectorProfileName
           }));
 
           // Upsert vectors using the helper function from upstashMemory.ts
@@ -415,7 +411,7 @@ export const chunkerTool = createTool({
           embeddingsCreated: embeddings.length,
           vectorsUpserted,
           indexName: validatedInput.vectorOptions?.indexName,
-          embeddingDimension: VECTOR_PROFILES[vectorProfileName].EMBEDDING_DIMENSION,
+          embeddingDimension: 1536, // Assuming gemini profile always uses 1536 dimensions
           vectorProcessingTime: Date.now() - vectorStartTime
         };
 
@@ -447,7 +443,7 @@ export const chunkerTool = createTool({
         vectorStats
       };
 
-      logger.info('Document chunking completed successfully', { 
+      logger.info('Document chunking completed successfully', {
         totalChunks: result.chunks.length,
         strategy: chunkConfig.strategy,
         processingTime: result.stats.processingTime,
@@ -457,7 +453,7 @@ export const chunkerTool = createTool({
       // Validate output
       return chunkerOutputSchema.parse(result);
 
-    } catch (error) {      logger.error('Document chunking failed', { 
+    } catch (error) {      logger.error('Document chunking failed', {
         error: error instanceof Error ? error.message : String(error),
         context: context
       });
@@ -506,10 +502,10 @@ function preprocessCSV(content: string): string {
   try {
     const lines = content.split('\n');
     if (lines.length === 0) return content;
-    
+
     const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
     const result = [`Headers: ${headers.join(', ')}\n`];
-    
+
     for (let i = 1; i < Math.min(lines.length, 100); i++) { // Limit to first 100 rows
       const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
       if (values.length === headers.length) {
@@ -629,12 +625,12 @@ async function chunkFixed(content: string, config: ChunkConfig): Promise<RawChun
   for (let i = 0; i < content.length; i += config.size - config.overlap) {
     const end = Math.min(i + config.size, content.length);
     const chunkContent = content.substring(i, end);
-    
+
     if (chunkContent.trim().length >= config.minChunkSize) {
       chunks.push({
         content: chunkContent,
         metadata: { 
-          strategy: 'fixed', 
+          strategy: 'fixed',
           index: chunkIndex++,
           startPos: i,
           endPos: end
@@ -660,7 +656,7 @@ async function chunkSemantic(content: string, config: ChunkConfig): Promise<RawC
 
     // Simple heuristic: start new chunk if sentence begins with certain patterns
     const isNewTopic = /^(However|Moreover|Furthermore|In addition|On the other hand|Meanwhile|Therefore|Thus|Consequently|In conclusion)/i.test(sentence);
-    
+    // If it's a new topic or exceeds max size, create a new chunk
     if (isNewTopic && currentChunk.length > config.minChunkSize) {
       chunks.push({
         content: currentChunk.trim(),

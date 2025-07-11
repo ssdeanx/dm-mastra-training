@@ -26,11 +26,10 @@ import { z } from 'zod';
 import {
   searchUpstashMessages,
   queryVectors,
-  VECTOR_PROFILES,
-  VECTOR_CONFIG,
   type VectorQueryResult,
   type MetadataFilter
 } from '../upstashMemory';
+
 import { createGeminiEmbeddingModel } from '../config/googleProvider';
 import type { UIMessage, CoreMessage } from 'ai';
 import { PinoLogger } from '@mastra/loggers';
@@ -46,7 +45,6 @@ export type VectorQueryRuntimeContext = {
   'debug'?: boolean;
   'max-results'?: number;
   'include-metadata'?: boolean;
-  'vectorProfile'?: 'gemini';
 };
 
 const logger = new PinoLogger({ name: 'VectorQueryTool', level: 'info' });
@@ -80,8 +78,8 @@ const vectorQueryOutputSchema = z.object({
 // Basic vector query tool using Mastra's createVectorQueryTool for compatibility with Upstash
 export const vectorQueryTool = createVectorQueryTool({
   vectorStoreName: "upstashVector",
-  indexName: VECTOR_PROFILES.gemini.INDEX_NAME,
-  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION }),
+  indexName: 'gemini-embeddings', // Use literal index name
+  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536, taskType: 'RETRIEVAL_QUERY' }), // Use literal dimension
   enableFilter: true,
   description: "Search for semantically similar content in the Upstash vector store using embeddings with sparse cosine similarity. Supports filtering, ranking, and context retrieval."
 });
@@ -170,22 +168,21 @@ export const enhancedVectorQueryTool = createTool({
         });
 
         relevantContext = results.map(r => r.content).join('\n\n');
-        
+
       } else {
         // Use direct Upstash vector store search with sparse cosine similarity
         logger.info('Performing direct Upstash vector store search');
 
-        
                 // Create query embedding using Google's embedding model
                 const { embeddings } = await embedMany({
-                  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION }),
+                  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536 }), // Use literal dimension
                   values: [validatedInput.query]
                 });
         const queryEmbedding = embeddings[0];
 
         // Query the Upstash vector store directly with sparse cosine similarity
         const vectorResults = await queryVectors(
-          VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE].INDEX_NAME,
+          'gemini-embeddings', // Directly use literal index name
           queryEmbedding,
           validatedInput.topK,
           validatedInput.enableFilter ? (validatedInput.filter as MetadataFilter) : undefined,
@@ -292,14 +289,16 @@ export const hybridVectorSearchTool = createTool({
       const userId = (runtimeContext?.get('user-id') as string | undefined) ?? 'anonymous';
       const sessionId = (runtimeContext?.get('session-id') as string | undefined) ?? 'default';
       const searchPreference = (runtimeContext?.get('search-preference') as 'semantic' | 'hybrid' | 'metadata' | undefined) ?? 'hybrid';
-      logger.info('Hybrid vector search initiated', { 
+      logger.info('Hybrid vector search initiated', {
         query: validatedInput.query,
         semanticWeight: validatedInput.semanticWeight,
         metadataWeight: validatedInput.metadataWeight,
         userId,
         sessionId,
-        searchPreference      });      // Use enhanced vector query instead of the basic one for consistency
-      logger.info('Using enhanced vector query for semantic search');      const basicResults = await enhancedVectorQueryTool.execute({
+        searchPreference
+      });      // Use enhanced vector query instead of the basic one for consistency
+      logger.info('Using enhanced vector query for semantic search');
+      const basicResults = await enhancedVectorQueryTool.execute({
         input: {
           query: validatedInput.query,
           topK: validatedInput.topK,
@@ -343,13 +342,13 @@ export const hybridVectorSearchTool = createTool({
           // Simple metadata matching score (can be enhanced)
           let metadataScore = 0;
           if (result.metadata && validatedInput.metadataQuery) {
-            const matchingKeys = Object.keys(validatedInput.metadataQuery).filter(key => 
+            const matchingKeys = Object.keys(validatedInput.metadataQuery).filter(key =>
               result.metadata?.[key] === validatedInput.metadataQuery![key]
             );
             metadataScore = matchingKeys.length / Object.keys(validatedInput.metadataQuery).length;
           }
 
-          const combinedScore = (semanticScore * validatedInput.semanticWeight!) + 
+          const combinedScore = (semanticScore * validatedInput.semanticWeight!) +
                                (metadataScore * validatedInput.metadataWeight!);
 
           hybridScores.push({
@@ -394,7 +393,7 @@ export const hybridVectorSearchTool = createTool({
       return output;
 
     } catch (error) {
-      logger.error('Hybrid vector search failed', { 
+      logger.error('Hybrid vector search failed', {
         error: error instanceof Error ? error.message : String(error)
       });
       throw new Error(`Hybrid vector search failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -405,7 +404,7 @@ export const hybridVectorSearchTool = createTool({
 /**
  * Runtime context for vector query tools to enable dynamic configuration
  * This allows CopilotKit frontend to configure tool behavior via headers
- * 
+ *
  * @example
  * ```typescript
  * // In CopilotKit agent registration:

@@ -155,6 +155,129 @@ Why is this important:
   `allow_external`: Whether to allow following links that go to external domains
   `categories`: Filter URLs using predefined categories like documentation, blog, api, etc
 
+- npm-sentinel-mcp:
+  The `npm-sentinel-mcp` suite provides powerful tools for comprehensive NPM package analysis, crucial for maintaining code quality, security, and project health. Leverage these tools to make informed decisions about dependencies and ensure adherence to best practices.
+
+  **Key Utilities and Proper Usage:**
+
+  - **`npmVersions`**: Use to quickly check all available versions of a package.
+    - *Use case*: Before upgrading a dependency, review available versions to identify potential breaking changes.
+  - **`npmLatest`**: Get the latest stable version and its changelog.
+    - *Use case*: Stay updated with the most recent releases and understand new features or fixes.
+  - **`npmDeps`**: Analyze direct and transitive dependencies.
+    - *Use case*: Identify dependency conflicts or unneeded packages to reduce bundle size and improve performance.
+  - **`npmTypes`**: Verify TypeScript type definition availability.
+    - *Use case*: Ensure type safety and better developer experience when integrating new libraries.
+  - **`npmSize`**: Understand package size.
+    - *Use case*: Optimize application bundle size by choosing smaller, more efficient libraries.
+  - **`npmVulnerabilities`**: Scan for known security vulnerabilities.
+    - *Use case*: Regularly audit dependencies to mitigate security risks in your project.
+  - **`npmTrends`**: Monitor package download trends and popularity.
+    - *Use case*: Assess the community adoption and long-term viability of a package.
+  - **`npmCompare`**: Compare multiple NPM packages side-by-side.
+    - *Use case*: Evaluate alternative libraries for a specific functionality based on various metrics like popularity, size, and maintenance.
+  - **`npmMaintainers`**: Get information about package maintainers.
+    - *Use case*: Understand the active support and development behind a package.
+  - **`npmScore`**: Obtain a consolidated quality score.
+    - *Use case*: Quickly gauge the overall health and reliability of a package before adoption.
+  - **`npmPackageReadme`**: Retrieve README content.
+    - *Use case*: Access documentation directly to understand package usage and features.
+  - **`npmSearch`**: Search for packages by keywords.
+    - *Use case*: Discover new packages or find specific functionalities.
+  - **`npmLicenseCompatibility`**: Check license compatibility.
+    - *Use case*: Ensure compliance with project licensing requirements.
+  - **`npmRepoStats`**: Get repository statistics.
+    - *Use case*: Evaluate project activity, issue resolution, and contribution rates.
+  - **`npmDeprecated`**: Check for deprecated packages.
+    - *Use case*: Identify and replace outdated dependencies to avoid future issues.
+  - **`npmChangelogAnalysis`**: Analyze release history.
+    - *Use case*: Understand the evolution of a package and potential impacts of upgrades.
+  - **`npmAlternatives`**: Find alternative packages.
+    - *Use case*: Explore other options if a current dependency is not meeting requirements or is deprecated.
+  - **`npmQuality`**: Analyze overall package quality metrics.
+    - *Use case*: Deep dive into code quality, test coverage, and documentation standards.
+  - **`npmMaintenance`**: Analyze package maintenance metrics.
+    - *Use case*: Evaluate the responsiveness of maintainers and frequency of updates.
+
+By consistently utilizing the `npm-sentinel-mcp` tools, developers can proactively ensure that projects adhere to high standards of code quality, security, and maintainability. These tools directly support the principle of "Future Proof your work" by providing insights into dependency health and longevity, and contribute to "Make sure everything is typesafe" by verifying type availability. Integrating these checks into the development workflow facilitates continuous improvement and helps mitigate risks associated with third-party packages.
+
+- mcp-deepwiki:
+  The `mcp-deepwiki` tool provides functionality to fetch content from deepwiki.com repositories, making it useful for accessing documentation or knowledge bases directly within your workflow.
+
+  **Key Utilities and Proper Usage:**
+
+  - **`deepwiki_fetch`**: Fetch a deepwiki.com repo and return Markdown.
+    - *Parameters*:
+      - `url*`: The URL, owner/repo name (e.g., "vercel/ai"), a two-word "owner repo" form (e.g., "vercel ai"), or a single library keyword.
+      - `maxDepth`: (Optional) Can fetch a single site (`0`) or multiple/all sites (`1`). Default is `1`.
+      - `mode`: (Optional) `aggregate` (default) or `pages`.
+      - `verbose`: (Optional) Boolean, default `false`.
+    - *Use case*: Quickly retrieve documentation, project specifications, or research materials from DeepWiki for reference or integration into your project. This can help with understanding external dependencies, APIs, or general knowledge pertinent to your coding tasks, ensuring you have the most up-to-date information without leaving your development environment.
+
+By integrating `mcp-deepwiki` into your workflow, you can ensure that your development efforts are always informed by the latest and most relevant knowledge. This directly supports the principles of "Future Proof your work" and "Make sure everything is typesafe" by providing immediate access to critical documentation and research materials, enabling more robust and maintainable code.
+
+- fireproof:
+  The `fireproof` tool provides capabilities for managing JSON documents, offering a local, persistent data store that can be highly beneficial for development, testing, and application configuration.
+
+  **Key Utilities and Proper Usage:**
+
+  - **`save_json_doc`**: Save a JSON document.
+    - *Use case*: Persist application state, configuration settings, or temporary data during development or testing without relying on external databases.
+  - **`load_json_doc`**: Load a JSON document by ID.
+    - *Use case*: Retrieve previously saved data for application initialization, testing scenarios, or debugging.
+  - **`delete_json_doc`**: Delete a JSON document by ID.
+    - *Use case*: Clean up test data, remove outdated configurations, or manage temporary data storage efficiently.
+  - **`query_json_docs`**: Query JSON documents sorted by a field.
+    - *Use case*: Perform simple data retrieval and analysis on stored JSON documents, useful for debugging, quick reporting, or local data manipulation.
+
+  By utilizing `fireproof`, developers can streamline local data management, accelerate testing cycles, and manage application configurations more effectively, supporting robust and maintainable code by ensuring data integrity and efficient data handling within the development environment.
+
+- browserbase:
+  The `browserbase` tool provides powerful capabilities for interacting with web pages in a programmatic way, enabling automated browsing, testing, and data extraction within a cloud browser environment. This is particularly useful for UI testing, scraping, and automating repetitive web tasks.
+
+  **Key Utilities and Proper Usage:**
+
+  - **`browserbase_wait`**: Pause execution for a specified duration.
+    - *Use case*: Allow page elements to load or animations to complete before proceeding with further actions in automated browser tasks.
+  - **`browserbase_close`**: Close the currently active web page.
+    - *Use case*: Clean up browser sessions after completing a task or navigating to a new context.
+  - **`browserbase_resize`**: Adjust the browser window dimensions.
+    - *Use case*: Test responsive designs or simulate different screen sizes during UI testing.
+  - **`browserbase_snapshot`**: Capture an accessibility snapshot of the current page state.
+    - *Use case*: Debug layout issues, verify element visibility, or capture the state of a page for later analysis.
+  - **`browserbase_click`**: Simulate a click on a specified web element.
+    - *Use case*: Automate user interactions for navigation, form submissions, or triggering UI events in tests or workflows.
+  - **`browserbase_drag`**: Perform a drag-and-drop operation between two elements.
+    - *Use case*: Test drag-and-drop functionalities in web applications.
+  - **`browserbase_hover`**: Simulate hovering over a web element.
+    - *Use case*: Trigger hover-specific UI elements (e.g., tooltips, dropdowns) for testing or data extraction.
+  - **`browserbase_type`**: Type text into an editable web element.
+    - *Use case*: Populate form fields, search bars, or text areas in automated workflows.
+  - **`browserbase_select_option`**: Select an option from a dropdown element.
+    - *Use case*: Automate selection of options in forms or configuration settings.
+  - **`browserbase_take_screenshot`**: Capture a screenshot of the current page or a specific element.
+    - *Use case*: Visual regression testing, documenting UI states, or capturing evidence of test failures.
+  - **`browserbase_press_key`**: Simulate a key press.
+    - *Use case*: Trigger keyboard shortcuts or navigate through elements using keyboard controls in automated tests.
+  - **`browserbase_get_text`**: Extract text content from the page or a specific element.
+    - *Use case*: Verify content presence, extract data for analysis, or validate dynamic text updates.
+  - **`browserbase_navigate`**: Navigate to a specified URL.
+    - *Use case*: Direct the browser to specific pages for testing, scraping, or workflow initiation.
+  - **`browserbase_navigate_back`**: Go back to the previous page in the browser history.
+    - *Use case*: Test navigation flows or revert to previous states in a multi-step process.
+  - **`browserbase_navigate_forward`**: Go forward to the next page in the browser history.
+    - *Use case*: Navigate forward in browser history, often used in conjunction with `navigate_back`.
+  - **`browserbase_session_create`**: Create or reuse a cloud browser session.
+    - *Use case*: Manage isolated browser environments for different test runs or automation tasks, ensuring clean states.
+  - **`browserbase_session_close`**: Close the current Browserbase session.
+    - *Use case*: Terminate browser sessions cleanly and release resources.
+  - **`browserbase_context_create`**: Create a new Browserbase context for reusing cookies, authentication, and cached data.
+    - *Use case*: Maintain consistent session data across multiple browser sessions for complex workflows requiring login or persistent state.
+  - **`browserbase_context_delete`**: Delete a Browserbase context.
+    - *Use case*: Clean up persistent session data when no longer needed, ensuring privacy and resource management.
+
+  By effectively utilizing `browserbase` tools, developers can implement robust automated testing (supporting the "Write unit tests" and "Future Proof your work" standards), perform reliable web scraping, and automate web-based tasks. This directly contributes to ensuring the quality and efficiency of web applications and related processes.
+
 - stochasticalgorithms:
 
   A tool for applying stochastic algorithms to decision-making problems. Supports various algorithms including: - Markov Decision Processes (MDPs): Optimize policies over long sequences of decisions - Monte Carlo Tree Search (MCTS): Simulate future action sequences for large decision spaces - Multi-Armed Bandit: Balance exploration vs exploitation in action selection - Bayesian Optimization: Optimize decisions with probabilistic inference - Hidden Markov Models (HMMs): Infer latent states affecting decision outcomes Each algorithm provides a systematic approach to handling uncertainty in decision-making.

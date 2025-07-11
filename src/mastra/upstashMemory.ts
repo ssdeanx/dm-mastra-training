@@ -9,6 +9,10 @@ import { UIMessage } from 'ai';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
 import { createGeminiEmbeddingModel } from './config/googleProvider';
 
+
+
+
+
 //import { ca } from 'zod/v4/locales';
 
 /**
@@ -78,33 +82,29 @@ const vectorIndexSchema = z.object({
   indexName: z.string().nonempty(),
 });
 
-const createVectorIndexSchema = z.object({
-  indexName: z.string().nonempty(),
+const createVectorIndexSchema = vectorIndexSchema.extend({
   dimension: z.number().int().positive(),
-  metric: z.enum(['cosine', 'euclidean', 'dotproduct']),
+  metric: z.enum(['cosine', 'euclidean', 'dotproduct']).optional(),
 });
 
-const vectorUpsertSchema = z.object({
-  indexName: z.string().nonempty(),
+const vectorUpsertSchema = z.intersection(vectorIndexSchema, z.object({
   vectors: z.array(z.array(z.number())),
   metadata: z.array(z.record(z.unknown())).optional(),
   ids: z.array(z.string()).optional()
-});
+}));
 
-const vectorQuerySchema = z.object({
-  indexName: z.string().nonempty(),
+const vectorQuerySchema = z.intersection(vectorIndexSchema, z.object({
   queryVector: z.array(z.number()),
   topK: z.number().int().min(1).default(10),
   filter: z.any().optional(), // Use z.any() for MetadataFilter compatibility
   includeVector: z.boolean().default(false)
-});
+}));
 
-const vectorUpdateSchema = z.object({
-  indexName: z.string().nonempty(),
+const vectorUpdateSchema = z.intersection(vectorIndexSchema, z.object({
   id: z.string().nonempty(),
   vector: z.array(z.number()).optional(),
   metadata: z.record(z.unknown()).optional()
-});
+}));
 
 /**
  * Vector operation result interfaces following Upstash Vector API
@@ -217,27 +217,11 @@ export const upstashStorage = new UpstashStore({
  * - Supports metadata filtering and hybrid search
  */
 export const upstashVector = new UpstashVector({
-  url: process.env.UPSTASH_VECTOR_REST_URL2 || '',
-  token: process.env.UPSTASH_VECTOR_REST_TOKEN2 || ''
+  url: process.env.UPSTASH_VECTOR_REST_URL || '',
+  token: process.env.UPSTASH_VECTOR_REST_TOKEN || ''
 });
 
-/**
- * Vector configuration constants
- */
-export const VECTOR_PROFILES = {
-  'gemini': { // Renamed from 'gemini-1536'
-    INDEX_NAME: 'mastra-gemini-vectors', // Renamed for clarity
-    EMBEDDING_DIMENSION: 1536, // Gemini-embedding-exp-03-07 dimension
-    DISTANCE_METRIC: 'cosine' as const,
-    MODEL_PROVIDER: 'google'
-  }
-} as const;
 
-export const VECTOR_CONFIG = {
-  DEFAULT_PROFILE: 'gemini' as const,
-  DEFAULT_TOP_K: 5,
-  MAX_BATCH_SIZE: 100
-} as const;
 
 
 /**
@@ -1106,13 +1090,13 @@ export class WorkflowAwareMemoryProcessor extends MemoryProcessor {
 export const upstashMemory = new Memory({
   storage: upstashStorage,
   vector: upstashVector,
-  embedder: createGeminiEmbeddingModel(undefined, { outputDimensionality: VECTOR_PROFILES.gemini.EMBEDDING_DIMENSION }),
+  embedder: createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 1536, taskType: 'SEMANTIC_SIMILARITY'}),
   options: {
     lastMessages: 500, // Enhanced for better context retention
     semanticRecall: {
-      topK: VECTOR_CONFIG.DEFAULT_TOP_K,
+      topK: 5, // Retrieve top 5 semantically relevant messages
       messageRange: {
-        before: 3,
+        before: 4,
         after: 1,
       },
       scope: 'resource', // Search across all threads for a user
@@ -1122,13 +1106,37 @@ export const upstashMemory = new Memory({
     },
     workingMemory: {
       enabled: true, // Persistent user information across conversations
-      template: `# Memory
-- Preferences:
-- Goals:
-- Context:
-- Recent Actions:
-- Key Insights:
-- Important Notes:
+      template: `# Agent Personal Notebook
+- This your personal notebook for storing important information about the user.
+- It will be used to provide context for future conversations.
+- You can add information about the user, their preferences, and any other relevant details.
+- Use the following format to add information:
+  - **Key**: Value
+  - **Example**: "User's favorite color: Blue"
+  - **Important**: Save critical information that can help the agent be more effective in future conversations.
+- **Note**: This notebook is for your personal use only and will not be shared with anyone else. Only you agents can access this information.
+
+## Working Memory
+- This is your working memory for the current conversation.
+- It will be used to provide context for the current conversation.
+- You can add information about the current conversation, such as important messages, decisions, and actions
+- Use the following format to add information:
+  - **Key**: Value
+  - **Example**: "Current task: Analyze sales data"
+  - **Important**: Save critical information that can help the agent be more effective in the current conversation.
+
+### Agent personal space for storing important information between conversations for the agent to use
+- This is your personal space for storing important information between conversations.
+- It will be used to provide context for future conversations.
+- This is very powerful for you to build up a rich context over time to expand your agent's capabilities dynamically and adapt to evolving user needs.
+- You can add information about your internal perspectives, their preferences, and ways to improve your own internal workings.
+- Think of it as your own personal knowledge base that you can use to improve your performance over time.
+- Use the following format to add information:
+  - **Key**: Value
+  - **Example**: "My preferred response style: Concise and to the point"
+  - **Important**: Save critical information that can help you be more effective in future conversations.
+- **Note**: This personal space is for your own use only and will not be shared with anyone else. Only agent can access this information.
+
 `
     },
   },
@@ -1443,49 +1451,10 @@ export async function enhancedUpstashSearchMessages(
  * @param metric - Distance metric (default: cosine)
  * @returns Promise resolving to operation result
  */
-export async function validateVectorIndexConfiguration(
-  indexName: string,
-  profileName: keyof typeof VECTOR_PROFILES = VECTOR_CONFIG.DEFAULT_PROFILE
-): Promise<VectorOperationResult> {
-  const profile = VECTOR_PROFILES[profileName];
-  const params = vectorIndexSchema.parse({ indexName, dimension: profile.EMBEDDING_DIMENSION, metric: profile.DISTANCE_METRIC });
-  try {
-    logger.info('Vector index configuration validated', {
-      indexName: params.indexName,
-      dimension: profile.EMBEDDING_DIMENSION,
-      metric: profile.DISTANCE_METRIC,
-      profileName: profileName
-    });
-    return {
-      success: true,
-      operation: 'createIndex',
-      indexName: params.indexName
-    };
-  } catch (error: unknown) {
-    logger.error('Failed to validate vector index configuration', {
-      error: (error as Error).message,
-      indexName: params.indexName
-    });
-    return {
-      success: false,
-      operation: 'createIndex',
-      indexName: params.indexName,
-      error: (error as Error).message
-    };
-  }
-}
-
-/**
- * Create a new vector index in Upstash.
- * @param indexName - Name of the index to create.
- * @param dimension - Dimension of the vectors in the index.
- * @param metric - Distance metric for the index ('cosine' | 'euclidean' | 'dotproduct').
- * @returns Promise resolving to a VectorOperationResult.
- */
 export async function createVectorIndex(
   indexName: string,
   dimension: number,
-  metric: 'cosine' | 'euclidean' | 'dotproduct'
+  metric: 'cosine' | 'euclidean' | 'dotproduct' = 'cosine'
 ): Promise<VectorOperationResult> {
   const params = createVectorIndexSchema.parse({ indexName, dimension, metric });
   try {
@@ -1516,57 +1485,6 @@ export async function createVectorIndex(
       operation: 'createVectorIndex',
       indexName: params.indexName,
       error: (error as Error).message,
-    };
-  }
-}
-
-/**
- * Initialize Upstash Vector indexes for optimal search performance
- * Should be called during application startup
- *
- * @version 1.0.0
- * @author SSD
- * @date 2025-06-20
- *
- * @mastra Initialization function for Upstash Vector indexes
- * @module upstashMemory
- * @function initializeUpstashVectorIndexes
- * @returns Promise resolving to operation result
- *
- * @example
- * ```typescript
- * await initializeUpstashVectorIndexes();
- * ```
- *
- * @remarks
- * Upstash Vector automatically manages indexes, but this function provides
- * validation and logging for the vector setup process
- */
-export async function initializeUpstashVectorIndexes(): Promise<VectorOperationResult> {
-  try {
-    // Upstash Vector handles index creation automatically
-    // We can validate the connection by attempting to list indexes
-    const indexes = await upstashVector.listIndexes();
-    logger.info('Upstash Vector indexes initialized successfully', {
-      indexCount: indexes.length,
-      indexes: indexes.slice(0, 5), // Log first 5 indexes
-      vectorConfig: VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE],
-      defaultProfile: VECTOR_CONFIG.DEFAULT_PROFILE
-    });
-    return {
-      success: true,
-      operation: 'initializeIndexes',
-      count: indexes.length
-    };
-  } catch (error: unknown) {
-    logger.error('Upstash Vector index initialization failed', {
-      error: (error as Error).message,
-      vectorConfig: VECTOR_PROFILES[VECTOR_CONFIG.DEFAULT_PROFILE]
-    });
-    return {
-      success: false,
-      operation: 'initializeIndexes',
-      error: (error as Error).message
     };
   }
 }
@@ -1706,7 +1624,7 @@ export async function upsertVectors(
 export async function queryVectors(
   indexName: string,
   queryVector: number[],
-  topK: number = VECTOR_CONFIG.DEFAULT_TOP_K,
+  topK: number = 5,
   filter?: MetadataFilter,
   includeVector: boolean = false
 ): Promise<VectorQueryResult[]> {
@@ -1774,7 +1692,7 @@ export async function queryVectors(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function transformToUpstashFilter(filter: MetadataFilter): any {
   const transformed: Record<string, unknown> = {};
-  
+
   Object.entries(filter).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       // Handle nested MetadataFilter objects
@@ -1896,7 +1814,7 @@ export async function batchUpsertVectors(
   vectors: number[][],
   metadata?: Record<string, unknown>[],
   ids?: string[],
-  batchSize: number = VECTOR_CONFIG.MAX_BATCH_SIZE
+  batchSize: number = 100
 ): Promise<VectorOperationResult> {
   const totalVectors = vectors.length;
   let successCount = 0;
@@ -1975,7 +1893,7 @@ export async function enhancedVectorSearch(
 }> {
   const startTime = Date.now();
   const {
-    topK = VECTOR_CONFIG.DEFAULT_TOP_K,
+    topK = 5,
     filter,
     includeVector = false,
     minScore = 0,

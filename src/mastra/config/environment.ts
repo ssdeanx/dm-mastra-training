@@ -18,8 +18,13 @@ const envSchema = z.object({
   // Google API Key for Generative AI (required for Google models)
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   // Upstash Redis configuration
-  // Upstash Vector 2 configuration (for 1536-dimension embeddings)
-  
+  UPSTASH_REDIS_REST_URL: z.string().url('Invalid Upstash Redis URL').optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'Upstash Redis token required').optional(),
+
+  // Upstash Vector configuration
+  UPSTASH_VECTOR_REST_URL: z.string().url('Invalid Upstash Vector URL').optional(),
+  UPSTASH_VECTOR_REST_TOKEN: z.string().min(1, 'Upstash Vector token required').optional(),
+
   // The Odds API configuration
   THE_ODDS_API_KEY: z.string().optional(),
   ALPHA_VANTAGE_API_KEY: z.string().optional(),
