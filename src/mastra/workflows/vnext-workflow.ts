@@ -64,7 +64,7 @@ export const memory = new Memory({
   }),
   embedder: createGeminiEmbeddingModel('text-embedding-004', {
     outputDimensionality: 768, // optional, number of dimensions for the embedding
-    taskType: 'SEMANTIC_SIMILARITY', // replace invalid object with a valid union literal
+    taskType: 'SEMANTIC_SIMILARITY' as const,
   }),
   options: {
     lastMessages: 500,

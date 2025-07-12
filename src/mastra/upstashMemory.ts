@@ -1,5 +1,6 @@
 import { Memory } from '@mastra/memory';
-import { UpstashStore, UpstashVector } from '@mastra/upstash';
+import { UpstashStore } from '@mastra/upstash';
+import { pinecone } from './pinecone';
 import { z } from 'zod';
 import { PinoLogger } from '@mastra/loggers';
 import type { CoreMessage as OriginalCoreMessage } from '@mastra/core';
@@ -7,7 +8,7 @@ import { maskStreamTags } from '@mastra/core';
 import { MemoryProcessor, MemoryProcessorOpts } from '@mastra/core/memory';
 import { UIMessage } from 'ai';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
-import { createGeminiEmbeddingModel } from './config/googleProvider';
+import { createGeminiEmbeddingModel } from'./config/googleProvider';
 
 
 
@@ -56,8 +57,8 @@ const logger = new PinoLogger({ name: 'upstashMemory', level: 'info' });
 const createThreadSchema = z.object({
   resourceId: z.string().nonempty(),
   threadId: z.string().optional(),
-  title: z.string().optional(),
-  metadata: z.record(z.unknown()).optional()
+  title: z.string().optional(), // This line is already correct.
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 const getMessagesSchema = z.object({
@@ -89,7 +90,7 @@ const createVectorIndexSchema = vectorIndexSchema.extend({
 
 const vectorUpsertSchema = z.intersection(vectorIndexSchema, z.object({
   vectors: z.array(z.array(z.number())),
-  metadata: z.array(z.record(z.unknown())).optional(),
+  metadata: z.array(z.record(z.string(), z.unknown())).optional(),
   ids: z.array(z.string()).optional()
 }));
 
@@ -103,7 +104,7 @@ const vectorQuerySchema = z.intersection(vectorIndexSchema, z.object({
 const vectorUpdateSchema = z.intersection(vectorIndexSchema, z.object({
   id: z.string().nonempty(),
   vector: z.array(z.number()).optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 }));
 
 /**
@@ -207,6 +208,8 @@ export const upstashStorage = new UpstashStore({
   token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
 });
 
+
+
 /**
  * Enhanced Upstash Vector Configuration
  * Initializes vector storage for optimal search performance with proper dimensions
@@ -216,10 +219,9 @@ export const upstashStorage = new UpstashStore({
  * - Uses cosine similarity for text embeddings
  * - Supports metadata filtering and hybrid search
  */
-export const upstashVector = new UpstashVector({
-  url: process.env.UPSTASH_VECTOR_REST_URL || '',
-  token: process.env.UPSTASH_VECTOR_REST_TOKEN || ''
-});
+// Comment out old pineconeVector export since we're using it under the upstashVector name
+// export const pineconeVector = pinecone;
+export const upstashVector = pinecone;
 
 
 
@@ -1089,8 +1091,8 @@ export class WorkflowAwareMemoryProcessor extends MemoryProcessor {
  */
 export const upstashMemory = new Memory({
   storage: upstashStorage,
-  vector: upstashVector,
-  embedder: createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 1536, taskType: 'SEMANTIC_SIMILARITY'}),
+  vector: pinecone,
+  embedder: createGeminiEmbeddingModel('gemini-embedding-exp-03-07', { outputDimensionality: 1536, taskType: 'SEMANTIC_SIMILARITY'}),
   options: {
     lastMessages: 500, // Enhanced for better context retention
     semanticRecall: {
@@ -1421,27 +1423,24 @@ export async function enhancedUpstashSearchMessages(
     topK: number;
     before: number;
     after: number;
-  }
+  };
 }> {
-  try {
-    const result = await upstashMemory.query({
-      threadId,
-      selectBy: { vectorSearchString },
-      threadConfig: {
-        semanticRecall: {
-          topK,
-          messageRange: { before, after }
-        }
+  // Use the pinecone-backed memory (upstashMemory configured with pinecone) for semantic recall
+  const result = await upstashMemory.query({
+    threadId,
+    selectBy: { vectorSearchString },
+    threadConfig: {
+      semanticRecall: {
+        topK,
+        messageRange: { before, after },
       },
-    });
-    return {
-      ...result,
-      searchMetadata: { topK, before, after }
-    };
-  } catch (error: unknown) {
-    logger.error(`enhancedUpstashSearchMessages failed: ${(error as Error).message}`);
-    throw error;
-  }
+    },
+  });
+
+  return {
+    ...result,
+    searchMetadata: { topK, before, after },
+  };
 }
 
 /**
@@ -1658,8 +1657,8 @@ export async function queryVectors(
       resultCount: results.length,
       hasFilter: !!params.filter,
       filterApplied: !!upstashFilter
-    });
-
+    // Transform results to match our interface
+    return results.map((result: any) => ({
     // Transform results to match our interface
     return results.map(result => ({
       id: result.id,
@@ -2265,5 +2264,3 @@ export const UPSTASH_TYPE_SAFETY_STATUS = {
   typeSafety: 'Compile-time checking disabled for filters',
   futureImprovement: 'Implement proper type imports when available'
 } as const;
-
-
