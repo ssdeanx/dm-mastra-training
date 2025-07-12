@@ -1457,7 +1457,7 @@ export async function createVectorIndex(
 ): Promise<VectorOperationResult> {
   const params = createVectorIndexSchema.parse({ indexName, dimension, metric });
   try {
-    await upstashVector.createIndex({
+    await pinecone.createIndex({
       indexName: params.indexName,
       dimension: params.dimension,
       metric: params.metric,
@@ -1494,7 +1494,7 @@ export async function createVectorIndex(
  */
 export async function listVectorIndexes(): Promise<string[]> {
   try {
-    const indexes = await upstashVector.listIndexes();
+    const indexes = await pinecone.listIndexes();
     logger.info('Vector indexes listed successfully', { count: indexes.length });
     return indexes;
   } catch (error: unknown) {
@@ -1512,7 +1512,7 @@ export async function listVectorIndexes(): Promise<string[]> {
  */
 export async function describeVectorIndex(indexName: string): Promise<VectorIndexStats> {
   try {
-    const stats = await upstashVector.describeIndex({ indexName });
+    const stats = await pinecone.describeIndex({ indexName });
     logger.info('Vector index described successfully', { indexName, stats });
     return {
       dimension: stats.dimension,
@@ -1535,7 +1535,7 @@ export async function describeVectorIndex(indexName: string): Promise<VectorInde
  */
 export async function deleteVectorIndex(indexName: string): Promise<VectorOperationResult> {
   try {
-    await upstashVector.deleteIndex({ indexName });
+    await pinecone.deleteIndex({ indexName });
     logger.info('Vector index deleted successfully', { indexName });
     return {
       success: true,
@@ -1573,7 +1573,7 @@ export async function upsertVectors(
 ): Promise<VectorOperationResult> {
   const params = vectorUpsertSchema.parse({ indexName, vectors, metadata, ids });
   try {
-    await upstashVector.upsert({
+    await pinecone.upsert({
       indexName: params.indexName,
       vectors: params.vectors,
       metadata: params.metadata,
@@ -1643,7 +1643,7 @@ export async function queryVectors(
       upstashFilter = transformToUpstashFilter(validatedFilter);
     }
 
-    const results = await upstashVector.query({
+    const results = await pinecone.query({
       indexName: params.indexName,
       queryVector: params.queryVector,
       topK: params.topK,
@@ -1657,10 +1657,11 @@ export async function queryVectors(
       resultCount: results.length,
       hasFilter: !!params.filter,
       filterApplied: !!upstashFilter
+    });
+
     // Transform results to match our interface
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return results.map((result: any) => ({
-    // Transform results to match our interface
-    return results.map(result => ({
       id: result.id,
       score: result.score,
       metadata: result.metadata || {},
@@ -1732,7 +1733,7 @@ export async function updateVector(
     throw new Error('Either vector or metadata must be provided for update');
   }
   try {
-    await upstashVector.updateVector({
+    await pinecone.updateVector({
       indexName: params.indexName,
       id: params.id,
       update: {
@@ -1777,7 +1778,7 @@ export async function deleteVector(
   id: string
 ): Promise<VectorOperationResult> {
   try {
-    await upstashVector.deleteIndex({ indexName });
+    await pinecone.deleteIndex({ indexName });
     logger.info('Vector index deleted successfully', { indexName });
     return {
       success: true,

@@ -6,7 +6,7 @@ import { RuntimeContext } from '@mastra/core/runtime-context';
 import { PinoLogger } from "@mastra/loggers";
 import { generateId } from 'ai';
 import { Memory } from '@mastra/memory';
-import { LibSQLStore, LibSQLVector } from '@mastra/libsql';
+import { LibSQLStore } from '@mastra/libsql';
 import { AttentionGuidedMemoryProcessor, ContextualRelevanceProcessor, WorkflowAwareMemoryProcessor, BiasMitigationProcessor } from '../upstashMemory';
 // Agent imports
 import { masterAgent } from '../agents/master-agent';
@@ -15,6 +15,8 @@ import { researchAgent } from '../agents/research-agent';
 import { analyzerAgent } from '../agents/analyzer-agent';
 import { weatherWorkflow } from './weather-workflow';
 import { chunkerTool, createBraveSearchTool, createTavilySearchTool, graphRAGTool, graphRAGUpsertTool, hybridVectorSearchTool, mem0MemorizeTool, mem0RememberTool, stockPriceTool, vectorQueryTool, weatherTool } from '../tools';
+
+import { pinecone } from '../pinecone';
 // Tool imports
 
 /**
@@ -59,11 +61,9 @@ export const memory = new Memory({
     url: process.env.VNEXT_URL || 'file:./data/mastra.db', // Or your database URL
     authToken: process.env.VNEXT_TOKEN || '', // Optional authentication token
   }),
-  vector: new LibSQLVector({
-    connectionUrl: process.env.VNEXT_URL || "file:./data/vector.db", // Or your vector database URL
-  }),
+  vector: pinecone, // Using Pinecone for vector storage
   embedder: createGeminiEmbeddingModel('text-embedding-004', {
-    outputDimensionality: 768, // optional, number of dimensions for the embedding
+    outputDimensionality: 1536, // optional, number of dimensions for the embedding
     taskType: 'SEMANTIC_SIMILARITY' as const,
   }),
   options: {
