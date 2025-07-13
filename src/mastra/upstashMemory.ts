@@ -8,7 +8,7 @@ import { maskStreamTags } from '@mastra/core';
 import { MemoryProcessor, MemoryProcessorOpts } from '@mastra/core/memory';
 import { UIMessage } from 'ai';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
-import { createGeminiEmbeddingModel } from'./config/googleProvider';
+import { createGeminiEmbeddingModel } from './config/googleProvider';
 
 
 
@@ -50,7 +50,7 @@ export class VectorStoreError extends Error {
 }
 
 
-const logger = new PinoLogger({ name: 'upstashMemory', level: 'info' });
+const logger = new PinoLogger({ name: 'memory', level: 'info' });
 
 
 // Validation schemas
@@ -221,7 +221,7 @@ export const upstashStorage = new UpstashStore({
  */
 // Comment out old pineconeVector export since we're using it under the upstashVector name
 // export const pineconeVector = pinecone;
-export const upstashVector = pinecone;
+//export const upstashVector = pinecone;
 
 
 
@@ -1089,7 +1089,7 @@ export class WorkflowAwareMemoryProcessor extends MemoryProcessor {
  * // Initialize vector indexes on startup:
  * await initializeUpstashVectorIndexes();
  */
-export const upstashMemory = new Memory({
+export const mastraMemory = new Memory({
   storage: upstashStorage,
   vector: pinecone,
   embedder: createGeminiEmbeddingModel('gemini-embedding-exp-03-07', { outputDimensionality: 1536, taskType: 'SEMANTIC_SIMILARITY'}),
@@ -1191,18 +1191,18 @@ export const upstashMemory = new Memory({
  * @param threadId - Optional specific thread ID
  * @returns Promise resolving to thread information
  */
-export async function createUpstashThread(
+export async function createMemoryThread(
   resourceId: string,
   title?: string,
   metadata?: Record<string, unknown>,
   threadId?: string
 ) {
-  logger.info(`[upstashMemory] createUpstashThread received. resourceId: ${resourceId}, threadId: ${threadId}`);
+  logger.info(`[memory] createMemoryThread received. resourceId: ${resourceId}, threadId: ${threadId}`);
   const params = createThreadSchema.parse({ resourceId, threadId, title, metadata });
   try {
-    return await upstashMemory.createThread(params);
+    return await mastraMemory.createThread(params);
   } catch (error: unknown) {
-    logger.error(`createUpstashThread failed: ${(error as Error).message}`);
+    logger.error(`createMemoryThread failed: ${(error as Error).message}`);
     throw error;
   }
 }
@@ -1214,20 +1214,20 @@ export async function createUpstashThread(
  * @param last - Number of last messages to retrieve
  * @returns Promise resolving to thread messages
  */
-export async function getUpstashThreadMessages(
+export async function getMemoryThreadMessages(
   resourceId: string,
   threadId: string,
   last = 10
 ) {
   const params = getMessagesSchema.parse({ resourceId, threadId, last });
   try {
-    return await upstashMemory.query({
+    return await mastraMemory.query({
       resourceId: params.resourceId,
       threadId: params.threadId,
       selectBy: { last: params.last }
     });
   } catch (error: unknown) {
-    logger.error(`getUpstashThreadMessages failed: ${(error as Error).message}`);
+    logger.error(`getMemoryThreadMessages failed: ${(error as Error).message}`);
     throw error;
   }
 }
@@ -1237,12 +1237,12 @@ export async function getUpstashThreadMessages(
  * @param threadId - Thread identifier
  * @returns Promise resolving to thread information
  */
-export async function getUpstashThreadById(threadId: string) {
+export async function getMemoryThreadById(threadId: string) {
   const id = threadIdSchema.parse(threadId);
   try {
-    return await upstashMemory.getThreadById({ threadId: id });
+    return await mastraMemory.getThreadById({ threadId: id });
   } catch (error: unknown) {
-    logger.error(`getUpstashThreadById failed: ${(error as Error).message}`);
+    logger.error(`getMemoryThreadById failed: ${(error as Error).message}`);
     throw error;
   }
 }
@@ -1252,12 +1252,12 @@ export async function getUpstashThreadById(threadId: string) {
  * @param resourceId - Resource identifier
  * @returns Promise resolving to array of threads
  */
-export async function getUpstashThreadsByResourceId(resourceId: string) {
+export async function getMemoryThreadsByResourceId(resourceId: string) {
   const id = resourceIdSchema.parse(resourceId);
   try {
-    return await upstashMemory.getThreadsByResourceId({ resourceId: id });
+    return await mastraMemory.getThreadsByResourceId({ resourceId: id });
   } catch (error: unknown) {
-    logger.error(`getUpstashThreadsByResourceId failed: ${(error as Error).message}`);
+    logger.error(`getMemoryThreadsByResourceId failed: ${(error as Error).message}`);
     throw error;
   }
 }
@@ -1294,7 +1294,7 @@ export async function getUpstashThreadsByResourceId(resourceId: string) {
  * );
  * ```
  */
-export async function searchUpstashMessages(
+export async function searchMemoryMessages(
   threadId: string,
   vectorSearchString: string,
   topK = 3,
@@ -1331,7 +1331,7 @@ export async function searchUpstashMessages(
 
     // Add metadata filter if provided (validate for Upstash compatibility)
     if (filter) {
-      const validatedFilter = validateUpstashFilter(filter);
+      const validatedFilter = validateMetadataFilter(filter);
       queryConfig.filter = transformToUpstashFilter(validatedFilter);
       logger.info('Applying Upstash-compatible metadata filter to search', {
         threadId: params.threadId,
@@ -1340,9 +1340,9 @@ export async function searchUpstashMessages(
       });
     }
 
-    const result = await upstashMemory.query(queryConfig);
+    const result = await mastraMemory.query(queryConfig);
 
-    logger.info('Upstash message search completed', {
+    logger.info('Memory message search completed', {
       threadId: params.threadId,
       messagesFound: result.messages.length,
       uiMessagesFound: result.uiMessages.length,
@@ -1351,7 +1351,7 @@ export async function searchUpstashMessages(
 
     return result;
   } catch (error: unknown) {
-    logger.error(`searchUpstashMessages failed: ${(error as Error).message}`, {
+    logger.error(`searchMemoryMessages failed: ${(error as Error).message}`, {
       threadId: params.threadId,
       vectorSearchString: params.vectorSearchString,
       filter
@@ -1370,16 +1370,16 @@ export async function searchUpstashMessages(
  * @param last - Number of recent messages
  * @returns Promise resolving to array of UI-formatted messages
  */
-export async function getUpstashUIThreadMessages(threadId: string, last = 100): Promise<UIMessage[]> {
+export async function getMemoryUIThreadMessages(threadId: string, last = 100): Promise<UIMessage[]> {
   const id = threadIdSchema.parse(threadId);
   try {
-    const { uiMessages } = await upstashMemory.query({
+    const { uiMessages } = await mastraMemory.query({
       threadId: id,
       selectBy: { last },
     });
     return uiMessages;
   } catch (error: unknown) {
-    logger.error(`getUpstashUIThreadMessages failed: ${(error as Error).message}`);
+    logger.error(`getMemoryUIThreadMessages failed: ${(error as Error).message}`);
     throw error;
   }
 }
@@ -1392,7 +1392,7 @@ export async function getUpstashUIThreadMessages(threadId: string, last = 100): 
  * @param onMask - Optional callback for the masked content
  * @returns Async iterable of chunks with working_memory tags removed
  */
-export function maskUpstashWorkingMemoryStream(
+export function maskMemoryWorkingMemoryStream(
   textStream: AsyncIterable<string>,
   onStart?: () => void,
   onEnd?: () => void,
@@ -1410,7 +1410,7 @@ export function maskUpstashWorkingMemoryStream(
  * @param after - Number of messages after each match
  * @returns Promise resolving to { messages, uiMessages } with enhanced metadata
  */
-export async function enhancedUpstashSearchMessages(
+export async function enhancedMemorySearchMessages(
   threadId: string,
   vectorSearchString: string,
   topK = 3,
@@ -1425,8 +1425,8 @@ export async function enhancedUpstashSearchMessages(
     after: number;
   };
 }> {
-  // Use the pinecone-backed memory (upstashMemory configured with pinecone) for semantic recall
-  const result = await upstashMemory.query({
+  // Use the pinecone-backed memory (mastraMemory configured with pinecone) for semantic recall
+  const result = await mastraMemory.query({
     threadId,
     selectBy: { vectorSearchString },
     threadConfig: {
@@ -1639,7 +1639,7 @@ export async function queryVectors(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let upstashFilter: any; // TODO: Replace with proper UpstashVectorFilter type when available.  Not now.. This is a workaround for local Upstash package constraints.
     if (params.filter) {
-      const validatedFilter = validateUpstashFilter(params.filter);
+      const validatedFilter = validateMetadataFilter(params.filter);
       upstashFilter = transformToUpstashFilter(validatedFilter);
     }
 
@@ -1778,12 +1778,12 @@ export async function deleteVector(
   id: string
 ): Promise<VectorOperationResult> {
   try {
-    await pinecone.deleteIndex({ indexName });
-    logger.info('Vector index deleted successfully', { indexName });
+    await pinecone.deleteVector({ indexName, id });
+    logger.info('Vector deleted successfully', { indexName, id });
     return {
       success: true,
-      operation: 'deleteIndex',
-      indexName
+      operation: 'deleteVector',
+      indexName,
     };
   } catch (error: unknown) {
     logger.error('Failed to delete vector', {
@@ -1793,7 +1793,7 @@ export async function deleteVector(
     });
     return {
       success: false,
-      operation: 'deleteIndex',
+      operation: 'deleteVector',
       indexName,
       error: (error as Error).message
     };
@@ -1964,7 +1964,7 @@ export interface UpstashThread {
  * @param threadRequests - Array of thread creation requests
  * @returns Promise resolving to array of created threads
  */
-export async function batchCreateUpstashThreads(
+export async function batchCreateMemoryThreads(
   threadRequests: Array<{
     resourceId: string;
     metadata?: Record<string, unknown>;
@@ -1975,13 +1975,13 @@ export async function batchCreateUpstashThreads(
   try {
     const results = await Promise.allSettled(
       threadRequests.map(request =>
-        createUpstashThread(request.resourceId, undefined, request.metadata, request.threadId)
+        createMemoryThread(request.resourceId, undefined, request.metadata, request.threadId)
       )
     );
     const successes = results.filter(r => r.status === 'fulfilled').length;
     const failures = results.filter(r => r.status === 'rejected').length;
     const duration = Date.now() - startTime;
-    logger.info('Batch Upstash thread creation completed', {
+    logger.info('Batch memory thread creation completed', {
       totalRequests: threadRequests.length,
       successes,
       failures,
@@ -1991,7 +1991,7 @@ export async function batchCreateUpstashThreads(
       .map(result => (result.status === 'fulfilled' ? result.value : null))
       .filter(Boolean) as UpstashThread[];
   } catch (error: unknown) {
-    logger.error(`batchCreateUpstashThreads failed: ${(error as Error).message}`);
+    logger.error(`batchCreateMemoryThreads failed: ${(error as Error).message}`);
     throw error;
   }
 }
@@ -2000,7 +2000,7 @@ export async function batchCreateUpstashThreads(
  * Enhanced memory cleanup and optimization for Upstash Redis
  * @param options - Cleanup configuration options
  */
-export async function optimizeUpstashMemoryStorage(options: {
+export async function optimizeMemoryStorage(options: {
   olderThanDays?: number;
   keepMinimumMessages?: number;
   compactVectorIndex?: boolean;
@@ -2016,7 +2016,7 @@ export async function optimizeUpstashMemoryStorage(options: {
   } = options;
   const startTime = Date.now();
   try {
-    logger.info('Upstash memory optimization requested', {
+    logger.info('Memory optimization requested', {
       olderThanDays,
       keepMinimumMessages,
       compactVectorIndex,
@@ -2030,10 +2030,10 @@ export async function optimizeUpstashMemoryStorage(options: {
       vectorIndexOptimized: compactVectorIndex,
       duration: Date.now() - startTime
     };
-    logger.info('Upstash memory optimization completed (auto-managed)', optimizationResults);
+    logger.info('Memory optimization completed (auto-managed)', optimizationResults);
     return optimizationResults;
   } catch (error: unknown) {
-    logger.error(`optimizeUpstashMemoryStorage failed: ${(error as Error).message}`);
+    logger.error(`optimizeMemoryStorage failed: ${(error as Error).message}`);
     throw error;
   }
 }
@@ -2054,29 +2054,29 @@ export async function optimizeUpstashMemoryStorage(options: {
  * });
  * ```
  */
-export function validateUpstashFilter(filter: MetadataFilter): MetadataFilter {
+export function validateMetadataFilter(filter: MetadataFilter): MetadataFilter {
   if (!filter || typeof filter !== 'object') {
     throw new VectorStoreError('Filter must be a valid object', 'operation_failed');
   }
 
-  // Check field key length limits (512 chars for Upstash)
+  // Check field key length limits (512 chars for Pinecone)
   const checkFieldKeys = (obj: Record<string, unknown>, path = ''): void => {
     Object.keys(obj).forEach(key => {
       const fullPath = path ? `${path}.${key}` : key;
 
       if (fullPath.length > 512) {
         throw new VectorStoreError(
-          `Field key '${fullPath}' exceeds 512 character limit for Upstash`,
+          `Field key '${fullPath}' exceeds 512 character limit for Pinecone`,
           'operation_failed',
           { fieldKey: fullPath, length: fullPath.length }
         );
       }
 
-      // Check for null/undefined values (not supported by Upstash)
+      // Check for null/undefined values (not supported by Pinecone)
       const value = obj[key];
       if (value === null || value === undefined) {
         throw new VectorStoreError(
-          `Null/undefined values not supported by Upstash in field '${fullPath}'`,
+          `Null/undefined values not supported by Pinecone in field '${fullPath}'`,
           'operation_failed',
           { fieldKey: fullPath, value }
         );
@@ -2091,12 +2091,12 @@ export function validateUpstashFilter(filter: MetadataFilter): MetadataFilter {
 
   checkFieldKeys(filter);
 
-  // Check for large IN clauses (Upstash has query size limits)
+  // Check for large IN clauses (Pinecone has query size limits)
   const checkArraySizes = (obj: Record<string, unknown>): void => {
     Object.entries(obj).forEach(([key, value]) => {
       if (key === '$in' || key === '$nin') {
         if (Array.isArray(value) && value.length > 100) {
-          logger.warn('Large IN/NIN clause detected - may hit Upstash query size limits', {
+          logger.warn('Large IN/NIN clause detected - may hit Pinecone query size limits', {
             operator: key,
             arraySize: value.length
           });

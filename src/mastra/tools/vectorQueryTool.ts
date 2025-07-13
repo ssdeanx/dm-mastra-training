@@ -24,12 +24,11 @@ import { createTool, ToolExecutionContext } from '@mastra/core/tools';
 import { RuntimeContext } from '@mastra/core/di';
 import { z } from 'zod';
 import {
-  searchUpstashMessages,
+  searchMemoryMessages,
   queryVectors,
   type VectorQueryResult,
-  type MetadataFilter
+  type MetadataFilter,
 } from '../upstashMemory';
-
 import { createGeminiEmbeddingModel } from '../config/googleProvider';
 import type { UIMessage, CoreMessage } from 'ai';
 import { PinoLogger } from '@mastra/loggers';
@@ -57,14 +56,14 @@ const vectorQueryInputSchema = z.object({
   after: z.number().int().min(0).default(1).describe('Number of messages after each match to include for context'),
   includeMetadata: z.boolean().default(true).describe('Whether to include metadata in results'),
   enableFilter: z.boolean().default(false).describe('Enable filtering based on metadata'),
-  filter: z.record(z.any()).optional().describe('Optional metadata filter using Upstash-compatible MongoDB/Sift query syntax. Supports: $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin, $and, $or, $not, $nor, $exists, $contains, $regex. Field keys limited to 512 chars, no null values.'),
+  filter: z.record(z.string(), z.any()).optional().describe('Optional metadata filter using Pinecone-compatible MongoDB/Sift query syntax. Supports: $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin, $and, $or, $not, $nor, $exists. Field keys limited to 512 chars, no null values.'),
 }).strict();
 
 const vectorQueryResultSchema = z.object({
   id: z.string().describe('Unique identifier for the result'),
   content: z.string().describe('The text content of the chunk'),
   score: z.number().describe('Similarity score (0-1)'),
-  metadata: z.record(z.any()).optional().describe('Associated metadata'),
+  metadata: z.record(z.string(), z.any()).optional().describe('Chunk metadata including position, type, etc.'),
   threadId: z.string().optional().describe('Thread ID if applicable'),
 });
 
@@ -77,11 +76,11 @@ const vectorQueryOutputSchema = z.object({
 }).strict();
 // Basic vector query tool using Mastra's createVectorQueryTool for compatibility with Upstash
 export const vectorQueryTool = createVectorQueryTool({
-  vectorStoreName: "upstashVector",
-  indexName: 'gemini-embeddings', // Use literal index name
-  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536, taskType: 'RETRIEVAL_QUERY' }), // Use literal dimension
+  vectorStoreName: "pinecone", // Use literal vector store name
+  indexName: 'training-mastra', // Use literal index name
+  model: createGeminiEmbeddingModel('gemini-embedding-exp-03-07', { outputDimensionality: 1536, taskType: 'RETRIEVAL_QUERY' }), // Use literal dimension
   enableFilter: true,
-  description: "Search for semantically similar content in the Upstash vector store using embeddings with sparse cosine similarity. Supports filtering, ranking, and context retrieval."
+  description: "Search for semantically similar content in the Pinecone vector store using embeddings with sparse cosine similarity. Supports filtering, ranking, and context retrieval."
 });
 
 
@@ -121,7 +120,7 @@ export const enhancedVectorQueryTool = createTool({
       if (validatedInput.threadId) {
         logger.info('Searching within thread using Upstash memory', { threadId: validatedInput.threadId });
 
-        const memoryResults = await searchUpstashMessages(
+        const memoryResults = await searchMemoryMessages(
           validatedInput.threadId,
           validatedInput.query,
           validatedInput.topK,
@@ -170,8 +169,8 @@ export const enhancedVectorQueryTool = createTool({
         relevantContext = results.map(r => r.content).join('\n\n');
 
       } else {
-        // Use direct Upstash vector store search with sparse cosine similarity
-        logger.info('Performing direct Upstash vector store search');
+        // Use direct Pinecone vector store search with sparse cosine similarity
+        logger.info('Performing direct Pinecone vector store search');
 
                 // Create query embedding using Google's embedding model
                 const { embeddings } = await embedMany({
@@ -180,7 +179,7 @@ export const enhancedVectorQueryTool = createTool({
                 });
         const queryEmbedding = embeddings[0];
 
-        // Query the Upstash vector store directly with sparse cosine similarity
+        // Query the Pinecone vector store directly with sparse cosine similarity
         const vectorResults = await queryVectors(
           'gemini-embeddings', // Directly use literal index name
           queryEmbedding,
@@ -200,11 +199,11 @@ export const enhancedVectorQueryTool = createTool({
               content,
               score,
               metadata: validatedInput.includeMetadata ? {
-                ...result.metadata,
+                ...(result.metadata || {}),
                 userId,
                 sessionId,
                 searchPreference
-              } : undefined,
+              } : {},
             });
           }
         });
@@ -257,34 +256,40 @@ const hybridScoreSchema = z.object({
   combinedScore: z.number().describe('Weighted combination of both scores'),
 });
 
+// Define input and output types for the hybrid tool
+const hybridInputSchema = vectorQueryInputSchema.extend({
+  metadataQuery: z.record(z.string(), z.any()).describe('Chunk metadata including position, type, etc.'),
+  semanticWeight: z.number().min(0).max(1).default(0.7).describe('Weight for semantic similarity (0-1)'),
+  metadataWeight: z.number().min(0).max(1).default(0.3).describe('Weight for metadata matching (0-1)'),
+});
+type HybridInput = z.infer<typeof hybridInputSchema>;
+
+const hybridOutputSchema = vectorQueryOutputSchema.extend({
+  hybridScores: z.array(hybridScoreSchema).describe('Breakdown of hybrid scoring'),
+});
+type HybridOutput = z.infer<typeof hybridOutputSchema>;
+
 // Hybrid vector search tool that combines semantic and metadata filtering
 export const hybridVectorSearchTool = createTool({
   id: 'hybrid_vector_query',
   description: 'Hybrid search combining vector similarity with metadata filtering for precise results',
-  inputSchema: vectorQueryInputSchema.extend({
-    metadataQuery: z.record(z.any()).optional().describe('Specific metadata query parameters'),
-    semanticWeight: z.number().min(0).max(1).default(0.7).describe('Weight for semantic similarity (0-1)'),
-    metadataWeight: z.number().min(0).max(1).default(0.3).describe('Weight for metadata matching (0-1)'),
-  }),
-  outputSchema: vectorQueryOutputSchema.extend({
-    hybridScores: z.array(hybridScoreSchema).describe('Breakdown of hybrid scoring'),
-  }),
-  execute: async ({ context, runtimeContext }: {
-    context: z.infer<typeof vectorQueryInputSchema> & {
-      metadataQuery?: Record<string, unknown>;
-      semanticWeight?: number;
-      metadataWeight?: number;
-    };
-    runtimeContext?: RuntimeContext<VectorQueryRuntimeContext>
-  }) => {
+  inputSchema: hybridInputSchema,
+  outputSchema: hybridOutputSchema,
+  execute: async ({
+    input,
+    runtimeContext
+  }: ToolExecutionContext<typeof hybridInputSchema> & {
+    input: HybridInput;
+    runtimeContext?: RuntimeContext<VectorQueryRuntimeContext>;
+  }): Promise<HybridOutput> => {
     const startTime = Date.now();
     try {
       const extendedSchema = vectorQueryInputSchema.extend({
-        metadataQuery: z.record(z.any()).optional(),
+        metadataQuery: z.record(z.string(), z.any()).optional(),
         semanticWeight: z.number().min(0).max(1).default(0.7),
         metadataWeight: z.number().min(0).max(1).default(0.3),
       });
-      const validatedInput = extendedSchema.parse(context);
+      const validatedInput = extendedSchema.parse(input);
       // Get runtime context values
       const userId = (runtimeContext?.get('user-id') as string | undefined) ?? 'anonymous';
       const sessionId = (runtimeContext?.get('session-id') as string | undefined) ?? 'default';

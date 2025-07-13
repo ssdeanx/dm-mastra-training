@@ -55,7 +55,7 @@ export const GEMINI_CONFIG = {
 
   // Embedding models with dimension support
   EMBEDDING_MODELS: {
-    TEXT_EMBEDDING_004: 'text-embedding-004', // 768 default, supports custom dimensions
+    TEXT_EMBEDDING_004: 'models/text-embedding-004', // 768 default, supports custom dimensions
     GEMINI_EMBEDDING_EXP: 'gemini-embedding-exp-03-07' // 1536 dimensions, elastic: 3072, 1536, 768
   },
 
@@ -601,20 +601,55 @@ export function extractGroundingMetadata(providerMetadata?: Record<string, unkno
   const googleMetadata = providerMetadata.google as GoogleGenerativeAIProviderMetadata;
   const grounding = googleMetadata.groundingMetadata;
 
-  return {
-    searchQueries: grounding?.webSearchQueries || [],
-    searchEntryPoint: grounding?.searchEntryPoint?.renderedContent || null,
-    groundingSupports: grounding?.groundingSupports?.map(support => ({
-      segment: {
-        text: support.segment?.text || '',
-        startIndex: support.segment?.startIndex || 0,
-        endIndex: support.segment?.endIndex || 0
-      },
-      groundingChunkIndices: support.groundingChunkIndices || [],
-      confidenceScores: support.confidenceScores || []
-    })) || [],
-    safetyRatings: googleMetadata.safetyRatings || []
-  };
+  interface GroundingSegment {
+    text: string;
+    startIndex: number;
+    endIndex: number;
+  }
+
+  interface GroundingSupport {
+    segment: GroundingSegment;
+    groundingChunkIndices: number[];
+    confidenceScores: number[];
+  }
+
+  interface SafetyRating {
+    category: string;
+    probability: string;
+    blocked?: boolean;
+  }
+
+  interface GroundingMetadata {
+    searchQueries: string[];
+    searchEntryPoint: string | null;
+    groundingSupports: GroundingSupport[];
+    safetyRatings: SafetyRating[];
+  }
+
+  interface RawGroundingSupport {
+    segment?: {
+      text?: string;
+      startIndex?: number;
+      endIndex?: number;
+    };
+    groundingChunkIndices?: number[];
+    confidenceScores?: number[];
+  }
+
+    return {
+      searchQueries: grounding?.webSearchQueries || [],
+      searchEntryPoint: grounding?.searchEntryPoint?.renderedContent || null,
+      groundingSupports: grounding?.groundingSupports?.map((support: RawGroundingSupport): GroundingSupport => ({
+        segment: {
+          text: support.segment?.text || '',
+          startIndex: support.segment?.startIndex || 0,
+          endIndex: support.segment?.endIndex || 0
+        },
+        groundingChunkIndices: support.groundingChunkIndices || [],
+        confidenceScores: support.confidenceScores || []
+      })) || [],
+      safetyRatings: googleMetadata.safetyRatings || []
+    } as GroundingMetadata;
 }
 
 /**

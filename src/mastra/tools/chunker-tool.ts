@@ -31,7 +31,7 @@ const chunkParamsSchema = z.object({
 
 const documentTypeSchema = z.enum(['text', 'html', 'markdown', 'json', 'latex', 'csv', 'xml']).describe('Type of document content');
 
-const documentMetadataSchema = z.record(z.any()).optional().describe('Metadata associated with the document');
+const documentMetadataSchema = z.record(z.string(), z.any()).describe('Chunk metadata including position, type, etc.');
 
 const documentInputSchema = z.object({
   content: z.string().min(1).describe('The document content to process'),
@@ -48,7 +48,7 @@ const chunkerInputSchema = z.object({
   includeStats: z.boolean().default(true).describe('Whether to include chunking statistics'),
   vectorOptions: z.object({
     createEmbeddings: z.boolean().default(false).describe('Whether to create embeddings for chunks'),
-    upsertToVector: z.boolean().default(false).describe('Whether to upsert chunks to Upstash vector store'),
+    upsertToVector: z.boolean().default(false).describe('Whether to upsert chunks to Pinecone vector store'),
     indexName: z.string().default('gemini').describe('Vector index name for upserting'),
     createIndex: z.boolean().default(true).describe('Whether to create the vector index if it does not exist'),
   }).optional().describe('Vector store integration options'),
@@ -79,11 +79,11 @@ const chunkSchema = z.object({
   content: z.string().describe('Chunk text content'),
   index: z.number().int().min(0).describe('Position index in the document'),
   size: z.number().int().min(0).describe('Size of the chunk in characters'),
-  metadata: z.record(z.any()).describe('Chunk metadata including position, type, etc.'),
+  metadata: z.record(z.string(), z.any()).describe('Chunk metadata including position, type, etc.'),
   source: z.string().optional().describe('Source document identifier'),
   tokens: z.number().int().min(0).optional().describe('Estimated token count'),
   embedding: z.array(z.number()).optional().describe('Vector embedding for the chunk (384 dimensions)'),
-  vectorId: z.string().optional().describe('Vector store ID if upserted to Upstash')
+  vectorId: z.string().optional().describe('Vector store ID if upserted to Pinecone')
 }).strict();
 
 const chunkingStatsSchema = z.object({

@@ -22,7 +22,7 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'Upstash Redis token required').optional(),
 
   // Upstash Vector configuration
-  UPSTASH_VECTOR_REST_URL: z.string().url('Invalid Upstash Vector URL').optional(),
+  UPSTASH_VECTOR_REST_URL: z.url('Invalid Upstash Vector URL').optional(),
   UPSTASH_VECTOR_REST_TOKEN: z.string().min(1, 'Upstash Vector token required').optional(),
 
   // The Odds API configuration
@@ -37,7 +37,7 @@ const envSchema = z.object({
   // Needle API key
   NEEDLE_API_KEY: z.string().optional(),
   // Needle URL
-  NEEDLE_URL: z.string().url().default("https://api.needle.com/v1"),
+  NEEDLE_URL: z.url().default("https://api.needle.com/v1"),
   // Needle project ID
   NEEDLE_PROJECT_ID: z.string().optional(),
 
@@ -50,8 +50,8 @@ const validateEnv = () => {
   } catch (error) {
     console.error("❌ Environment validation failed:");
     if (error instanceof z.ZodError) {
-      error.errors.forEach((err) => {
-        console.error(`  - ${err.path.join(".")}: ${err.message}`);
+      error.issues.forEach((issue) => {
+        console.error(`  - ${issue.path.join(".")}: ${issue.message}`);
       });
     }
     process.exit(1);

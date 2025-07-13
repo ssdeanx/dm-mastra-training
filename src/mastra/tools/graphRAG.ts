@@ -19,9 +19,9 @@ import {
   upsertVectors,
   createVectorIndex,
   VectorStoreError,
-  ExtractParams,
-  upstashVector
+  ExtractParams
 } from '../upstashMemory';
+import { pinecone } from '../pinecone';
 import { createGeminiEmbeddingModel } from '../config/googleProvider';
 import { embedMany } from 'ai';
 
@@ -35,7 +35,7 @@ const logger = new PinoLogger({ name: 'GraphRAGTool' });
 const documentInputSchema = z.object({
   text: z.string().min(1).describe('The document text content to process'),
   type: z.enum(['text', 'html', 'markdown', 'json', 'latex']).default('text').describe('Type of document content'),
-  metadata: z.record(z.any()).optional().describe('Metadata associated with the document')
+  metadata: z.record(z.string(), z.any()).optional().describe('Metadata associated with the document')
 }).strict();
 
 const chunkParamsSchema = z.object({
@@ -75,14 +75,14 @@ const queryInputSchema = z.object({
   includeVector: z.boolean().default(false).describe('Whether to include vector data in results'),
   minScore: z.number().min(0).max(1).default(0).describe('Minimum similarity score threshold'),
   vectorProfile: z.enum(['gemini']).default('gemini').describe('Vector profile to use for embeddings and querying'),
-  filter: z.record(z.any()).optional().describe('Optional metadata filter using Upstash-compatible MongoDB/Sift query syntax'), // Add filter field
+  filter: z.record(z.string(), z.any()).optional().describe('Optional metadata filter using Upstash-compatible MongoDB/Sift query syntax'), // Add filter field
 }).strict();
 
 const queryResultSchema = z.object({
   id: z.string().describe('Unique chunk/document identifier'),
   score: z.number().describe('Similarity score for this retrieval'),
   content: z.string().describe('The chunk content'),
-  metadata: z.record(z.any()).describe('All metadata fields'),
+  metadata: z.record(z.string(), z.any()).describe('All metadata fields'),
   vector: z.array(z.number()).optional().describe('Embedding vector if requested')
 }).strict();
 
@@ -292,7 +292,7 @@ export const graphRAGUpsertTool = createTool({
  * GraphRAG query tool - Uses createGraphRAGTool with Upstash Vector store and sparse cosine similarity
  */
 export const graphRAGTool = createGraphRAGTool({
-  vectorStoreName: 'upstashVector',
+  vectorStoreName: 'pinecone',
   indexName: 'gemini',
   model: createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536, taskType: 'CLUSTERING' }),
   graphOptions: {
@@ -329,7 +329,7 @@ export const graphRAGQueryTool = createTool({
 
       // Get the embedder
       const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536, taskType: 'CLUSTERING' });
-      const upstashVectorClient = upstashVector;
+      const upstashVectorClient = pinecone;
 
       if (debug) {
         logger.info('Starting GraphRAG query', {
