@@ -8,7 +8,7 @@ import { maskStreamTags } from '@mastra/core';
 import { UIMessage } from 'ai';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
 import { createGeminiEmbeddingModel } from './config/googleProvider';
-import { AttentionGuidedMemoryProcessor, ContextualRelevanceProcessor, WorkflowAwareMemoryProcessor, BiasMitigationProcessor } from './processor-extra';
+import { AttentionGuidedMemoryProcessor, ContextualRelevanceProcessor, WorkflowAwareMemoryProcessor, BiasMitigationProcessor, ToolUsageTrackerProcessor, AgentInteractionPatternProcessor, MentalModelProcessor } from './processor-extra';
 
 
 
@@ -344,6 +344,13 @@ export const mastraMemory = new Memory({
     new BiasMitigationProcessor({
       detectionStrategies: ['confirmation', 'recency', 'anchoring', 'availability', 'framing', 'bandwagon', 'overconfidence', ],
       mitigationStrategies: ['re-weight', 'add-counter-arguments', 'remove', 'flag', 'ignore', 'contextualize', 'reframe', 'balance'],
+    }),
+    new MentalModelProcessor(),
+    new ToolUsageTrackerProcessor({
+      logInterval: 5000, // Log tool usage every 5 seconds
+    }),
+    new AgentInteractionPatternProcessor({
+      sequenceLength: 15,
     }),
   ],
 });

@@ -859,3 +859,278 @@ export class WorkflowAwareMemoryProcessor extends MemoryProcessor {
     return []; // Or return a small, recent subset if desired
   }
 }
+
+/**
+ * Tool Usage Tracker Processor
+ *
+ * Monitors and logs the usage of tools by agents to provide insights into tool popularity and frequency.
+ * This processor does not modify the messages but provides valuable analytics for optimizing agent toolsets.
+ *
+ * @mastra Memory Processor implementation for analytics
+ * @class ToolUsageTrackerProcessor
+ * @version 1.0.0
+ * @author Gemini
+ * @date 2025-07-13
+ *
+ * @example
+ * ```typescript
+ * const memory = new Memory({
+ *   processors: [
+ *     new ToolUsageTrackerProcessor({
+ *       logInterval: 10 // Log usage every 10 processing calls
+ *     }),
+ *   ]
+ * });
+ * ```
+ */
+export class ToolUsageTrackerProcessor extends MemoryProcessor {
+  private toolUsage: Map<string, Map<string, number>>; // Map<stage, Map<toolName, count>>
+  private processCount: number;
+  private readonly logInterval: number;
+
+  constructor(options: { logInterval?: number } = {}) {
+    super({ name: 'ToolUsageTrackerProcessor' });
+    this.toolUsage = new Map<string, Map<string, number>>();
+    this.processCount = 0;
+    this.logInterval = options.logInterval ?? 10;
+
+    logger.info('ToolUsageTrackerProcessor initialized', {
+      logInterval: this.logInterval,
+    });
+  }
+
+  process(messages: CoreMessage[], opts: WorkflowMemoryProcessorOpts = {}): CoreMessage[] {
+    this.processCount++;
+    const workflowOpts = opts as WorkflowMemoryProcessorOpts;
+    const currentWorkflowStage = workflowOpts.currentWorkflowStage || 'global'; // Default to 'global' if no stage
+
+    try {
+      messages.forEach(msg => {
+        if (msg.role === 'tool' && msg.content) {
+          const toolName = msg.metadata?.toolName as string || 'unknown_tool';
+
+          if (!this.toolUsage.has(currentWorkflowStage)) {
+            this.toolUsage.set(currentWorkflowStage, new Map<string, number>());
+          }
+          const stageToolUsage = this.toolUsage.get(currentWorkflowStage)!;
+          stageToolUsage.set(toolName, (stageToolUsage.get(toolName) || 0) + 1);
+        }
+      });
+
+      if (this.processCount % this.logInterval === 0) {
+        this.logToolUsage();
+      }
+    } catch (error) {
+      logger.error('ToolUsageTrackerProcessor failed', {
+        error: (error as Error).message,
+      });
+    }
+
+    return messages;
+  }
+
+  private logToolUsage(): void {
+    if (this.toolUsage.size > 0) {
+      const globalToolUsage: Record<string, number> = {};
+      for (const stageMap of this.toolUsage.values()) {
+        stageMap.forEach((count, toolName) => {
+          globalToolUsage[toolName] = (globalToolUsage[toolName] || 0) + count;
+        });
+      }
+
+      logger.info('Tool Usage Statistics', {
+        global: Object.fromEntries(Object.entries(globalToolUsage).sort(([, a], [, b]) => b - a)),
+        perStage: Object.fromEntries(
+          Array.from(this.toolUsage.entries()).map(([stageName, stageMap]) => [
+            stageName,
+            Object.fromEntries(Array.from(stageMap.entries()).sort(([, a], [, b]) => b - a)),
+          ])
+        ),
+        totalToolCalls: [...Object.values(globalToolUsage)].reduce((a, b) => a + b, 0),
+      });
+    }
+  }
+}
+
+/**
+ * Agent Interaction Pattern Processor
+ *
+ * Analyzes the sequence of agent interactions within workflows to identify common patterns and potential bottlenecks.
+ * This processor helps in understanding and optimizing the collaboration between different agents.
+ *
+ * @mastra Memory Processor implementation for analytics
+ * @class AgentInteractionPatternProcessor
+ * @version 1.0.0
+ * @author Gemini
+ * @date 2025-07-13
+ *
+ * @example
+ * ```typescript
+ * const memory = new Memory({
+ *   processors: [
+ *     new AgentInteractionPatternProcessor({
+ *       sequenceLength: 3 // Analyze patterns of 3 consecutive agent interactions
+ *     }),
+ *   ]
+ * });
+ * ```
+ */
+export class AgentInteractionPatternProcessor extends MemoryProcessor {
+  private agentSequence: Map<string, string[]>; // Map<stage, agentSequence[]>
+  private interactionPatterns: Map<string, Map<string, number>>; // Map<stage, Map<pattern, count>>
+  private readonly sequenceLength: number;
+
+  constructor(options: { sequenceLength?: number } = {}) {
+    super({ name: 'AgentInteractionPatternProcessor' });
+    this.agentSequence = new Map<string, string[]>();
+    this.interactionPatterns = new Map<string, Map<string, number>>();
+    this.sequenceLength = options.sequenceLength ?? 3;
+
+    logger.info('AgentInteractionPatternProcessor initialized', {
+      sequenceLength: this.sequenceLength,
+    });
+  }
+
+  process(messages: CoreMessage[], opts: MemoryProcessorOpts = {}): CoreMessage[] {
+    const workflowOpts = opts as WorkflowMemoryProcessorOpts;
+    const currentWorkflowStage = workflowOpts.currentWorkflowStage || 'global'; // Default to 'global'
+
+    try {
+      if (!this.agentSequence.has(currentWorkflowStage)) {
+        this.agentSequence.set(currentWorkflowStage, []);
+      }
+      const stageAgentSequence = this.agentSequence.get(currentWorkflowStage)!;
+
+      messages.forEach(msg => {
+        if (msg.metadata?.agentName) {
+          const agentName = msg.metadata.agentName as string;
+          if (stageAgentSequence[stageAgentSequence.length - 1] !== agentName) {
+            stageAgentSequence.push(agentName);
+          }
+        }
+      });
+
+      this.analyzePatterns(currentWorkflowStage);
+    } catch (error) {
+      logger.error('AgentInteractionPatternProcessor failed', {
+        error: (error as Error).message,
+      });
+    }
+
+    return messages;
+  }
+
+  private analyzePatterns(stage: string): void {
+    const stageAgentSequence = this.agentSequence.get(stage)!;
+    if (stageAgentSequence.length >= this.sequenceLength) {
+      if (!this.interactionPatterns.has(stage)) {
+        this.interactionPatterns.set(stage, new Map<string, number>());
+      }
+      const stagePatterns = this.interactionPatterns.get(stage)!;
+
+      for (let i = 0; i <= stageAgentSequence.length - this.sequenceLength; i++) {
+        const sequence = stageAgentSequence.slice(i, i + this.sequenceLength).join(' -> ');
+        stagePatterns.set(sequence, (stagePatterns.get(sequence) || 0) + 1);
+      }
+      this.logInteractionPatterns(stage);
+    }
+  }
+
+  private logInteractionPatterns(stage: string): void {
+    const stagePatterns = this.interactionPatterns.get(stage)!;
+    if (stagePatterns.size > 0) {
+      const sortedPatterns = [...stagePatterns.entries()].sort((a, b) => b[1] - a[1]);
+      logger.info(`Agent Interaction Patterns for Stage: ${stage}` , {
+        totalSequences: this.agentSequence.get(stage)!.length,
+        uniquePatterns: stagePatterns.size,
+        topPatterns: Object.fromEntries(sortedPatterns.slice(0, 5)),
+      });
+    }
+  }
+}
+
+/**
+ * Mental Model Processor
+ *
+ * Analyzes chat messages to identify patterns that suggest the applicability of specific mental models.
+ * This processor enriches message metadata with a 'suggestedMentalModel' hint, guiding the agent's
+ * internal reasoning process without maintaining long-term state or making additional LLM calls.
+ *
+ * @mastra Memory Processor implementation for enhancing agent reasoning
+ * @class MentalModelProcessor
+ * @version 1.0.0
+ * @author Gemini
+ * @date 2025-07-13
+ *
+ * @example
+ * ```typescript
+ * const memory = new Memory({
+ *   processors: [
+ *     new MentalModelProcessor(),
+ *   ]
+ * });
+ * ```
+ */
+export class MentalModelProcessor extends MemoryProcessor {
+  constructor() {
+    super({ name: 'MentalModelProcessor' });
+    logger.info('MentalModelProcessor initialized');
+  }
+
+  override process(messages: CoreMessage[], opts: MemoryProcessorOpts = {}): CoreMessage[] {
+    const startTime = Date.now();
+    let annotatedCount = 0;
+
+    try {
+      messages.forEach(msg => {
+        if (msg.role === 'user' && msg.content) {
+          const contentStr = msg.content.toString().toLowerCase();
+          let suggestedModel: string | undefined;
+
+          // Simple keyword-based detection for mental models
+          if (contentStr.includes('break down') || contentStr.includes('fundamental') || contentStr.includes('core principles')) {
+            suggestedModel = 'first_principles';
+          } else if (contentStr.includes('trade-off') || contentStr.includes('alternative') || contentStr.includes('cost of not')) {
+            suggestedModel = 'opportunity_cost';
+          } else if (contentStr.includes('error') || contentStr.includes('bug') || contentStr.includes('debug') || contentStr.includes('fault')) {
+            suggestedModel = 'error_propagation';
+          } else if (contentStr.includes('simplify') || contentStr.includes('least complex') || contentStr.includes('fewest assumptions')) {
+            suggestedModel = 'occams_razor';
+          } else if (contentStr.includes('80/20 rule') || contentStr.includes('most impact') || contentStr.includes('key factors')) {
+            suggestedModel = 'pareto_principle';
+          } else if (contentStr.includes("explain to me like i'm five") || contentStr.includes('talk through') || contentStr.includes('walk me through')) {
+            suggestedModel = 'rubber_duck';
+          }
+
+          if (suggestedModel) {
+            msg.metadata = {
+              ...msg.metadata,
+              suggestedMentalModel: suggestedModel
+            };
+            annotatedCount++;
+            const snippet = msg.content.toString().substring(0, 50);
+            logger.debug(`Suggested mental model '${suggestedModel}' for message: "${snippet}..."`);
+          }
+        }
+      });
+
+      const duration = Date.now() - startTime;
+      logger.info('MentalModelProcessor completed', {
+        originalCount: messages.length,
+        annotatedCount,
+        processingDuration: duration,
+        optsReceived: Object.keys(opts).length > 0,
+        optsKeys: Object.keys(opts)
+      });
+      return messages;
+    } catch (error: unknown) {
+      logger.error('MentalModelProcessor failed', {
+        error: (error as Error).message,
+        processedSoFar: annotatedCount,
+        optsReceived: Object.keys(opts).length > 0,
+        optsKeys: Object.keys(opts)
+      });
+      return messages;
+    }
+  }
+}
