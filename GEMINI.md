@@ -84,14 +84,23 @@ The system supports multiple sophisticated retrieval strategies against the **Pi
 * **Vector Search**: The `vectorQueryTool` and `hybridVectorSearchTool` provide powerful semantic and metadata-filtered search capabilities. These tools construct and execute queries against Pinecone, using a unified, MongoDB-style filter syntax that is translated to be Pinecone-compatible.
 * **Graph RAG**: The `graphRAGTool` and `graphRAGQueryTool` enable a more advanced retrieval method. This tool first retrieves initial candidates from Pinecone and then constructs a knowledge graph to discover deeper, more contextual relationships between the data chunks.
 
-### 3.4. Memory Processing (`upstashMemory.ts`)
+### 3.4. Memory Processing (`src/mastra/upstashMemory.ts`)
 
-To ensure the context provided to LLMs is concise, relevant, and unbiased, the `mastraMemory` instance is equipped with a chain of advanced memory processors that filter and rank messages before they are passed to an agent:
+To ensure the context provided to LLMs is concise, relevant, and unbiased, the `mastraMemory` instance in `src/mastra/upstashMemory.ts` orchestrates a chain of advanced memory processors (defined in [`src/mastra/processor-extra.ts`](src/mastra/processor-extra.ts)) that filter and rank messages before they are passed to an agent:
 
-* **`AttentionGuidedMemoryProcessor`**: Scores and prunes messages based on semantic importance and recency.
-* **`ContextualRelevanceProcessor`**: Maintains topic continuity by segmenting conversations and dropping irrelevant threads.
-* **`WorkflowAwareMemoryProcessor`**: Dynamically adjusts the context to include messages relevant to the current stage of an active workflow.
-* **`BiasMitigationProcessor`**: Identifies and applies mitigation strategies for common cognitive biases (e.g., confirmation, recency) in the conversational history.
+* **Attention-Guided Memory Processor**: Scores and prunes messages based on semantic importance and recency.
+* **Contextual Relevance Processor**: Maintains topic continuity by segmenting conversations and dropping irrelevant threads.
+* **Workflow-Aware Memory Processor**: Dynamically adjusts the context to include messages relevant to the current stage of an active workflow.
+* **Bias Mitigation Processor**: Identifies and applies mitigation strategies for common cognitive biases (e.g., confirmation, recency) in the conversational history.
+
+### 3.5. Memory Processors (`src/mastra/processor-extra.ts`)
+
+The `processor-extra.ts` file centralizes the definitions of various advanced memory processors used by the `mastraMemory` instance. These modular processors can be combined to create sophisticated context management pipelines:
+
+* **`AttentionGuidedMemoryProcessor`** ([`src/mastra/processor-extra.ts:272`](src/mastra/processor-extra.ts:272)): Implements attention-based relevance scoring and dynamic context pruning. It scores messages by importance, removes redundant content using semantic similarity, and applies pruning to optimize context size while preserving conversation flow.
+* **`ContextualRelevanceProcessor`** ([`src/mastra/processor-extra.ts:537`](src/mastra/processor-extra.ts:537)): Focuses on maintaining only contextually relevant messages. It identifies topic segments and selects the most relevant ones based on continuity and semantic coherence, effectively filtering out irrelevant threads.
+* **`WorkflowAwareMemoryProcessor`** ([`src/mastra/processor-extra.ts:638`](src/mastra/processor-extra.ts:638)): Dynamically adjusts the messages included in the agent's context based on the current stage of an ongoing workflow. It prioritizes messages relevant to the current workflow stage and prunes irrelevant ones to optimize context size.
+* **`BiasMitigationProcessor`** ([`src/mastra/processor-extra.ts:67`](src/mastra/processor-extra.ts:67)): Designed to identify and mitigate cognitive biases (e.g., confirmation, recency, framing, anchoring, availability, overconfidence) in messages. It employs various detection and mitigation strategies to ensure a more neutral and objective context for agents.
 
 ## 4. Core Technologies & Configuration
 
@@ -199,6 +208,7 @@ This section synthesizes the project's core patterns and best practices into an 
 * **Inconsistent Workflow Naming in `index.ts`**: The `index.ts` file imports workflows with varying naming conventions (e.g., `weatherWorkflow`, `researchAnalysisWorkflow`, `documentAnalysisWorkflow`). While functional, consistent naming improves readability and discoverability. **Recommendation**: Standardize workflow variable names (e.g., `weatherWorkflow`, `documentAnalysisWorkflow`, `researchAnalysisWorkflow`) to follow a clear pattern.
 * **Limited Network Agent Count in `base-network.ts`**: The `base-network.ts` file claims to coordinate "17+ specialized agents" but only explicitly lists a few in the `agents` array. **Recommendation**: Either update the count in the comments to reflect the actual number of agents explicitly registered, or modify the `agents` array to include all 17+ agents if they are indeed part of this network. This improves documentation accuracy and code clarity.
 * **Hardcoded `vNextNetwork` in `index.ts`**: The `vNextNetwork` is directly imported and registered in `index.ts`. If there are multiple vNext networks, this approach might become less scalable. **Recommendation**: Consider a dynamic import or a registry for vNext networks similar to agents, allowing for easier management and scaling of experimental networks.
+* **Expand Memory Processors**: The current set of memory processors defined in [`src/mastra/processor-extra.ts`](src/mastra/processor-extra.ts) provides robust context management. **Recommendation**: Explore and implement additional specialized memory processors (e.g., for sentiment analysis, entity extraction, summarization, or long-term memory consolidation) to further refine and optimize the context provided to LLMs, enhancing agent performance and reducing token usage for specific tasks.
 
 ## 6. Commands
 
