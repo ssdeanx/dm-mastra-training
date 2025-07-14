@@ -82,7 +82,7 @@ const AlphaVantageHistoricalDataPointSchema = z.object({
 });
 
 const AlphaVantageHistoricalApiResponseSchema = z.object({
-  "Meta Data": z.record(z.string()).optional(),
+  "Meta Data": z.record(z.string(), z.any()).optional(),
   "Time Series (Daily)": z.record(z.string(), AlphaVantageHistoricalDataPointSchema).optional(),
   "Weekly Time Series": z.record(z.string(), AlphaVantageHistoricalDataPointSchema).optional(),
   "Monthly Time Series": z.record(z.string(), AlphaVantageHistoricalDataPointSchema).optional(),

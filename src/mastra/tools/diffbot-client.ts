@@ -299,7 +299,7 @@ export interface KnowledgeGraphNode {
   score: number
   esscore?: number
   entity: KnowledgeGraphEntity
-  entity_ctx: Record<string, unknown>
+  entity_ctx?: Record<string, unknown>
   errors: string[]
   callbackQuery: string
   upperBound: number
@@ -543,7 +543,7 @@ const DiffbotImageSchema = z.object({
   naturalHeight: z.number().optional(),
   naturalWidth: z.number().optional(),
   primary: z.boolean().optional(),
-  meta: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional()
+  meta: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional()
 });
 
 const DiffbotRequestSchema = z.object({
@@ -589,7 +589,7 @@ const ExtractResponseSchema = z.object({
       name: z.string()
     })).optional(),
     links: z.array(z.string()).optional(),
-    meta: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional()
+    meta: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional()
   })),
   request: DiffbotRequestSchema,
   errorCode: z.number().optional(),
@@ -816,7 +816,7 @@ const KnowledgeGraphResponseSchema = z.object({
     score: z.number(),
     esscore: z.number().optional(),
     entity: KnowledgeGraphEntitySchema,
-    entity_ctx: z.record(z.unknown()),
+    entity_ctx: z.record(z.string(), z.any()).optional(),
     errors: z.array(z.string()),
     callbackQuery: z.string(),
     upperBound: z.number(),
@@ -1077,6 +1077,7 @@ export function createDiffbotClient(options?: {
         }
       },
     }),
+
     diffbotSearchKnowledgeGraph: createTool({
       id: "diffbot-search-knowledge-graph",
       description: "Performs searches against the Diffbot Knowledge Graph.",
@@ -1140,4 +1141,3 @@ export const diffbotEnhanceEntityTool = diffbotClient.diffbotEnhanceEntity;
 export const diffbotSearchKnowledgeGraphTool = diffbotClient.diffbotSearchKnowledgeGraph;
 export const diffbotEnhanceKnowledgeGraphTool = diffbotClient.diffbotEnhanceKnowledgeGraph;
 // Optionally export the client for advanced use
-

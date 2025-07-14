@@ -3,7 +3,7 @@ import defaultKy, { type KyInstance } from 'ky';
 import { z } from 'zod';
 import { createTool } from "@mastra/core/tools";
 import { PinoLogger } from '@mastra/loggers';
-import { RuntimeContext } from '@mastra/core/di';
+//import { RuntimeContext } from '@mastra/core/di'; // FIXME: Uncomment if needed
 
 const logger = new PinoLogger({ name: 'reddit', level: 'info' });
 
@@ -151,7 +151,7 @@ export const FullPostSchema = z.object({
       id: z.string(),
       source: ImageSchema,
       resolutions: z.array(ImageSchema),
-      variants: z.record(z.object({
+      variants: z.record(z.string(), z.object({
         id: z.string(),
         source: ImageSchema,
         resolutions: z.array(ImageSchema),
@@ -331,7 +331,7 @@ export function createRedditClient(options?: {
       description: "Fetches posts from a subreddit.",
       inputSchema: GetSubredditPostsOptionsSchema,
       outputSchema: PostListingResultSchema,
-      execute: async ({ context }) => {
+      execute: async ({ context }: { context: GetSubredditPostsOptions }) => {
         logger.info('Fetching subreddit posts', { subreddit: context.subreddit, type: context.type });
         try {
           const response = await redditClient.getSubredditPosts(context);

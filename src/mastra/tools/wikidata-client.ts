@@ -53,22 +53,22 @@ interface WikidataApiResponse {
  */
 const WikidataClaimSchema = z.object({
   value: z.string(),
-  qualifiers: z.record(z.union([z.array(z.string()), z.array(z.number())])),
-  references: z.array(z.record(z.array(z.string())))
+  qualifiers: z.record(z.string(), z.union([z.array(z.string()), z.array(z.number())])),
+  references: z.array(z.record(z.string(), z.array(z.string())))
 });
 
 const WikidataEntitySchema = z.object({
   id: z.string(),
   type: z.string(),
-  claims: z.record(z.array(WikidataClaimSchema)),
+  claims: z.record(z.string(), z.array(WikidataClaimSchema)),
   modified: z.string(),
-  labels: z.record(z.string()).optional(),
-  descriptions: z.record(z.string()).optional(),
+  labels: z.record(z.string(), z.any()).optional(),
+  descriptions: z.record(z.string(), z.any()).optional(),
   aliases: z.any().optional(),
-  sitelinks: z.record(z.string()).optional()
+  sitelinks: z.record(z.string(), z.any()).optional()
 });
 
-const WikidataEntityMapSchema = z.record(WikidataEntitySchema);
+const WikidataEntityMapSchema = z.record(z.string(), WikidataEntitySchema);
 
 /**
  * Basic Wikidata client.

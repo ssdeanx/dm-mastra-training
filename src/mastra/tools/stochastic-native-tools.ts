@@ -375,7 +375,7 @@ function runHMM(params: Record<string, any>) {
 export const stochasticAlgorithmInputSchema = z.object({
   algorithm: z.enum(["mdp", "mcts", "bandit", "bayesian", "hmm"]).describe("The stochastic algorithm to apply."),
   problem: z.string().describe("The problem to solve using the algorithm."),
-  parameters: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.number())])).describe("Parameters specific to the algorithm."),
+  parameters: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.number())])).describe("Parameters specific to the algorithm."),
   result: z.string().optional().describe("Result of the algorithm application."),
 }).strict();
 
@@ -383,7 +383,7 @@ export const stochasticAlgorithmOutputSchema = z.object({
   status: z.string().describe("Status of the algorithm execution."),
   summary: z.string().describe("Summary of the algorithm's outcome."),
   algorithmUsed: z.string().describe("The stochastic algorithm that was applied."),
-  details: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.number())])).optional().describe("Detailed results of the algorithm."),
+  details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.number())])).optional().describe("Detailed results of the algorithm."),
 }).strict();
 
 export const stochasticAlgorithmTool = createTool({

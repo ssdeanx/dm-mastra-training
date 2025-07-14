@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { TavilyClient } from "@agentic/tavily";
 import { env } from "process";
 import { PinoLogger } from '@mastra/loggers';
-import { RuntimeContext } from '@mastra/core/di';
+//import { RuntimeContext } from '@mastra/core/di'; // FIXME: Uncomment if needed
 
 const logger = new PinoLogger({ name: 'tavily', level: 'info' });
 
@@ -43,7 +43,7 @@ export function createTavilySearchTool(config: TavilyConfig = {}) {
         })
       ),
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: { context: { query: string } }) => {
       logger.info('Starting Tavily search', { 
         query: context.query 
       });

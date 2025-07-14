@@ -345,7 +345,7 @@ export function createHackerNewsClient(options?: CreateHackerNewsClientOptions):
       description: "Fetches a HN story or comment by its ID from the Algolia search API.",
       inputSchema: GetItemOptionsSchema,
       outputSchema: SearchItemSchema,
-      execute: async ({ context, runtimeContext }) => {
+      execute: async ({ context, runtimeContext }: { context: GetItemOptionsSchema; runtimeContext?: RuntimeContext<HackerNewsRuntimeContext> }) => {
         const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
         if (debug) {
           logger.info('Fetching HN search item', { itemId: context.itemId });
@@ -367,7 +367,7 @@ export function createHackerNewsClient(options?: CreateHackerNewsClientOptions):
       description: "Fetches a HN user by username from the Algolia search API.",
       inputSchema: GetUserOptionsSchema,
       outputSchema: SearchUserSchema,
-      execute: async ({ context, runtimeContext }) => {
+      execute: async ({ context, runtimeContext }: { context: GetUserOptionsSchema; runtimeContext?: RuntimeContext<HackerNewsRuntimeContext> }) => {
         const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
         if (debug) {
           logger.info('Fetching HN search user', { username: context.username });
@@ -389,7 +389,7 @@ export function createHackerNewsClient(options?: CreateHackerNewsClientOptions):
       description: "Searches HN for stories and comments matching the given query using the Algolia search API.",
       inputSchema: SearchOptionsSchema,
       outputSchema: SearchResponseSchema,
-      execute: async ({ context, runtimeContext }) => {
+      execute: async ({ context, runtimeContext }: { context: SearchOptions; runtimeContext?: RuntimeContext<HackerNewsRuntimeContext> }) => {
         const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
         if (debug) {
           logger.info('Searching HN items', { query: context.query });
@@ -411,7 +411,7 @@ export function createHackerNewsClient(options?: CreateHackerNewsClientOptions):
       description: "Fetches/searches the top stories currently on the front page of HN using the Algolia search API.",
       inputSchema: SearchOptionsSchema,
       outputSchema: SearchResponseSchema,
-      execute: async ({ context, runtimeContext }) => {
+      execute: async ({ context, runtimeContext }: { context: SearchOptions; runtimeContext?: RuntimeContext<HackerNewsRuntimeContext> }) => {
         const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
         if (debug) {
           logger.info('Fetching HN top stories', { query: context.query });
@@ -433,7 +433,7 @@ export function createHackerNewsClient(options?: CreateHackerNewsClientOptions):
       description: "Fetches a HN story or comment by its ID from the official Firebase API.",
       inputSchema: GetItemOptionsSchema,
       outputSchema: ItemSchema,
-      execute: async ({ context, runtimeContext }) => {
+      execute: async ({ context, runtimeContext }: { context: GetItemOptionsSchema; runtimeContext?: RuntimeContext<HackerNewsRuntimeContext> }) => {
         const debug = (runtimeContext?.get('debug') as boolean | undefined) ?? false;
         if (debug) {
           logger.info('Fetching HN item', { id: context.itemId });
