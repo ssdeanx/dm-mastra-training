@@ -103,9 +103,9 @@ export type ChanceAgentRuntimeContext = {
 const chanceAgentInputSchema = z.object({
   query: z.string().min(1).describe('The decision problem or question for the chance agent'),
   options: z.array(z.string()).min(1).describe('A list of possible options or actions to choose from'),
-  context: z.record(z.any()).optional().describe('Optional context information relevant to the decision'),
+  context: z.record(z.string(), z.any()).optional().describe('Optional context information relevant to the decision'),
   requestId: z.string().optional().describe('Optional request identifier'),
-  metadata: z.record(z.any()).optional().describe('Optional metadata'),
+  metadata: z.record(z.string(), z.any()).optional().describe('Optional metadata'),
   userId: z.string().optional().describe('User identifier'),
   sessionId: z.string().optional().describe('Session identifier'),
   decisionType: z.enum(["strategic", "tactical", "operational", "exploratory"]).optional().describe('Type of decision'),
@@ -157,9 +157,9 @@ const chanceAgentConfigSchema = z.object({
     'crypto-asset-focus': z.string().optional().describe('Cryptocurrency asset focus')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
-  tools: z.record(z.any()).describe('Available tools for the agent'),
+  tools: z.record(z.string(), z.any()).describe('Available tools for the agent'),
   memory: z.any().describe('Agent memory configuration'),
-  workflows: z.record(z.any()).describe('Available workflows for the agent')
+  workflows: z.record(z.string(), z.any()).describe('Available workflows for the agent')
 }).strict();
 
 /**

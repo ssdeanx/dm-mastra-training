@@ -89,10 +89,10 @@ const researchAgentConfigSchema = z.object({
     'crypto-asset-focus': z.string().optional().describe('Cryptocurrency asset focus for research')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
-  evals: z.record(z.any()).describe('Evaluation metrics for the agent'),
-  tools: z.record(z.any()).describe('Available tools for the agent'),
+  evals: z.record(z.string(), z.any()).describe('Evaluation metrics for the agent'),
+  tools: z.record(z.string(), z.any()).describe('Available tools for the agent'),
   memory: z.any().describe('Agent memory configuration'),
-  workflows: z.record(z.any()).describe('Available workflows for the agent')
+  workflows: z.record(z.string(), z.any()).describe('Available workflows for the agent')
 }).strict();
 
 

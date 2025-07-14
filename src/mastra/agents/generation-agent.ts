@@ -101,9 +101,9 @@ export type GenerationAgentRuntimeContext = {
  */
 const generationAgentInputSchema = z.object({
   prompt: z.string().min(1).describe('The prompt or request for content generation'),
-  context: z.record(z.any()).optional().describe('Optional context information relevant to generation'),
+  context: z.record(z.string(), z.any()).optional().describe('Optional context information relevant to generation'),
   requestId: z.string().optional().describe('Optional request identifier'),
-  metadata: z.record(z.any()).optional().describe('Optional metadata'),
+  metadata: z.record(z.string(), z.any()).optional().describe('Optional metadata'),
   userId: z.string().optional().describe('User identifier'),
   sessionId: z.string().optional().describe('Session identifier'),
   contentType: z.enum(["text", "code", "image-prompt", "audio-prompt", "video-prompt", "structured-data", "report", "summary"]).optional().describe('Type of content to generate'),
@@ -151,9 +151,9 @@ const generationAgentConfigSchema = z.object({
     'keywords': z.array(z.string()).optional().describe('Specific keywords or phrases to include')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
-  tools: z.record(z.any()).describe('Available tools for the agent'),
+  tools: z.record(z.string(), z.any()).describe('Available tools for the agent'),
   memory: z.any().describe('Agent memory configuration'),
-  workflows: z.record(z.any()).describe('Available workflows for the agent')
+  workflows: z.record(z.string(), z.any()).describe('Available workflows for the agent')
 }).strict();
 
 /**

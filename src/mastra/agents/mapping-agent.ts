@@ -86,12 +86,12 @@ export type MappingAgentRuntimeContext = {
  */
 const mappingAgentInputSchema = z.object({
   sourceData: z.any().describe('The data to be mapped, can be string, object, or array'),
-  sourceSchema: z.record(z.any()).optional().describe('Optional schema of the source data'),
-  targetSchema: z.record(z.any()).describe('The desired schema for the output data'),
+  sourceSchema: z.record(z.string(), z.any()).optional().describe('Optional schema of the source data'),
+  targetSchema: z.record(z.string(), z.any()).describe('The desired schema for the output data'),
   mappingInstructions: z.string().describe('Instructions for how to map source fields to target fields'),
-  context: z.record(z.any()).optional().describe('Optional context information relevant to the mapping'),
+  context: z.record(z.string(), z.any()).optional().describe('Optional context information relevant to the mapping'),
   requestId: z.string().optional().describe('Optional request identifier'),
-  metadata: z.record(z.any()).optional().describe('Optional metadata'),
+  metadata: z.record(z.string(), z.any()).optional().describe('Optional metadata'),
   userId: z.string().optional().describe('User identifier'),
   sessionId: z.string().optional().describe('Session identifier'),
   sourceDataFormat: z.enum(["json", "csv", "xml", "yaml", "plaintext", "auto"]).optional().describe('Format of the source data'),
@@ -142,9 +142,9 @@ const mappingAgentConfigSchema = z.object({
     'domain-context': z.string().optional().describe('Domain context for data mapping'),
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
-  tools: z.record(z.any()).describe('Available tools for the agent'),
+  tools: z.record(z.string(), z.any()).describe('Available tools for the agent'),
   memory: z.any().describe('Agent memory configuration'),
-  workflows: z.record(z.any()).describe('Available workflows for the agent')
+  workflows: z.record(z.string(), z.any()).describe('Available workflows for the agent')
 }).strict();
 
 /**

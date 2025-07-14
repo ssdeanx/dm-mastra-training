@@ -311,7 +311,7 @@ export const debuggingApproachTool = createTool({
   inputSchema: debuggingApproachInputSchema,
   outputSchema: debuggingApproachOutputSchema,
   execute: async ({ context }) => {
-    const { approachName, issue, steps, findings, resolution } = context;
+    const { approachName, issue, steps, findings, resolution } = context; // Fix: Expected 2-3 arguments, but got 1.
     try {
       logger.info(`Executing debuggingApproachTool natively with approach: ${approachName}`, { approachName, issue });
       // Validate required fields
@@ -522,8 +522,8 @@ export const decisionFrameworkInputSchema = z.object({
   stage: z.enum(["problem-definition", "options", "criteria", "evaluation", "analysis", "recommendation"]).describe("Current stage of decision analysis."),
   recommendation: z.string().optional().describe("Final recommendation."),
   sensitivityInsights: z.array(z.string()).optional().describe("Insights from sensitivity analysis."),
-  expectedValues: z.record(z.number()).optional().describe("Calculated expected values for options."),
-  multiCriteriaScores: z.record(z.number()).optional().describe("Calculated multi-criteria scores for options."),
+  expectedValues: z.record(z.string().min(1).max(100), z.number()).optional().describe("Calculated expected values for options."),
+  multiCriteriaScores: z.record(z.string().min(1).max(100), z.number()).optional().describe("Calculated multi-criteria scores for options."),
   decisionId: z.string().describe("Unique identifier for this decision."),
   iteration: z.number().int().min(0).describe("Current iteration of the decision analysis."),
   suggestedNextStage: z.string().optional().describe("Suggested next stage in the process."),
@@ -896,7 +896,7 @@ export const visualReasoningInputSchema = z.object({
     id: z.string(),
     type: z.enum(["node", "edge", "container", "annotation"]),
     label: z.string().optional(),
-    properties: z.record(z.any()),
+    properties: z.record(z.string(), z.any()),
     source: z.string().optional(),
     target: z.string().optional(),
     contains: z.array(z.string()).optional(),

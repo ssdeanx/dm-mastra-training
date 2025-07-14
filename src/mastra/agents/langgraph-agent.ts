@@ -1,5 +1,5 @@
 import { Agent } from '@mastra/core/agent';
-import { createGemini25Provider } from '../config';
+import { createGemini25Provider } from '../config/googleProvider';
 import { mastraMemory } from '../upstashMemory';
 import {
   createMastraLangGraphWorkflow,

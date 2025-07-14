@@ -54,7 +54,7 @@ const analyzerAgentInputSchema = z.object({
   data: z.any().optional().describe('Optional data to analyze'),
   context: z.record(z.string(), z.any()).optional().describe('Optional context information'),
   requestId: z.string().optional().describe('Optional request identifier'),
-  metadata: z.record(z.any()).optional().describe('Optional metadata'),
+  metadata: z.record(z.string(), z.any()).optional().describe('Optional metadata'),
   userId: z.string().optional().describe('User identifier'),
   sessionId: z.string().optional().describe('Session identifier'),
   analysisType: z.enum(["statistical", "trend", "comparative", "predictive", "diagnostic", "exploratory"]).optional().describe('Analysis type'),
@@ -113,9 +113,9 @@ const analyzerAgentConfigSchema = z.object({
     'crypto-asset-focus': z.string().optional().describe('Cryptocurrency asset focus')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
-  tools: z.record(z.any()).describe('Available tools for the agent'),
+  tools: z.record(z.string(), z.any()).describe('Available tools for the agent'),
   memory: z.any().describe('Agent memory configuration'),
-  workflows: z.record(z.any()).describe('Available workflows for the agent')
+  workflows: z.record(z.string(), z.any()).describe('Available workflows for the agent')
 }).strict();
 
 /**

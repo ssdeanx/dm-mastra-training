@@ -53,9 +53,9 @@ logger.error("An error occurred"); // Logged as ERROR to both systems
  */
 const masterAgentInputSchema = z.object({
   query: z.string().min(1).describe('User query or request for the master agent'),
-  context: z.record(z.any()).optional().describe('Optional context information'),
+  context: z.record(z.string(), z.any()).optional().describe('Optional context information'),
   requestId: z.string().optional().describe('Optional request identifier'),
-  metadata: z.record(z.any()).optional().describe('Optional metadata')
+  metadata: z.record(z.string(), z.any()).optional().describe('Optional metadata')
 }).strict();
 
 const masterAgentOutputSchema = z.object({
@@ -84,10 +84,10 @@ const masterAgentConfigSchema = z.object({
     'debug-mode': z.boolean().optional().describe('Debug mode flag')
   }).describe('Runtime context for the agent'),
   model: z.any().describe('Model configuration for the agent'),
-  evals: z.record(z.any()).describe('Evaluation metrics for the agent'),
-  tools: z.record(z.any()).describe('Available tools for the agent'),
+  evals: z.record(z.string(), z.any()).describe('Evaluation metrics for the agent'),
+  tools: z.record(z.string(), z.any()).describe('Available tools for the agent'),
   memory: z.any().describe('Agent memory configuration'),
-  workflows: z.record(z.any()).describe('Available workflows for the agent')
+  workflows: z.record(z.string(), z.any()).describe('Available workflows for the agent')
 }).strict();
 
 /**
