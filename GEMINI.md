@@ -71,9 +71,9 @@ The framework features a robust Retrieval-Augmented Generation (RAG) pipeline bu
 
 ### 3.2. Embedding and Storage (`googleProvider.ts`, `pinecone.ts`, `upstashMemory.ts`)
 
-* **Embedding**: The `createGeminiEmbeddingModel` function is used to create **1536-dimension** vector embeddings for text chunks, typically using the `text-embedding-004` model or experimental variations.
+* **Embedding**: The `createGeminiEmbeddingModel` function is used to create **768-dimension** vector embeddings for text chunks, typically using the `text-embedding-004` model.
 * **Storage**: The architecture uses a powerful hybrid storage model:
-  * **Pinecone (`pinecone.ts`)**: Serves as the primary vector database. All text embeddings and their associated metadata are stored and indexed here for efficient similarity search.
+  * **Pinecone (`pinecone.ts`)**: Serves as the primary vector database, using the `training` index. All text embeddings and their associated metadata are stored and indexed here for efficient similarity search.
   * **Upstash Redis (`upstashMemory.ts`)**: Functions as the key-value store for conversational history, agent working memory, and session data.
 * **Orchestration**: The `mastraMemory` instance in `upstashMemory.ts` orchestrates this process, transparently handling the routing of data to the correct store.
 
@@ -86,12 +86,15 @@ The system supports multiple sophisticated retrieval strategies against the **Pi
 
 ### 3.4. Memory Processing (`src/mastra/upstashMemory.ts`)
 
-To ensure the context provided to LLMs is concise, relevant, and unbiased, the `mastraMemory` instance in `src/mastra/upstashMemory.ts` orchestrates a chain of advanced memory processors (defined in [`src/mastra/processor-extra.ts`](src/mastra/processor-extra.ts)) that filter and rank messages before they are passed to an agent:
+To ensure the context provided to LLMs is concise, relevant, and unbiased, the `mastraMemory` instance in `src/mastra/upstashMemory.ts` orchestrates a chain of advanced memory processors (defined in [`src/mastra/processor-extra.ts`](src/mastra/processor-extra.ts)) that filter and rank messages before they are passed to an agent. This also includes comprehensive support for **evals, tracing, and workflows**, allowing for full observability and state management of agent interactions:
 
 * **Attention-Guided Memory Processor**: Scores and prunes messages based on semantic importance and recency.
 * **Contextual Relevance Processor**: Maintains topic continuity by segmenting conversations and dropping irrelevant threads.
-* **Workflow-Aware Memory Processor**: Dynamically adjusts the context to include messages relevant to the current stage of an active workflow.
+* **Workflow-Aware Memory Processor**: Dynamically adjusts the context to include messages relevant to the current stage of an active workflow, and enables **workflow state saving and retrieval**.
 * **Bias Mitigation Processor**: Identifies and applies mitigation strategies for common cognitive biases (e.g., confirmation, recency) in the conversational history.
+* **Tool Usage Tracker Processor**: Monitors and logs the usage of tools by agents, providing insights into tool popularity and frequency.
+* **Agent Interaction Pattern Processor**: Analyzes the sequence of agent interactions within workflows to identify common patterns and potential bottlenecks.
+* **Mental Model Processor**: Analyzes chat messages to identify patterns that suggest the applicability of specific mental models, guiding the agent's internal reasoning.
 
 ### 3.5. Memory Processors (`src/mastra/processor-extra.ts`)
 
@@ -99,8 +102,11 @@ The `processor-extra.ts` file centralizes the definitions of various advanced me
 
 * **`AttentionGuidedMemoryProcessor`** ([`src/mastra/processor-extra.ts:272`](src/mastra/processor-extra.ts:272)): Implements attention-based relevance scoring and dynamic context pruning. It scores messages by importance, removes redundant content using semantic similarity, and applies pruning to optimize context size while preserving conversation flow.
 * **`ContextualRelevanceProcessor`** ([`src/mastra/processor-extra.ts:537`](src/mastra/processor-extra.ts:537)): Focuses on maintaining only contextually relevant messages. It identifies topic segments and selects the most relevant ones based on continuity and semantic coherence, effectively filtering out irrelevant threads.
-* **`WorkflowAwareMemoryProcessor`** ([`src/mastra/processor-extra.ts:638`](src/mastra/processor-extra.ts:638)): Dynamically adjusts the messages included in the agent's context based on the current stage of an ongoing workflow. It prioritizes messages relevant to the current workflow stage and prunes irrelevant ones to optimize context size.
+* **`WorkflowAwareMemoryProcessor`** ([`src/mastra/processor-extra.ts:638`](src/mastra/processor-extra.ts:638)): Dynamically adjusts the messages included in the agent's context based on the current stage of an ongoing workflow. It prioritizes messages relevant to the current workflow stage and prunes irrelevant ones to optimize context size. This processor also supports **saving and retrieving workflow states**, enabling persistent and resumable workflows.
 * **`BiasMitigationProcessor`** ([`src/mastra/processor-extra.ts:67`](src/mastra/processor-extra.ts:67)): Designed to identify and mitigate cognitive biases (e.g., confirmation, recency, framing, anchoring, availability, overconfidence) in messages. It employs various detection and mitigation strategies to ensure a more neutral and objective context for agents.
+* **`ToolUsageTrackerProcessor`** ([`src/mastra/processor-extra.ts:886`](src/mastra/processor-extra.ts:886)): Monitors and logs the usage of tools by agents to provide insights into tool popularity and frequency. This processor does not modify the messages but provides valuable analytics for optimizing agent toolsets.
+* **`AgentInteractionPatternProcessor`** ([`src/mastra/processor-extra.ts:978`](src/mastra/processor-extra.ts:978)): Analyzes the sequence of agent interactions within workflows to identify common patterns and potential bottlenecks. This processor helps in understanding and optimizing the collaboration between different agents.
+* **`MentalModelProcessor`** ([`src/mastra/processor-extra.ts:1074`](src/mastra/processor-extra.ts:1074)): Analyzes chat messages to identify patterns that suggest the applicability of specific mental models. This processor enriches message metadata with a 'suggestedMentalModel' hint, guiding the agent's internal reasoning process without maintaining long-term state or making additional LLM calls.
 
 ## 4. Core Technologies & Configuration
 
@@ -198,8 +204,7 @@ This section synthesizes the project's core patterns and best practices into an 
 
 This section contains my internal notes on potential improvement areas and architectural observations. I will only surface these suggestions if you explicitly ask for them. My goal is to assist, not to be disruptive.
 
-* **Note on Naming Conventions**: I've observed some inconsistencies in the naming of the Pinecone index across different files (e.g., `"pineconeIndex"`, `"training-mastra"`, `"gemini-embeddings"`, `"gemini"`). If you'd like, I can standardize this to a single, environment-configurable name to improve consistency.
-* **Note on Hard-coded Values**: I've noticed that some critical values, like the embedding dimension (`1536`), are repeated in multiple locations. If you'd like, I can centralize these into a single configuration file to make them easier to manage.
+* **Note on Hard-coded Values**: I've noticed that some critical values, like the embedding dimension (`768`), are repeated in multiple locations. These are now consistent across the relevant files.
 * **Note on Environment Validation**: The `zod` schema in `src/mastra/config/environment.ts` could be enhanced to enforce conditional validation. For example, we could make `GOOGLE_GENERATIVE_AI_API_KEY` required only when `FACTORY` is set to `"gemini"`. Let me know if you'd like me to implement this.
 * **Note on Provider Abstraction**: The `googleProvider.ts` file has several similar factory functions. If you'd like, I can plan a refactor to consolidate these into a single, streamlined factory, which would simplify the code and reduce cognitive overhead for new developers.
 * **Note on Tracing Metadata**: The Langfuse tracing metadata in `googleProvider.ts` is attached in a way that could be more robust. If you're interested, I can investigate a more robust integration pattern.
