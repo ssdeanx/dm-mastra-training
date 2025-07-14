@@ -43,3 +43,4 @@ dist
 Docs/*.md
 docs/AGENTS_README.md
 docs/BEST_PRACTICES.md
+schema.txt

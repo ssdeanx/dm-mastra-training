@@ -76,7 +76,7 @@ async function initializePinecone() {
     return await model.doEmbed({ values });
   }
 
-  const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536 });
+  const embedder = createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768, taskType: 'CLUSTERING' });
   const { embeddings: vectors } = await embedMany({
     model: embedder,
     values: chunks.map(chunk => chunk.text)

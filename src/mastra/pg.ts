@@ -1,6 +1,7 @@
 import { Memory } from "@mastra/memory";
 import { PostgresStore, PgVector } from "@mastra/pg";
- 
+import { z } from 'zod';
+
 // PostgreSQL connection details
 const host = "localhost";
 const port = 5432;
@@ -9,6 +10,18 @@ const database = "postgres";
 const password = "postgres";
 const connectionString = `postgresql://${user}:${password}@${host}:${port}`;
  
+// Define the schema for the todo list
+const todoListSchema = z.object({
+  items: z.array(
+    z.object({
+      description: z.string(),
+      due: z.string().optional(),
+      started: z.string().optional(),
+      status: z.enum(["active", "completed"]).default("active"),
+    })
+  ),
+});
+
 // Initialize memory with PostgreSQL storage and vector search
 export const pgmemory = new Memory({
   storage: new PostgresStore({
@@ -27,15 +40,7 @@ export const pgmemory = new Memory({
     },
   workingMemory: {
       enabled: true,
-      template: `
-# Todo List
-## Item Status
-- Active items:
-  - Example (Due: Feb 7 3028, Started: Feb 7 2025)
-    - Description: This is an example task
-## Completed
-- None yet
-`,
+      schema: todoListSchema,
     },
   },
 });
