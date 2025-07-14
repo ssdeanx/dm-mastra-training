@@ -3,12 +3,8 @@
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { agentRegistry } from './agents';
-import { weatherWorkflow } from './workflows/weather-workflow';
-import { researchAnalysisWorkflow } from './workflows/research-analysis-workflow';
-//import { inngestMultiAgentWorkflow } from './workflows/inngest-multi-agent-workflow';
-import { documentAnalysisWorkflow } from './workflows/document-analysis-workflow';
-import { researchReportWorkflow } from './workflows/research-report-workflow';
-import { agentPerformanceWorkflow } from './workflows/agent-performance-workflow';
+import { workflowRegistry } from "./workflows/index";
+// vNext-Workflows go in vnext_networks they are agent networks that have workflows in them & uses workflow steps to save unlike normal networks
 import { baseNetwork } from './networks/base-network';
 import { vNextNetwork } from './workflows/vnext-workflow';
 import { LangfuseExporter } from 'langfuse-vercel';
@@ -20,7 +16,6 @@ import { registerApiRoute } from "@mastra/core/server";
 //import { CopilotRuntime, copilotRuntimeNodeHttpEndpoint, ExperimentalEmptyAdapter } from "@copilotkit/runtime"; // Uncomment if you need to use CopilotKit runtime
 import { registerCopilotKit } from "@ag-ui/mastra";
 import type { LogLevel } from '@mastra/loggers';
-
 // Import all agent-specific runtime contexts
 import type {
   MasterAgentRuntimeContext,
@@ -36,7 +31,7 @@ import type {
 } from './agents';
 
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow, researchAnalysisWorkflow, documentAnalysisWorkflow, researchReportWorkflow, agentPerformanceWorkflow },
+  workflows: workflowRegistry,
   vnext_networks: { 'dean-machines-vnext': vNextNetwork },
   networks: { baseNetwork },
   agents: agentRegistry,
