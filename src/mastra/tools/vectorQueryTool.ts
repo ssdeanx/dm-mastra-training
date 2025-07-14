@@ -184,9 +184,9 @@ export const enhancedVectorQueryTool = createTool({
                 });
         const queryEmbedding = embeddings[0];
 
-        // Query the Pinecone vector store directly with sparse cosine similarity
+        // Query the Pinecone vector store directly with cosine similarity
         const vectorResults = await queryVectors(
-          'gemini-embeddings', // Directly use literal index name
+          'training', // Directly use literal index name
           queryEmbedding,
           validatedInput.topK,
           validatedInput.enableFilter ? (validatedInput.filter as MetadataFilter) : undefined,

@@ -369,8 +369,8 @@ export const chunkerTool = createTool({
 
         // Upsert to vector store if requested
         if (validatedInput.vectorOptions?.upsertToVector) {
-          const indexName = validatedInput.vectorOptions.indexName || 'gemini';
-          logger.info('Upserting to vector store using gemini profile', {
+          const indexName = validatedInput.vectorOptions.indexName || 'training';
+          logger.info('Upserting to vector store using training profile', {
             indexName: indexName,
             profileIndexName: indexName
           });
@@ -411,7 +411,7 @@ export const chunkerTool = createTool({
           embeddingsCreated: embeddings.length,
           vectorsUpserted,
           indexName: validatedInput.vectorOptions?.indexName,
-          embeddingDimension: 768, // Assuming gemini profile always uses 768 dimensions
+          embeddingDimension: 768, // Assuming training profile always uses 768 dimensions
           vectorProcessingTime: Date.now() - vectorStartTime
         };
 

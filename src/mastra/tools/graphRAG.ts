@@ -54,7 +54,7 @@ const upsertInputSchema = z.object({
     keywords: z.any().optional(),
     questions: z.any().optional(),
   }).optional() as z.ZodType<ExtractParams | undefined>, // Cast to ExtractParams
-  indexName: z.string().default('context').describe('Name of the index to upsert to'),
+  indexName: z.string().default('training').describe('Name of the index to upsert to'),
   createIndex: z.boolean().default(true).describe('Whether to create the index if it does not exist'),
   vectorProfile: z.enum(['gemini']).default('gemini').describe('Vector profile to use for embeddings and upserting'),
 }).strict();
@@ -293,7 +293,7 @@ export const graphRAGUpsertTool = createTool({
  */
 export const graphRAGTool = createGraphRAGTool({
   vectorStoreName: 'pinecone',
-  indexName: 'gemini',
+  indexName: 'training',
   model: createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768, taskType: 'CLUSTERING' }),
   graphOptions: {
     dimension: 768,
@@ -437,7 +437,7 @@ export const graphRAGQueryTool = createTool({
 export const graphRAGRuntimeContext = new RuntimeContext<GraphRAGRuntimeContext>();
 
 // Set default runtime context values for Upstash Vector with sparse cosine similarity
-graphRAGRuntimeContext.set("indexName", 'gemini');
+graphRAGRuntimeContext.set("indexName", 'training');
 graphRAGRuntimeContext.set("topK", 5);
 graphRAGRuntimeContext.set("threshold", 0.7);
 graphRAGRuntimeContext.set("minScore", 0.0);

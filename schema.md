@@ -1,6 +1,16 @@
 # Data Schema
 
 - This is the schema for all storage types, for example, (LibSQL, PostgreSQL, Upstash). [https://mastra.ai/en/docs/server-db/storage]
+- Using all of these will fix the workflow saving error i was experiencing, also why having trouble with tracing, & evals.  Make sure to implement them correctly so they are future proof,
+- Check the link if necessary. follow mastra patterns.
+- Mastra provides different storage providers, but you can treat them as interchangeable. Eg, you could use libsql in development but postgres in production, and your code will work the same both ways.
+- MastraStorage provides a unified interface for managing:
+  - Suspended Workflows: the serialized state of suspended workflows (so they can be resumed later)
+  - Memory: threads and messages per resourceId in your application
+  - Traces: OpenTelemetry traces from all components of Mastra
+  - Eval Datasets: scores and scoring reasons from eval runs
+
+![MastraStorage](image.png)
 
 ## Messages
 
@@ -18,7 +28,7 @@ NOT NULL
 Parent thread reference
 
 resourceId uuidv4
-CAN BE NULL
+NOT NULL
 ID of the resource that owns this message
 
 content text
@@ -251,3 +261,4 @@ Nanoseconds since Unix epoch when span ended
 createdAt timestamp
 NOT NULL
 ```
+

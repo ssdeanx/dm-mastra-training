@@ -4,7 +4,7 @@ import { pinecone } from './pinecone';
 import { z } from 'zod';
 import { PinoLogger } from '@mastra/loggers';
 import type { CoreMessage as OriginalCoreMessage } from '@mastra/core';
-import { maskStreamTags } from '@mastra/core';
+import { maskStreamTags, MastraStorage } from '@mastra/core';
 import { UIMessage } from 'ai';
 import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
 import { createGeminiEmbeddingModel } from './config/googleProvider';
@@ -46,14 +46,14 @@ const logger = new PinoLogger({ name: 'memory', level: 'info' });
 
 // Validation schemas
 const createThreadSchema = z.object({
-  resourceId: z.string().nonempty(),
+  resourceId: z.string().optional(),
   threadId: z.string().optional(),
   title: z.string().optional(), // This line is already correct.
   metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 const getMessagesSchema = z.object({
-  resourceId: z.string().nonempty(),
+  resourceId: z.string().optional(),
   threadId: z.string().nonempty(),
   last: z.number().int().min(1).optional()
 });
@@ -220,12 +220,12 @@ export const upstashStorage = new UpstashStore({
 
 
   /**
-   * Shared Mastra agent memory instance using Upstash for distributed storage and vector search.
+   * Shared Mastra agent memory instance using Upstash for distributed storage and [Pinecone] for vector search.
    *
    * @remarks
    * - Uses UpstashStore for distributed Redis storage
- * - Uses UpstashVector for semantic search with cloud-based vectors (384-dim fastembed embeddings)
- * - Embeddings powered by fastembed text-embedding model with cosine similarity
+ * - Uses PineconeVector for semantic search with cloud-based vectors (768-dim gemini embeddings)
+ * - Embeddings powered by Gemini text-embedding model with cosine similarity
  * - Configured for working memory and semantic recall with enhanced processors
  * - Supports custom memory processors for filtering, summarization, etc.
  * - Ideal for serverless and distributed applications
@@ -235,15 +235,15 @@ export const upstashStorage = new UpstashStore({
  * @see https://upstash.com/docs/vector/overall/getstarted
  * @see https://mastra.ai/en/reference/rag/upstash
  *
- * @version 1.0.0
+ * @version 2.0.0
  * @author SSD
- * @date 2025-06-20
+ * @date 2025-07-14
  *
  * @mastra Shared Upstash memory instance for all agents
  * @instance upstashMemory
  * @module upstashMemory
  * @class Memory
- * @classdesc Shared memory instance for all agents using Upstash for storage and vector search
+ * @classdesc Shared memory instance for all agents using Upstash for storage and [Pinecone] for vector search
  * @returns {Memory} Shared Upstash-backed memory instance for all agents
  *
  * @example
@@ -364,15 +364,19 @@ export const mastraMemory = new Memory({
  * @returns Promise resolving to thread information
  */
 export async function createMemoryThread(
-  resourceId: string,
+  resourceId?: string,
   title?: string,
   metadata?: Record<string, unknown>,
   threadId?: string
 ) {
   logger.info(`[memory] createMemoryThread received. resourceId: ${resourceId}, threadId: ${threadId}`);
   const params = createThreadSchema.parse({ resourceId, threadId, title, metadata });
+  const finalResourceId = params.resourceId ?? ''; // Provide a default empty string if undefined
   try {
-    return await mastraMemory.createThread(params);
+    return await mastraMemory.createThread({
+      ...params,
+      resourceId: finalResourceId
+    });
   } catch (error: unknown) {
     logger.error(`createMemoryThread failed: ${(error as Error).message}`);
     throw error;
@@ -387,14 +391,15 @@ export async function createMemoryThread(
  * @returns Promise resolving to thread messages
  */
 export async function getMemoryThreadMessages(
-  resourceId: string,
   threadId: string,
+  resourceId?: string,
   last = 10
 ) {
   const params = getMessagesSchema.parse({ resourceId, threadId, last });
+  const finalResourceId = params.resourceId ?? ''; // Provide a default empty string if undefined
   try {
     return await mastraMemory.query({
-      resourceId: params.resourceId,
+      resourceId: finalResourceId,
       threadId: params.threadId,
       selectBy: { last: params.last }
     });
@@ -424,10 +429,11 @@ export async function getMemoryThreadById(threadId: string) {
  * @param resourceId - Resource identifier
  * @returns Promise resolving to array of threads
  */
-export async function getMemoryThreadsByResourceId(resourceId: string) {
+export async function getMemoryThreadsByResourceId(resourceId?: string) {
   const id = resourceIdSchema.parse(resourceId);
+  const finalResourceId = id ?? '';
   try {
-    return await mastraMemory.getThreadsByResourceId({ resourceId: id });
+    return await mastraMemory.getThreadsByResourceId({ resourceId: finalResourceId });
   } catch (error: unknown) {
     logger.error(`getMemoryThreadsByResourceId failed: ${(error as Error).message}`);
     throw error;
@@ -783,14 +789,14 @@ export async function upsertVectors(
  * Supports MongoDB/Sift query syntax for comprehensive filtering capabilities
  *
  * @param indexName - Name of the index to query
- * @param queryVector - Query vector for similarity search (384 dimensions for fastembed)
+ * @param queryVector - Query vector for similarity search (768 dimensions for Gemini)
  * @param topK - Number of results to return
  * @param filter - Optional metadata filter using MongoDB/Sift query syntax
  * @param includeVector - Whether to include vectors in results
  * @returns Promise resolving to query results with metadata
  *
  * @warning Current Type Limitation:
- * Filter parameter uses `any` casting due to local Upstash package constraints.
+ * Filter parameter uses `any` casting due to local pinecone package constraints.
  */
 export async function queryVectors(
   indexName: string,
@@ -807,9 +813,9 @@ export async function queryVectors(
     includeVector
   });
   try {
-    // Validate filter for Upstash compatibility if provided
+    // Validate filter for pinecone compatibility if provided
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let upstashFilter: any; // TODO: Replace with proper UpstashVectorFilter type when available.  Not now.. This is a workaround for local Upstash package constraints.
+    let upstashFilter: any; // TODO: Replace with proper pineconeVectorFilter type when available.  Not now.. This is a workaround for local pinecone package constraints.
     if (params.filter) {
       const validatedFilter = validateMetadataFilter(params.filter);
       upstashFilter = transformToUpstashFilter(validatedFilter);
@@ -1042,7 +1048,7 @@ export async function batchUpsertVectors(
  * @returns Promise resolving to enhanced search results
  *
  * @warning Current Type Limitation:
- * Filter parameter uses `any` casting due to local Upstash package constraints.
+ * Filter parameter uses `any` casting due to local pinecone package constraints.
  */
 export async function enhancedVectorSearch(
   indexName: string,
@@ -1403,6 +1409,63 @@ export async function extractChunkMetadata(
       { chunkCount: chunks.length, extractParams }
     );
   }
+}
+
+/**
+ * @deprecated Current Implementation Status
+ *
+ * IMPORTANT: Type Safety Limitation Notice
+ *
+ * The current implementation uses `any` type casting for Upstash Vector filters
+ * due to the inability to import proper types from the local Upstash package.
+ *
+ * This is a temporary workaround that maintains functionality while we await:
+ * 1. Updated Upstash package exports
+ * 2. Proper TypeScript type definitions
+ * 3. Enhanced type safety implementation
+ *
+ * The functionality works correctly, but lacks compile-time type checking
+ * for the filter parameter in vector operations.
+ *
+ * Future improvements should:
+ * - Import proper UpstashVectorFilter types when available
+ * - Replace `any` type casting with proper type definitions
+ * - Implement full type safety for metadata filtering
+ *
+ * @author SSD
+ * @version 1.0.0
+ * @date 2025-07-08
+ */
+// Interface for Workflow data as per schema.md
+export interface WorkflowData {
+  workflow_name: string;
+  run_id: string;
+  snapshot: string;
+  createdAt: number; // Using number for timestamp (Unix epoch) for consistency with JS Date.now()
+  updatedAt: number;
+}
+
+// Interface for Eval Dataset data as per schema.md
+export interface EvalDataset {
+  input: string;
+  output: string;
+  result: Record<string, unknown>; // jsonb type
+  agent_name: string;
+  metric_name: string;
+  instructions: string;
+  test_info: Record<string, unknown>; // jsonb type
+  global_run_id: string;
+  run_id: string;
+  created_at: number; // Using number for timestamp (Unix epoch)
+}
+
+// Interface for Resource data as per schema.md
+export interface ResourceData {
+  id: string;
+  workingMemory?: string; // CAN BE NULL
+  metadata?: Record<string, unknown>; // CAN BE NULL (jsonb)
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**
