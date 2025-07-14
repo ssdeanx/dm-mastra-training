@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "npm install --legacy-peer-deps",
     "dev": "mastra dev",
     "build": "mastra build",
     "start": "mastra start"
@@ -61,7 +60,6 @@
     "@octokit/types": "^14.1.0",
     "cheerio": "^1.1.0",
     "crawlee": "^3.13.10",
-    "dotenv": "^17.2.0",
     "fast-json-patch": "^3.1.1",
     "fast-xml-parser": "^5.2.5",
     "freestyle-sandboxes": "^0.0.92",

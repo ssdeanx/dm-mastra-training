@@ -77,8 +77,8 @@ const vectorQueryOutputSchema = z.object({
 // Basic vector query tool using Mastra's createVectorQueryTool for compatibility with Upstash
 export const vectorQueryTool = createVectorQueryTool({
   vectorStoreName: "pinecone", // Use literal vector store name
-  indexName: 'training-mastra', // Use literal index name
-  model: createGeminiEmbeddingModel('gemini-embedding-exp-03-07', { outputDimensionality: 1536, taskType: 'RETRIEVAL_QUERY' }), // Use literal dimension
+  indexName: 'training', // Use literal index name
+  model: createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768, taskType: 'RETRIEVAL_QUERY' }), // Use literal dimension
   databaseConfig: {
     pinecone: {
       namespace: "production"  // Isolate data by environment
@@ -179,7 +179,7 @@ export const enhancedVectorQueryTool = createTool({
 
                 // Create query embedding using Google's embedding model
                 const { embeddings } = await embedMany({
-                  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536 }), // Use literal dimension
+                  model: createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768, taskType: 'RETRIEVAL_QUERY' }), // Use literal dimension
                   values: [validatedInput.query]
                 });
         const queryEmbedding = embeddings[0];

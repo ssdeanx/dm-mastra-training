@@ -138,7 +138,7 @@ export const graphRAGUpsertTool = createTool({
       const vectorProfileName = validatedInput.vectorProfile || 'gemini';
 
       // Get the embedder
-      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536 });
+      const embedder = createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768 });
 
       if (debug) {
         logger.info('Starting document upsert', {
@@ -206,7 +206,7 @@ export const graphRAGUpsertTool = createTool({
       if (validatedInput.createIndex) {
         const idxResult = await createVectorIndex(
           validatedInput.indexName,
-          1536,
+          768,
           'cosine'
         );
         if (!idxResult.success) {
@@ -294,9 +294,9 @@ export const graphRAGUpsertTool = createTool({
 export const graphRAGTool = createGraphRAGTool({
   vectorStoreName: 'pinecone',
   indexName: 'gemini',
-  model: createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536, taskType: 'CLUSTERING' }),
+  model: createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768, taskType: 'CLUSTERING' }),
   graphOptions: {
-    dimension: 1536,
+    dimension: 768,
     threshold: 0.7
   }
 });
@@ -328,7 +328,7 @@ export const graphRAGQueryTool = createTool({
       const vectorProfileName = validatedInput.vectorProfile || 'gemini';
 
       // Get the embedder
-      const embedder = createGeminiEmbeddingModel(undefined, { outputDimensionality: 1536, taskType: 'CLUSTERING' });
+      const embedder = createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768, taskType: 'CLUSTERING' });
       const upstashVectorClient = pinecone;
 
       if (debug) {
@@ -349,7 +349,7 @@ export const graphRAGQueryTool = createTool({
       graphRAGContext.set('topK', topK);
       graphRAGContext.set('threshold', threshold);
       graphRAGContext.set('minScore', validatedInput.minScore);
-      graphRAGContext.set('dimension', 1536);
+      graphRAGContext.set('dimension', 768);
 
 
       // Execute the GraphRAG query
@@ -441,7 +441,7 @@ graphRAGRuntimeContext.set("indexName", 'gemini');
 graphRAGRuntimeContext.set("topK", 5);
 graphRAGRuntimeContext.set("threshold", 0.7);
 graphRAGRuntimeContext.set("minScore", 0.0);
-graphRAGRuntimeContext.set("dimension", 1536);
+graphRAGRuntimeContext.set("dimension", 768);
 graphRAGRuntimeContext.set("category", "document");
 graphRAGRuntimeContext.set("debug", false);
 graphRAGRuntimeContext.set("debug", false);

@@ -49,7 +49,7 @@ const chunkerInputSchema = z.object({
   vectorOptions: z.object({
     createEmbeddings: z.boolean().default(false).describe('Whether to create embeddings for chunks'),
     upsertToVector: z.boolean().default(false).describe('Whether to upsert chunks to Pinecone vector store'),
-    indexName: z.string().default('gemini').describe('Vector index name for upserting'),
+    indexName: z.string().default('training').describe('Vector index name for upserting'),
     createIndex: z.boolean().default(true).describe('Whether to create the vector index if it does not exist'),
   }).optional().describe('Vector store integration options'),
   extractParams: z.object({
@@ -205,7 +205,7 @@ export const chunkerTool = createTool({
       const preserveStructure = (runtimeContext?.get('preserve-structure') as boolean | undefined) ?? validatedInput.chunkParams?.preserveStructure ?? true;
       const includeMetadata = (runtimeContext?.get('include-metadata') as boolean | undefined) ?? true;
       // Get the embedder - always use gemini profile as it's the only one
-      const embedder = createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 1536, taskType: 'CLUSTERING' });
+      const embedder = createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768, taskType: 'CLUSTERING' });
       // Create MDocument based on document type
       let doc: MDocument;
       const { content, type, title, source, metadata } = validatedInput.document;
@@ -411,7 +411,7 @@ export const chunkerTool = createTool({
           embeddingsCreated: embeddings.length,
           vectorsUpserted,
           indexName: validatedInput.vectorOptions?.indexName,
-          embeddingDimension: 1536, // Assuming gemini profile always uses 1536 dimensions
+          embeddingDimension: 768, // Assuming gemini profile always uses 768 dimensions
           vectorProcessingTime: Date.now() - vectorStartTime
         };
 

@@ -257,7 +257,7 @@ export const upstashStorage = new UpstashStore({
 export const mastraMemory = new Memory({
   storage: upstashStorage,
   vector: pinecone,
-  embedder: createGeminiEmbeddingModel('gemini-embedding-exp-03-07', { outputDimensionality: 1536, taskType: 'SEMANTIC_SIMILARITY'}),
+  embedder: createGeminiEmbeddingModel('models/text-embedding-004', { outputDimensionality: 768, taskType: 'SEMANTIC_SIMILARITY'}),
   options: {
     lastMessages: 500, // Enhanced for better context retention
     semanticRecall: {

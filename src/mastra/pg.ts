@@ -25,6 +25,18 @@ export const pgmemory = new Memory({
       topK: 3,
       messageRange: 2,
     },
+  workingMemory: {
+      enabled: true,
+      template: `
+# Todo List
+## Item Status
+- Active items:
+  - Example (Due: Feb 7 3028, Started: Feb 7 2025)
+    - Description: This is an example task
+## Completed
+- None yet
+`,
+    },
   },
 });
  
