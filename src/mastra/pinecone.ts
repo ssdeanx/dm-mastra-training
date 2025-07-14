@@ -2,7 +2,14 @@ import { PineconeVector } from '@mastra/pinecone';
 import { z } from 'zod';
 import {createGeminiEmbeddingModel} from './config/googleProvider';
 import type { MastraVector } from '@mastra/core';
+import { PinoLogger } from '@mastra/loggers';
 
+const logger = new PinoLogger({
+  level: 'info',
+  name: 'pinecone',
+});
+
+logger.info('Initializing Pinecone vector store...');
 
 /**
  * @const {object} pineconeEnvSchema
