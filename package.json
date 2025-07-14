@@ -107,8 +107,6 @@
   "overrides": {
     "@qdrant/js-client-rest": "^1.14.1",
     "axios": "^1.10.0",
-    "zod": "^4.0.5",
-    "prismjs": "^1.30.0",
-    "@langchain/community":"^0.3.48"
+    "zod": "^4.0.5"
   }
 }
