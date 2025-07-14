@@ -52,7 +52,13 @@ const optionsSchema = z.object({
   includeVisuals: z.boolean().default(true),
   generateActions: z.boolean().default(true),
   audience: z.enum(['general', 'technical', 'executive', 'academic']).default('general'),
-}).optional().default({});
+}).optional().default({
+  depth: 'moderate',
+  format: 'report',
+  includeVisuals: true,
+  generateActions: true,
+  audience: 'general'
+});
 
 const baseWorkflowSchema = z.object({
   workflowId: z.string(),
@@ -125,7 +131,13 @@ const researchInputSchema = z.object({
     includeVisuals: z.boolean().default(true),
     generateActions: z.boolean().default(true),
     audience: z.enum(['general', 'technical', 'executive', 'academic']).default('general'),
-  }).optional().default({}),
+  }).optional().default({
+    depth: 'moderate',
+    format: 'report',
+    includeVisuals: true,
+    generateActions: true,
+    audience: 'general'
+  }),
 });
 
 // Output schema for research results
