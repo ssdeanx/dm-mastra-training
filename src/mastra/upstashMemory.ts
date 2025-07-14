@@ -160,7 +160,7 @@ export interface Trace {
   };
   events: Record<string, any>[];
   links: Record<string, any>[];
-  other: string;
+  other: Record<string, any>;
   startTime: bigint;
   endTime: bigint;
   createdAt: Date;
@@ -1548,7 +1548,9 @@ export async function getWorkflowRuns(options: {
 export async function saveTrace(traceData: Trace): Promise<void> {
   logger.info(`[memory] saveTrace received. id: ${traceData.id}`);
   try {
-    await upstashStorage.insert({ tableName: 'traces', record: traceData });
+    // Use the mastraMemory storage directly since MastraStorage doesn't have insert method
+    const traceKey = `trace:${traceData.id}`;
+    await MastraStorage.set(traceKey, JSON.stringify(traceData));
     logger.info(`[memory] Trace saved successfully. id: ${traceData.id}`);
   } catch (error: unknown) {
     logger.error(`saveTrace failed: ${(error as Error).message}`);
@@ -1583,9 +1585,28 @@ export async function getTraces(args: {
           )
         : undefined
     };
-    const result = await upstashStorage.getTracesPaginated(argsWithDefaults);
-    logger.info(`[memory] Found ${result.total} traces.`);
-    return result;
+    const result = await upstashStorage.getTraces(argsWithDefaults);
+    
+    // Handle case where result is an array instead of paginated object
+    const traces = Array.isArray(result) ? result : (result as any)?.traces || [];
+    const total = Array.isArray(result) ? result.length : (result as any)?.total || 0;
+    
+    logger.info(`[memory] Found ${total} traces.`);
+    
+    // Transform traces to match local Trace interface
+    const transformedTraces: Trace[] = traces.map((trace: any) => ({
+      ...trace,
+      startTime: typeof trace.startTime === 'number' ? BigInt(trace.startTime) : trace.startTime,
+      endTime: typeof trace.endTime === 'number' ? BigInt(trace.endTime) : trace.endTime,
+    }));
+    
+    return {
+      traces: transformedTraces,
+      total,
+      page: argsWithDefaults.page,
+      perPage: argsWithDefaults.perPage,
+      hasMore: total > argsWithDefaults.page * argsWithDefaults.perPage
+    };
   } catch (error: unknown) {
     logger.error(`getTraces failed: ${(error as Error).message}`);
     throw error;
@@ -1600,20 +1621,16 @@ export async function getTraces(args: {
 export async function saveEval(evalData: Eval): Promise<void> {
   logger.info(`[memory] saveEval received. run_id: ${evalData.runId}`);
   try {
-    // The `createdAt` field in the `Eval` type is a string, but the storage expects a Date.
-    // We create a new object to avoid mutating the original `evalData`.
-    const recordToInsert = {
-      ...evalData,
-      createdAt: new Date(evalData.createdAt),
-      updatedAt: new Date()
-    };
-    await MastraStorage.insert({ tableName: 'evals', record: recordToInsert });
+    // Use the mastraMemory storage directly since MastraStorage doesn't have insert method
+    const evalKey = `eval:${evalData.runId}`;
+    await upstashStorage.set(evalKey, JSON.stringify(evalData));
     logger.info(`[memory] Eval saved successfully. run_id: ${evalData.runId}`);
   } catch (error: unknown) {
     logger.error(`saveEval failed: ${(error as Error).message}`);
     throw error;
   }
 }
+
 
 /**
  * Retrieves all evals with pagination and filtering.
@@ -1649,62 +1666,20 @@ export async function getEvals(options?: {
       }
     }
     
-    // Use MastraStorage insert method to query evals table
-    const queryResult = await upstashStorage.insert({
-      tableName: 'TABLE_NAMES',
+    // TODO: Implement actual filtering and pagination in MastraStorage
+    const result = await upstashStorage.getEvals({
       filters,
       page,
       perPage
     });
-    
-    // For now, return empty results since MastraStorage doesn't have a query method
-    // This is a placeholder implementation
-    const total = 0;
-    const evals: Eval[] = [];
-    const hasMore = false;
-    
-    logger.info(`[memory] Found ${total} evals.`);
+
+    logger.info(`[memory] Found ${result.total} evals.`);
     return {
-      evals,
-      total,
-      page,
-      perPage,
-      hasMore
+      ...result,
+      hasMore: result.total > page * perPage
     };
   } catch (error: unknown) {
     logger.error(`getEvals failed: ${(error as Error).message}`);
     throw error;
   }
-}
-/**
- * @deprecated Current Implementation Status
- *
- * IMPORTANT: Type Safety Limitation Notice
- *
- * The current implementation uses `any` type casting for Upstash Vector filters
- * due to the inability to import proper types from the local Upstash package.
- *
- * This is a temporary workaround that maintains functionality while we await:
- * 1. Updated Upstash package exports
- * 2. Proper TypeScript type definitions
- * 3. Enhanced type safety implementation
- *
- * The functionality works correctly, but lacks compile-time type checking
- * for the filter parameter in vector operations.
- *
- * Future improvements should:
- * - Import proper UpstashVectorFilter types when available
- * - Replace `any` type casting with proper type definitions
- * - Implement full type safety for metadata filtering
- *
- * @author SSD
- * @version 1.0.0
- * @date 2025-07-08
- */
-export const UPSTASH_TYPE_SAFETY_STATUS = {
-  current: 'Limited - using any type casting',
-  reason: 'Cannot import UpstashVectorFilter from local package',
-  functionality: 'Working correctly',
-  typeSafety: 'Compile-time checking disabled for filters',
-  futureImprovement: 'Implement proper type imports when available'
-} as const;
+}}
