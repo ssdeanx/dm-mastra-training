@@ -7,7 +7,7 @@ import { PinoLogger } from "@mastra/loggers";
 import { generateId } from 'ai';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
-import { AttentionGuidedMemoryProcessor, ContextualRelevanceProcessor, WorkflowAwareMemoryProcessor, BiasMitigationProcessor } from '../upstashMemory';
+import { AttentionGuidedMemoryProcessor, ContextualRelevanceProcessor, WorkflowAwareMemoryProcessor, BiasMitigationProcessor } from '../processor-extra';
 // Agent imports
 import { masterAgent } from '../agents/master-agent';
 import { supervisorAgent } from '../agents/supervisor-agent';
@@ -15,7 +15,7 @@ import { researchAgent } from '../agents/research-agent';
 import { analyzerAgent } from '../agents/analyzer-agent';
 import { weatherWorkflow } from './weather-workflow';
 import { chunkerTool, createBraveSearchTool, createTavilySearchTool, graphRAGTool, graphRAGUpsertTool, hybridVectorSearchTool, mem0MemorizeTool, mem0RememberTool, stockPriceTool, vectorQueryTool, weatherTool } from '../tools';
-
+import { mastraMemory } from '../upstashMemory';
 import { pinecone } from '../pinecone';
 // Tool imports
 
@@ -187,7 +187,7 @@ export const synthesisAgent = new Agent({
     // Structured outputs for better tool integration
     structuredOutputs: true,
   }),
-  memory: memory,
+  memory: mastraMemory,
 });
 
 // Agent collection
@@ -230,7 +230,7 @@ try {
     }),
     agents: vNextAgents,
     workflows: vNextWorkflows,
-    memory: memory, // Using LibSQLStore for memory management
+    memory: mastraMemory, // Using LibSQLStore for memory management
     tools: {
       graphRAGTool,
       graphRAGUpsertTool,
