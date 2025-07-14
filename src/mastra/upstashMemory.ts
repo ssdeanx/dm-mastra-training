@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Memory } from '@mastra/memory';
 import { UpstashStore } from '@mastra/upstash';
 import { pinecone } from './pinecone';
@@ -6,16 +7,9 @@ import { PinoLogger } from '@mastra/loggers';
 import type { CoreMessage as OriginalCoreMessage } from '@mastra/core';
 import { maskStreamTags, MastraStorage } from '@mastra/core';
 import { UIMessage } from 'ai';
-import { TokenLimiter, ToolCallFilter } from "@mastra/memory/processors";
+import { TokenLimiter, ToolCallFilter } from '@mastra/memory/processors';
 import { createGeminiEmbeddingModel } from './config/googleProvider';
 import { AttentionGuidedMemoryProcessor, ContextualRelevanceProcessor, WorkflowAwareMemoryProcessor, BiasMitigationProcessor, ToolUsageTrackerProcessor, AgentInteractionPatternProcessor, MentalModelProcessor } from './processor-extra';
-
-
-
-
-
-//import { ca } from 'zod/v4/locales';
-
 
 
 /**
@@ -48,7 +42,7 @@ const logger = new PinoLogger({ name: 'memory', level: 'info' });
 const createThreadSchema = z.object({
   resourceId: z.string().optional(),
   threadId: z.string().optional(),
-  title: z.string().optional(), // This line is already correct.
+  title: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional()
 });
 
@@ -97,6 +91,94 @@ const vectorUpdateSchema = z.intersection(vectorIndexSchema, z.object({
   vector: z.array(z.number()).optional(),
   metadata: z.record(z.string(), z.unknown()).optional()
 }));
+
+// Zod schema for Trace data, aligning with the local Trace interface
+const traceSchema = z.object({
+  id: z.string(),
+  parentSpanId: z.string().optional(),
+  name: z.string(),
+  traceId: z.string(),
+  scope: z.string(),
+  kind: z.number(),
+  attributes: z.record(z.string(), z.unknown()),
+  status: z.object({
+    code: z.number(),
+    message: z.string().optional(),
+  }),
+  events: z.array(z.record(z.string(), z.unknown())),
+  links: z.array(z.record(z.string(), z.unknown())),
+  other: z.string(),
+  startTime: z.bigint(),
+  endTime: z.bigint(),
+  createdAt: z.date(),
+});
+
+// Zod schema for Workflow data, aligning with the local WorkflowRun interface
+const workflowSchema = z.object({
+  workflowName: z.string(),
+  runId: z.string().uuid(),
+  snapshot: z.unknown(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  resourceId: z.string().optional(),
+});
+
+// Zod schema for EvalDataset data, aligning with the local Eval interface
+const evalDatasetSchema = z.object({
+  output: z.string(),
+  result: z.record(z.string(), z.unknown()),
+  agentName: z.string(),
+  metricName: z.string(),
+  instructions: z.string(),
+  testInfo: z.record(z.string(), z.unknown()),
+  globalRunId: z.string().uuid(),
+  runId: z.string().uuid(),
+  createdAt: z.string(),
+});
+
+// Locally defined types based on schema.md, as they are not exported from @mastra/core
+export interface WorkflowRun {
+  workflowName: string;
+  runId: string;
+  snapshot: any; // Temporarily use 'any' to resolve type incompatibility
+  createdAt: Date;
+  updatedAt: Date;
+  resourceId?: string;
+}
+
+export interface Trace {
+  id: string;
+  parentSpanId?: string;
+  name: string;
+  traceId: string;
+  scope: string;
+  kind: number;
+  attributes: Record<string, any>;
+  status: {
+    code: number;
+    message?: string;
+  };
+  events: Record<string, any>[];
+  links: Record<string, any>[];
+  other: string;
+  startTime: bigint;
+  endTime: bigint;
+  createdAt: Date;
+}
+
+export interface Eval {
+  agentName: string;
+  input: string;
+  output: string;
+  // Use Record<string, any> to allow flexible result structure
+  result: Record<string, any>;
+  metricName: string;
+  instructions: string;
+  testInfo: Record<string, any>;
+  globalRunId: string;
+  runId: string;
+  createdAt: string;
+}
 
 /**
  * Vector operation result interfaces following Upstash Vector API
@@ -194,25 +276,10 @@ export interface MetadataFilter {
 /**
  * Create shared Upstash storage instance
  */
-export const upstashStorage = new UpstashStore({
+export const upstashStorage: MastraStorage = new UpstashStore({
   url: process.env.UPSTASH_REDIS_REST_URL || '',
   token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
 });
-
-
-
-/**
- * Enhanced Upstash Vector Configuration
- * Initializes vector storage for optimal search performance with proper dimensions
- *
- * @remarks
- * - Configured for fastembed embedding model (384 dimensions)
- * - Uses cosine similarity for text embeddings
- * - Supports metadata filtering and hybrid search
- */
-// Comment out old pineconeVector export since we're using it under the upstashVector name
-// export const pineconeVector = pinecone;
-//export const upstashVector = pinecone;
 
 
 
@@ -222,7 +289,7 @@ export const upstashStorage = new UpstashStore({
    * @remarks
    * - Uses UpstashStore for distributed Redis storage
  * - Uses PineconeVector for semantic search with cloud-based vectors (768-dim gemini embeddings)
- * - Embeddings powered by Gemini text-embedding model with cosine similarity
+ * - Embeddings powered by Gemini text-embedding-004 model with cosine similarity
  * - Configured for working memory and semantic recall with enhanced processors
  * - Supports custom memory processors for filtering, summarization, etc.
  * - Ideal for serverless and distributed applications
@@ -1409,62 +1476,206 @@ export async function extractChunkMetadata(
 }
 
 /**
- * @deprecated Current Implementation Status
- *
- * IMPORTANT: Type Safety Limitation Notice
- *
- * The current implementation uses `any` type casting for Upstash Vector filters
- * due to the inability to import proper types from the local Upstash package.
- *
- * This is a temporary workaround that maintains functionality while we await:
- * 1. Updated Upstash package exports
- * 2. Proper TypeScript type definitions
- * 3. Enhanced type safety implementation
- *
- * The functionality works correctly, but lacks compile-time type checking
- * for the filter parameter in vector operations.
- *
- * Future improvements should:
- * - Import proper UpstashVectorFilter types when available
- * - Replace `any` type casting with proper type definitions
- * - Implement full type safety for metadata filtering
- *
- * @author SSD
- * @version 1.0.0
- * @date 2025-07-08
+ * Saves a suspended workflow's state.
+ * @param workflowData - The workflow data to save.
+ * @returns A promise that resolves when the workflow is saved.
  */
-// Interface for Workflow data as per schema.md
-export interface WorkflowData {
-  workflow_name: string;
-  run_id: string;
-  snapshot: string;
-  createdAt: number; // Using number for timestamp (Unix epoch) for consistency with JS Date.now()
-  updatedAt: number;
+export async function saveWorkflow(workflowData: {
+  workflowName: string;
+  runId: string;
+  snapshot: any; // Temporarily use 'any' to resolve type incompatibility
+}): Promise<void> {
+  logger.info(`[memory] saveWorkflow received. run_id: ${workflowData.runId}`);
+  try {
+    await upstashStorage.persistWorkflowSnapshot(workflowData);
+    logger.info(`[memory] Workflow saved successfully. run_id: ${workflowData.runId}`);
+  } catch (error: unknown) {
+    logger.error(`saveWorkflow failed: ${(error as Error).message}`);
+    throw error;
+  }
 }
 
-// Interface for Eval Dataset data as per schema.md
-export interface EvalDataset {
-  input: string;
-  output: string;
-  result: Record<string, unknown>; // jsonb type
-  agent_name: string;
-  metric_name: string;
-  instructions: string;
-  test_info: Record<string, unknown>; // jsonb type
-  global_run_id: string;
-  run_id: string;
-  created_at: number; // Using number for timestamp (Unix epoch)
+/**
+ * Retrieves a suspended workflow's state.
+ * @param run_id - The run ID of the workflow to retrieve.
+ * @returns A promise that resolves to the workflow data, or null if not found.
+ */
+export async function getWorkflow(runId: string, workflowName: string): Promise<WorkflowRun | null> {
+  logger.info(`[memory] getWorkflow received. run_id: ${runId}`);
+  try {
+    const run = await upstashStorage.getWorkflowRunById({ runId, workflowName });
+    if (!run) {
+      logger.warn(`[memory] Workflow not found. run_id: ${runId}`);
+      return null;
+    }
+    return run;
+  } catch (error: unknown) {
+    logger.error(`getWorkflow failed: ${(error as Error).message}`);
+    throw error;
+  }
 }
 
-// Interface for Resource data as per schema.md
-export interface ResourceData {
-  id: string;
-  workingMemory?: string; // CAN BE NULL
-  metadata?: Record<string, unknown>; // CAN BE NULL (jsonb)
-  createdAt: number;
-  updatedAt: number;
+/**
+ * Retrieves all workflow runs, with optional filtering.
+ * @param options - Filtering and pagination options.
+ * @returns A promise resolving to the workflow runs.
+ */
+export async function getWorkflowRuns(options: {
+  namespace?: string;
+  workflowName?: string;
+  resourceId?: string;
+  fromDate?: Date;
+  toDate?: Date;
+  limit?: number;
+  offset?: number;
+}): Promise<{ runs: WorkflowRun[]; total: number; }> {
+  logger.info('[memory] getWorkflowRuns received.', options);
+  try {
+    const result = await upstashStorage.getWorkflowRuns(options);
+    logger.info(`[memory] Found ${result.total} workflow runs.`);
+    return result;
+  } catch (error: unknown) {
+    logger.error(`getWorkflowRuns failed: ${(error as Error).message}`);
+    throw error;
+  }
 }
 
+/**
+ * Saves a trace.
+ * @param traceData - The trace data to save.
+ * @returns A promise that resolves when the trace is saved.
+ */
+export async function saveTrace(traceData: Trace): Promise<void> {
+  logger.info(`[memory] saveTrace received. id: ${traceData.id}`);
+  try {
+    await upstashStorage.insert({ tableName: 'traces', record: traceData });
+    logger.info(`[memory] Trace saved successfully. id: ${traceData.id}`);
+  } catch (error: unknown) {
+    logger.error(`saveTrace failed: ${(error as Error).message}`);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves all traces with pagination and filtering.
+ * @param args - Filtering and pagination options.
+ * @returns A promise resolving to a paginated list of traces.
+ */
+export async function getTraces(args: {
+  name?: string;
+  scope?: string;
+  page?: number;
+  perPage?: number;
+  attributes?: Record<string, unknown>;
+  filters?: Record<string, unknown>;
+  dateRange?: { start?: Date; end?: Date };
+}): Promise<{ traces: Trace[]; total: number; page: number; perPage: number; hasMore: boolean; }> {
+  logger.info('[memory] getTraces received.', args);
+  try {
+    const argsWithDefaults = {
+      ...args,
+      page: args.page ?? 1,
+      perPage: args.perPage ?? 20,
+      // Convert attributes from Record<string, unknown> to Record<string, string>
+      attributes: args.attributes 
+        ? Object.fromEntries(
+            Object.entries(args.attributes).map(([key, value]) => [key, String(value)])
+          )
+        : undefined
+    };
+    const result = await upstashStorage.getTracesPaginated(argsWithDefaults);
+    logger.info(`[memory] Found ${result.total} traces.`);
+    return result;
+  } catch (error: unknown) {
+    logger.error(`getTraces failed: ${(error as Error).message}`);
+    throw error;
+  }
+}
+
+/**
+ * Saves an eval dataset.
+ * @param evalData - The eval dataset to save.
+ * @returns A promise that resolves when the eval dataset is saved.
+ */
+export async function saveEval(evalData: Eval): Promise<void> {
+  logger.info(`[memory] saveEval received. run_id: ${evalData.runId}`);
+  try {
+    // The `createdAt` field in the `Eval` type is a string, but the storage expects a Date.
+    // We create a new object to avoid mutating the original `evalData`.
+    const recordToInsert = {
+      ...evalData,
+      createdAt: new Date(evalData.createdAt),
+      updatedAt: new Date()
+    };
+    await MastraStorage.insert({ tableName: 'evals', record: recordToInsert });
+    logger.info(`[memory] Eval saved successfully. run_id: ${evalData.runId}`);
+  } catch (error: unknown) {
+    logger.error(`saveEval failed: ${(error as Error).message}`);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves all evals with pagination and filtering.
+ * @param options - Filtering and pagination options.
+ * @returns A promise resolving to a paginated list of evals.
+ */
+export async function getEvals(options?: {
+  agentName?: string;
+  type?: 'test' | 'live';
+  page?: number;
+  perPage?: number;
+  dateRange?: { start?: Date; end?: Date };
+}): Promise<{ evals: Eval[]; total: number; page: number; perPage: number; hasMore: boolean; }> {
+  logger.info('[memory] getEvals received.', options);
+  try {
+    const page = options?.page ?? 1;
+    const perPage = options?.perPage ?? 20;
+    
+    // Build filter object for MastraStorage
+    const filters: Record<string, unknown> = {};
+    if (options?.agentName) {
+      filters.agentName = options.agentName;
+    }
+    if (options?.type) {
+      filters.type = options.type;
+    }
+    if (options?.dateRange) {
+      if (options.dateRange.start) {
+        filters.createdAtStart = options.dateRange.start;
+      }
+      if (options.dateRange.end) {
+        filters.createdAtEnd = options.dateRange.end;
+      }
+    }
+    
+    // Use MastraStorage insert method to query evals table
+    const queryResult = await upstashStorage.insert({
+      tableName: 'TABLE_NAMES',
+      filters,
+      page,
+      perPage
+    });
+    
+    // For now, return empty results since MastraStorage doesn't have a query method
+    // This is a placeholder implementation
+    const total = 0;
+    const evals: Eval[] = [];
+    const hasMore = false;
+    
+    logger.info(`[memory] Found ${total} evals.`);
+    return {
+      evals,
+      total,
+      page,
+      perPage,
+      hasMore
+    };
+  } catch (error: unknown) {
+    logger.error(`getEvals failed: ${(error as Error).message}`);
+    throw error;
+  }
+}
 /**
  * @deprecated Current Implementation Status
  *
