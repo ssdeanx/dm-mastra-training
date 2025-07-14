@@ -79,6 +79,11 @@ export const vectorQueryTool = createVectorQueryTool({
   vectorStoreName: "pinecone", // Use literal vector store name
   indexName: 'training-mastra', // Use literal index name
   model: createGeminiEmbeddingModel('gemini-embedding-exp-03-07', { outputDimensionality: 1536, taskType: 'RETRIEVAL_QUERY' }), // Use literal dimension
+  databaseConfig: {
+    pinecone: {
+      namespace: "production"  // Isolate data by environment
+    }
+  },
   enableFilter: true,
   description: "Search for semantically similar content in the Pinecone vector store using embeddings with sparse cosine similarity. Supports filtering, ranking, and context retrieval."
 });

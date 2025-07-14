@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core/agent';
 import { createGemini25Provider } from '../config/googleProvider';
 import { weatherTool } from '../tools/weather-tool';
 import { chunkerTool } from "../tools/chunker-tool";
-import { upstashMemory } from '../upstashMemory';
+import { mastraMemory } from '../upstashMemory';
 import { vectorQueryTool } from "../tools/vectorQueryTool";
 import { graphRAGTool } from "../tools/graphRAG";
 import { PinoLogger } from "@mastra/loggers";
@@ -133,5 +133,5 @@ GUIDELINES FOR EXECUTION:
     cryptoMarketDataTool,
     listCryptoCoinsTool
   },
-  memory: upstashMemory
+  memory: mastraMemory
 });

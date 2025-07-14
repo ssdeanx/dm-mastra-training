@@ -42,7 +42,7 @@ export const pinecone: MastraVector = new PineconeVector({
 
 async function initializePinecone() {
   await pinecone.createIndex({
-    indexName: "pineconeIndex",
+    indexName: "training-mastra",
     metric: "cosine",
     dimension: 1536,
   });
@@ -94,7 +94,7 @@ async function initializePinecone() {
 
   // Store embeddings with rich metadata for better organization and filtering
   await pinecone.upsert({
-    indexName: "pineconeIndex",
+    indexName: "training-mastra",
     vectors,
     metadata: chunks.map((chunk) => ({
       text: chunk.text,

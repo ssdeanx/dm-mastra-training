@@ -1,7 +1,9 @@
 {
   "mcpServers": {
-    "visualization": {
+    "visualization": {  
       "url": "https://server.smithery.ai/@antvis/mcp-server-chart/mcp?api_key=be98d3d0-f628-45e5-a532-cc4ade91164c&profile=mysterious-caterpillar-7VW37j",
+      "type": "http",
+      "timeout": 3600,
       "disabled": true,
       "alwaysAllow": []
     }

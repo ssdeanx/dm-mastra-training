@@ -1,5 +1,5 @@
 import { Agent } from "@mastra/core/agent";
-import { upstashMemory } from '../upstashMemory';
+import { mastraMemory } from '../upstashMemory';
 import { hybridVectorSearchTool, vectorQueryTool } from "../tools/vectorQueryTool";
 import { createGemini25Provider } from '../config/googleProvider';
 import { chunkerTool } from "../tools/chunker-tool";
@@ -52,7 +52,7 @@ export type AnalyzerAgentRuntimeContext = {
 const analyzerAgentInputSchema = z.object({
   query: z.string().min(1).describe('Analysis query or data request for the analyzer agent'),
   data: z.any().optional().describe('Optional data to analyze'),
-  context: z.record(z.any()).optional().describe('Optional context information'),
+  context: z.record(z.string(), z.any()).optional().describe('Optional context information'),
   requestId: z.string().optional().describe('Optional request identifier'),
   metadata: z.record(z.any()).optional().describe('Optional metadata'),
   userId: z.string().optional().describe('User identifier'),
@@ -302,7 +302,7 @@ ${UPSTASH_PROMPT}
     cryptoMarketDataTool,
     listCryptoCoinsTool
   },
-  memory: upstashMemory
+  memory: mastraMemory
 });
 
 /**

@@ -1,5 +1,5 @@
 import { Agent } from "@mastra/core/agent";
-import { upstashMemory } from '../upstashMemory';
+import { mastraMemory } from '../upstashMemory';
 import { createGemini25Provider } from '../config/googleProvider';
 import { chunkerTool } from "../tools/chunker-tool";
 import { z } from "zod";
@@ -312,7 +312,7 @@ ${UPSTASH_PROMPT}
     cryptoMarketDataTool,
     listCryptoCoinsTool
   },
-  memory: upstashMemory
+  memory: mastraMemory
 });
 
 /**

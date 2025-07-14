@@ -1,6 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 import { createGemini25Provider } from '../config';
-import { upstashMemory } from '../upstashMemory';
+import { mastraMemory } from '../upstashMemory';
 import {
   createMastraLangGraphWorkflow,
   createMastraLangGraphChat
@@ -208,7 +208,7 @@ ${UPSTASH_PROMPT}
     cryptoMarketDataTool,
     listCryptoCoinsTool
   },
-  memory: upstashMemory
+  memory: mastraMemory
 });
 
 /**

@@ -1,6 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import type { ToolAction } from "@mastra/core/tools";
-import { upstashMemory } from '../upstashMemory';
+import { mastraMemory } from '../upstashMemory';
 import { createGemini25Provider } from '../config/googleProvider';
 import { chunkerTool } from "../tools/chunker-tool";
 import { z } from "zod";
@@ -315,7 +315,7 @@ ${UPSTASH_PROMPT}
       {} as Record<string, string> // Pass empty options for nodeModules and envVars
     ) as ToolAction
   },
-  memory: upstashMemory
+  memory: mastraMemory
 });
 
 /**

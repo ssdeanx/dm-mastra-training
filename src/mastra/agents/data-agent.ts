@@ -1,6 +1,6 @@
 
 import { Agent } from "@mastra/core/agent";
-import { upstashMemory } from '../upstashMemory';
+import { mastraMemory } from '../upstashMemory';
 import { PinoLogger } from "@mastra/loggers";
 import { z } from 'zod';
 import {
@@ -163,7 +163,7 @@ GUIDELINES FOR EXECUTION:
       includeThoughts: true,
     },
   }),
-  memory: upstashMemory,
+  memory: mastraMemory,
   tools: {
     readDataFileTool,
     writeDataFileTool,

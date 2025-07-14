@@ -1,5 +1,5 @@
 import { Agent } from "@mastra/core/agent";
-import { upstashMemory } from '../upstashMemory';
+import { mastraMemory } from '../upstashMemory';
 import { vectorQueryTool } from "../tools/vectorQueryTool";
 import { chunkerTool } from "../tools/chunker-tool";
 import { graphRAGTool } from "../tools/graphRAG";
@@ -197,7 +197,7 @@ ${UPSTASH_PROMPT}
     cryptoMarketDataTool,
     listCryptoCoinsTool
   },
-  memory: upstashMemory
+  memory: mastraMemory
 });
 
 /**

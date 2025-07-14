@@ -30,10 +30,12 @@
     "@ai-sdk/openai": "^1.3.23",
     "@copilotkit/runtime": "^1.9.1",
     "@google/generative-ai": "^0.24.1",
+    "@langchain/community":"^0.3.48",
     "@langchain/google-genai": "^0.2.14",
     "@langchain/langgraph": "^0.3.8",
     "@mastra/agui": "^1.0.6",
     "@mastra/auth": "^0.1.0",
+    "@mastra/client-js": "^0.10.11",
     "@mastra/core": "^0.10.12",
     "@mastra/deployer": "^0.10.12",
     "@mastra/deployer-netlify": "^0.11.5",
@@ -48,6 +50,7 @@
     "@mastra/mem0": "^0.1.4",
     "@mastra/memory": "^0.11.2",
     "@mastra/pinecone": "^0.11.0",
+    "@mastra/pg": "^0.12.2",
     "@mastra/rag": "^1.0.2",
     "@mastra/upstash": "^0.12.1",
     "@mermaid-js/parser": "^0.6.1",
@@ -104,7 +107,8 @@
   "overrides": {
     "@qdrant/js-client-rest": "^1.14.1",
     "axios": "^1.10.0",
-    "rimraf": "^6.0.1",
-    "glob": "^11.0.3"
+    "zod": "^4.0.5",
+    "prismjs": "^1.30.0",
+    "@langchain/community":"^0.3.48"
   }
 }

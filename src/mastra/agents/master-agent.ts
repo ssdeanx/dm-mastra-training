@@ -1,5 +1,5 @@
 import { Agent } from "@mastra/core/agent";
-import { upstashMemory } from '../upstashMemory';
+import { mastraMemory } from '../upstashMemory';
 import { graphRAGQueryTool, graphRAGTool, graphRAGUpsertTool } from '../tools/graphRAG';
 import { vectorQueryTool, hybridVectorSearchTool } from "../tools/vectorQueryTool";
 import { mem0RememberTool, mem0MemorizeTool } from "../tools/mem0-tool";
@@ -269,7 +269,7 @@ ${UPSTASH_PROMPT}
     webScraperTool,
     gitOperationsTool,
   },
-  memory: upstashMemory,
+  memory: mastraMemory,
   evals: {
     toneConsistency: new ToneConsistencyMetric(),
     keywordCoverage: new KeywordCoverageMetric(),
