@@ -253,70 +253,65 @@ This diagram illustrates the high-level architecture of the Mastra framework, sh
 
 ```mermaid
 graph TD
-    subgraph User Interaction
-        A[User Interface] --> B(Mastra API Endpoints);
-    end
 
-    subgraph Mastra Core
-        B --> C[Mastra Framework - src/mastra/index.ts];
-        C --> D{Agent Networks};
-        C --> E{Workflows};
-        C --> F{Agents};
-        C --> G{Memory Management};
-        C --> H{Tool Integrations};
+    11["PostgreSQL Database<br>Database"]
+    12["Pinecone Vector DB<br>Vector Database"]
+    13["Upstash Redis<br>Key-Value Store"]
+    14["Arxiv API<br>External Service"]
+    15["Brave Search API<br>External Service"]
+    16["Diffbot API<br>External Service"]
+    17["Google APIs<br>External Service"]
+    18["Langfuse<br>Observability Platform"]
+    19["Mastra Application<br>TypeScript/Node.js"]
+    2["User<br>External Actor"]
+    20["User<br>External Actor"]
+    29["PostgreSQL Database<br>Database"]
+    30["Pinecone Vector DB<br>Vector Database"]
+    31["Upstash Redis<br>Key-Value Store"]
+    32["Arxiv API<br>External Service"]
+    33["Brave Search API<br>External Service"]
+    34["Diffbot API<br>External Service"]
+    35["Google APIs<br>External Service"]
+    36["Langfuse<br>Observability Platform"]
+    subgraph 1["Mastra Application<br>TypeScript/Node.js"]
+        10["Data Persistence<br>TypeScript"]
+        3["Mastra Entry Point<br>TypeScript"]
+        4["Configuration<br>TypeScript"]
+        5["Inngest Integration<br>TypeScript"]
+        6["Networks Module<br>TypeScript"]
+        7["Agents Module<br>TypeScript"]
+        8["Workflows Module<br>TypeScript"]
+        9["Tools Integrations<br>TypeScript"]
+        %% Edges at this level (grouped by source)
+        3["Mastra Entry Point<br>TypeScript"] -->|configures| 4["Configuration<br>TypeScript"]
+        3["Mastra Entry Point<br>TypeScript"] -->|orchestrates| 8["Workflows Module<br>TypeScript"]
+        6["Networks Module<br>TypeScript"] -->|provides base for| 7["Agents Module<br>TypeScript"]
+        8["Workflows Module<br>TypeScript"] -->|uses| 7["Agents Module<br>TypeScript"]
+        8["Workflows Module<br>TypeScript"] -->|utilizes| 9["Tools Integrations<br>TypeScript"]
+        5["Inngest Integration<br>TypeScript"] -->|triggers| 8["Workflows Module<br>TypeScript"]
+        7["Agents Module<br>TypeScript"] -->|leverages| 9["Tools Integrations<br>TypeScript"]
+        7["Agents Module<br>TypeScript"] -->|accesses| 10["Data Persistence<br>TypeScript"]
+        4["Configuration<br>TypeScript"] -->|configures| 10["Data Persistence<br>TypeScript"]
     end
-
-    subgraph Agent Networks
-        D --> D1[Base Network];
-        D --> D2[vNext Network];
-    end
-
-    subgraph Workflows
-        E --> E1[Research Analysis Workflow];
-        E --> E2[Inngest Multi-Agent Workflow];
-        E --> E3[Document Analysis Workflow];
-        E --> E4[Agent Performance Workflow];
-        E --> E5[Research Report Workflow];
-        E --> E6[Weather Workflow];
-    end
-
-    subgraph Agents
-        F --> F1[Master Agent];
-        F --> F2[Research Agent];
-        F --> F3[Analyzer Agent];
-        F --> F4[Supervisor Agent];
-        F --> F5[Data Agent];
-        F --> F6[Generation Agent];
-        F --> F7[LangGraph Agent];
-        F --> F8[Chance Agent];
-        F --> F9[Mapping Agent];
-        F --> F10[Weather Agent];
-    end
-
-    subgraph Memory Management
-        G --> G1[Upstash Memory (Redis/Vector)];
-        G --> G2[LibSQL Memory];
-        G --> G3[Mem0];
-        G --> G4[Memory Processors];
-    end
-
-    subgraph Tool Integrations
-        H --> H1[Web Search & Scraping];
-        H --> H2[Code Analysis & Git];
-        H --> H3[Financial & Sports Data];
-        H --> H4[Vector & RAG];
-        H --> H5[Cognitive Frameworks];
-        H --> H6[Miscellaneous];
-    end
-
-    D -- Orchestrates --> F;
-    E -- Utilizes --> F;
-    E -- Utilizes --> H;
-    F -- Utilizes --> G;
-    F -- Utilizes --> H;
-    G -- Provides Context --> F;
-    H -- Provides Capabilities --> F;
-    H -- Provides Capabilities --> E;
+    %% Edges at this level (grouped by source)
+    20["User<br>External Actor"] -->|initiates| 19["Mastra Application<br>TypeScript/Node.js"]
+    19["Mastra Application<br>TypeScript/Node.js"] -->|connects to| 29["PostgreSQL Database<br>Database"]
+    19["Mastra Application<br>TypeScript/Node.js"] -->|stores vectors in| 30["Pinecone Vector DB<br>Vector Database"]
+    19["Mastra Application<br>TypeScript/Node.js"] -->|caches in| 31["Upstash Redis<br>Key-Value Store"]
+    19["Mastra Application<br>TypeScript/Node.js"] -->|queries| 32["Arxiv API<br>External Service"]
+    19["Mastra Application<br>TypeScript/Node.js"] -->|searches| 33["Brave Search API<br>External Service"]
+    19["Mastra Application<br>TypeScript/Node.js"] -->|extracts from| 34["Diffbot API<br>External Service"]
+    19["Mastra Application<br>TypeScript/Node.js"] -->|interacts with| 35["Google APIs<br>External Service"]
+    19["Mastra Application<br>TypeScript/Node.js"] -->|sends telemetry to| 36["Langfuse<br>Observability Platform"]
+    2["User<br>External Actor"] -->|initiates| 1["Mastra Application<br>TypeScript/Node.js"]
+    1["Mastra Application<br>TypeScript/Node.js"] -->|connects to| 11["PostgreSQL Database<br>Database"]
+    1["Mastra Application<br>TypeScript/Node.js"] -->|stores vectors in| 12["Pinecone Vector DB<br>Vector Database"]
+    1["Mastra Application<br>TypeScript/Node.js"] -->|caches in| 13["Upstash Redis<br>Key-Value Store"]
+    1["Mastra Application<br>TypeScript/Node.js"] -->|queries| 14["Arxiv API<br>External Service"]
+    1["Mastra Application<br>TypeScript/Node.js"] -->|searches| 15["Brave Search API<br>External Service"]
+    1["Mastra Application<br>TypeScript/Node.js"] -->|extracts from| 16["Diffbot API<br>External Service"]
+    1["Mastra Application<br>TypeScript/Node.js"] -->|interacts with| 17["Google APIs<br>External Service"]
+    1["Mastra Application<br>TypeScript/Node.js"] -->|sends telemetry to| 18["Langfuse<br>Observability Platform"]
 ```
 
 ## 💡 Usage Examples: Unleashing Mastra's Potential
